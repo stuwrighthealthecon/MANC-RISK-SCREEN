@@ -11,7 +11,7 @@ incidence_time <- incidence_time_1+ runif(1,0,1)
 #First determine if screen detected or clinical detected in current data 
 
 detect_mode <- 1 #clinical detected
-if (incidence_time <= 70 & incidence_time >= 50 & runif(1,0,1)>prop_screen_detected){detect_mode <- 0} #screen detected
+if (incidence_time <= 70 & incidence_time >= 50 & runif(1,0,1)<prop_screen_detected){detect_mode <- 0} #screen detected
 
 #size at detection - as number of tumour doublings in diameter from a 0.25mm diameter
   clin_detect_size_g <- rnorm(n = 1,mean = clin_detection_m,sd = clin_detection_sd)
