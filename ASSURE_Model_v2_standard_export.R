@@ -46,7 +46,7 @@ source(file = "survival_times_NPI_sim_v3.R")
   #Supplental Screening on/off 1=on, 0=off
   supplemental_screeing <- 0
   #Risk stratification
-  risk_strategy <- 4 #1=procas, 2=optimal, 3=risk tertiles, 4= 3-yearly, 5= 2-yearly, 6= 5-yearly, 7=2 rounds (50 and 60) other=no screening
+  risk_strategy <- 4 #1=procas, 2=optimal, 3=risk tertiles, 4= 3-yearly, 5= 2-yearly, 6= 5-yearly, 7=2 rounds (50 and 60), other=no screening
   
   #Age of an individual at start of simulation
   start_age <- 38
