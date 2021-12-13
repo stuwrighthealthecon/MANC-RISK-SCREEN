@@ -16,6 +16,8 @@ Gray E, Donten A, Karssemeijer N, et al. Evaluation of a Stratified National Bre
 
 Work is currently under way to validate the model and update the input parameters.
 
+The accompanying file titled "Model Text Algorithm" was created by Stuart Wright and checked by Ewan Gray in the model validation process. This file contains a step by step text based explanation of the processes taking place in the model. The research team recommend reading this file and the published economic evaluation to gain a full understanding of the model.
+
 Below are some key notes about the model for new users:
 1) The model evalutes one screening strategy at a time (as defined by the user in the screen_strategy parameter). The results are therefore not incremental and need to be compared to those from another strategy which must also be run seperately
 2) Like most discrete event simulation models this model is computationally expensive. We have taken steps to decrease run-time and will be looking into this further. 
