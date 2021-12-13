@@ -2,7 +2,7 @@
 #Updated 1010 include DCIS
 NPI_by_size <- function(Ca_size,screen_detected_ca){
   NPI_cat <- 0
-  if (runif(1,0,1)<0.21 && screen_detected_ca == 1){
+  if (runif(1,0,1)<DCIS_fraction && screen_detected_ca == 1){
     NPI_cat <-4
   }
 #first determine if advanced cancer or not based on metastatic prob by size (categorical)
