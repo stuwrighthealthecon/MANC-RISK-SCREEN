@@ -280,10 +280,10 @@ if (screen_strategy==1) {
     screen_times <- med_risk_screentimes
     }
   if(screen_strategy==5){
-    screen_times <- seq(screen_startage, start_screening+(5*4),5)
+    screen_times <- seq(screen_startage, start_startage+(5*4),5)
   }
   if(screen_strategy==6){
-    screen_times <- seq(screen_startage, start_screening+10,10)
+    screen_times <- seq(screen_startage, start_startage+10,10)
   }
 
 ##########Counters i loop level######################
