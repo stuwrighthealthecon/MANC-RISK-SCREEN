@@ -24,7 +24,7 @@ tbl <- tribble(~Yr, ~Early_18.64, ~Late_18.64, ~Diff1, ~Early_65plus, ~Late_65pl
   filter(Yr > 0) 
 
 mod <- lm(data = tbl,
-          formula = log(DCost) ~ (Yr1 + Yr2 + Yr3 + Yr + Stage + Age)^2)
+          formula = log(DCost) ~ (Yr1 + Yr2 + Yr3 + Yr) * Stage * Age)
 mod %>% AIC()
 
 tblNewDat <- crossing(Yr=1:15, Stage=c("Early", "Late"), Age=c("18.64", "65plus")) %>%
