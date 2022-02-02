@@ -12,15 +12,15 @@ tbl <- tribble(~Yr, ~Early_18.64, ~Late_18.64, ~Diff1, ~Early_65plus, ~Late_65pl
                8, 1376, 2559, 1183, 2134, 2454, 320,
                9, 1279, 1848, 569, 2204, 2932, 728) %>%
   select(-Diff1, -Diff2) %>%
-  pivot_longer(cols = contains("6"),
-               names_to = c("Stage", "Age"),
+  pivot_longer(cols      = contains("6"),
+               names_to  = c("Stage", "Age"),
                names_sep = "_",
                values_to = "Cost") %>%
   group_by(Stage, Age) %>%
   mutate(DCost = Cost - first(Cost),
-         Yr1 = as.factor(Yr==1),
-         Yr2 = as.factor(Yr==2),
-         Yr3 = as.factor(Yr==3)) %>%
+         Yr1   = as.factor(Yr==1),
+         Yr2   = as.factor(Yr==2),
+         Yr3   = as.factor(Yr==3)) %>%
   filter(Yr > 0) 
 
 mod <- lm(data = tbl,
@@ -39,3 +39,11 @@ tblPred %>%
   ggplot(aes(x=Yr, y=DCost)) +
   geom_line(aes(colour = interaction(Stage, Age)), size = 1, lty = 1) +
   geom_point(data = tbl, aes(colour = interaction(Stage, Age)), size = 3)
+
+tblPred %>%
+  group_by(Stage, Age) %>%
+  mutate(DCost         = DCost * 1.219312579, # NHSCII inflator for 2010/11-->2020/21
+         disc          = 1/1.035^(Yr-0.5),
+         DCost.disc    = DCost * disc,
+         cumDCost.disc = cumsum(DCost.disc)) %>%
+  arrange(Stage, Age, Yr)
