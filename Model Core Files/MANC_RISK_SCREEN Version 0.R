@@ -253,6 +253,8 @@ if(supplemental_screening==0){
   MRI_screening<-0
   US_screening<-0} else {
     if (VDG>density_cutoff){
+      MRI_screening<-0
+      US_screening<-0
       if(ten_year_risk>8){MRI_screening<-1} else{US_screening<-1}
     } else {
        MRI_screening<-1
