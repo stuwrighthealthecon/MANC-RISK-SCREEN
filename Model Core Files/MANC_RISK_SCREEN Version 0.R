@@ -84,6 +84,7 @@ acmmortality_wb_b<-86.74
 gamma_survival_3<-exp(-2.465) #exponential distribution scale parameter NPI 3
 gamma_survival_2<-exp(-4.023) #exponential distribution scale parameter NPI 2
 gamma_survival_1<-exp(-5.413) #exponential distribution scale parameter NPI 1
+gamma_NPI <- c(gamma_survival_1,gamma_survival_2,gamma_survival_3)
 
 #Set incidence disribution
 Incidence_Mortality<-read.csv("Incidence_Mortality_ONS2.csv")
@@ -139,6 +140,8 @@ Vm = (4/3)*pi*(max_size/2)^3 #Max volume
 meta_survival_49 <- -0.527 #age <= 49
 meta_survival_69 <- -0.537 #age 50-69
 meta_survival_99 <- -0.849 # 70-99
+
+metastatic_survival <- c(meta_survival_49, meta_survival_69, meta_survival_99)
 
 #Set screening ages
 screen_startage <- 50

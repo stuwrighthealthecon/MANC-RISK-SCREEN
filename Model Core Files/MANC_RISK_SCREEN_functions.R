@@ -38,7 +38,6 @@ Incidence_function <- function(){
 #Incidence Simulator
 #Load necessary ONS data
 
-  
   #generate (non-cancer) mortality time conidtional on survivng to time t(peroid covered by BC survival function)
   if (incidence_time<90){
     mort_time <- sample(x = Incidence_Mortality[,1][incidence_time_1:101],size = 1,prob = Incidence_Mortality[,3][incidence_time_1:101])
@@ -132,8 +131,6 @@ cmp_screening_result<-cmpfun(screening_result)
 #Further assumption to guard against (reverse)lead-time bias is that cancer-specific survival is calculated from the age the cancer would have been clinically detected. Assumes no mortality effect of treatment.
 
 Ca_survival_time <- function(NPI_cat, Mort_age,age, CD_age){
-  gamma_NPI <- c(gamma_survival_1,gamma_survival_2,gamma_survival_3)
-  metastatic_survival <- c(meta_survival_49, meta_survival_69, meta_survival_99)
   
   if (NPI_cat< 4){
     survival_time <- -(log(x = dqrunif(1,0,1))/gamma_NPI[NPI_cat]) #inverse of cdf when rate is gamma_NPI[x]
