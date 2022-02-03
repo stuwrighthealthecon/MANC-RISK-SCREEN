@@ -106,10 +106,6 @@ NPI_by_size_mat<-data.frame("v1"=c(0.76,0.7,0.55,0.4,0.07,0.06),
                             "v2"=c(0.22,0.27,0.43,0.55,0.64,0.5),
                             "v3"=c(0.02,0.02,0.02,0.05,0.29,0.44))
 
-#Set age adjusted utility values
-utility_ages<-data.frame(c(30,35,40,45,50,55,60,65,70,75,80,85,90,95,100),
-                         c(0.9383,0.9145,0.9069,0.8824,0.8639,0.8344,0.8222,0.8072,0.8041,0.779,0.7533,0.6985,0.6497,0.6497,0.6497))
-
 #Set mean and sd of tumour doublings at clinical detection
 clin_detection_m <- 6.5 
 clin_detection_sd <- 0.535
@@ -180,6 +176,10 @@ recall_rate <- 0.045 #approx UK recall rate
 biopsy_rate <- 0.024 #proporiton of referrals without cancer that have biopsy - Madan
 
 #######################Utility Weights#########################################
+
+#Set age adjusted utility values
+utility_ages<-data.frame(c(30,35,40,45,50,55,60,65,70,75,80,85,90,95,100),
+                         c(0.9383,0.9145,0.9069,0.8824,0.8639,0.8344,0.8222,0.8072,0.8041,0.779,0.7533,0.6985,0.6497,0.6497,0.6497))
 
 #Set time independent utility decrements
 #Metastatic cancer 
