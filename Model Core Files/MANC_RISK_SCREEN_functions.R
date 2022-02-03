@@ -131,8 +131,8 @@ cmp_screening_result<-cmpfun(screening_result)
 
 #Further assumption to guard against (reverse)lead-time bias is that cancer-specific survival is calculated from the age the cancer would have been clinically detected. Assumes no mortality effect of treatment.
 
-Ca_survival_time <- function(NPI_cat, mort_age,age, CD_age){
-  
+Ca_survival_time <- function(NPI_cat, Mort_age,age, CD_age){
+  acmmortage<-Mort_age
   gamma_NPI <- c(gamma_survival_1,gamma_survival_2,gamma_survival_3)
   metastatic_survival <- c(meta_survival_49, meta_survival_69, meta_survival_99)
   
@@ -145,9 +145,9 @@ Ca_survival_time <- function(NPI_cat, mort_age,age, CD_age){
     }
     #data are for 10-year survival, after 10 years assume that pop mortality rates apply
     if(survival_time > 10){
-      mort_age <- qweibull(p = dqrunif(n = 1,min = pweibull(q = CD_age+10,shape = acmmortality_wb_a,scale = acmmortality_wb_b),max = 1),shape = acmmortality_wb_a, scale = acmmortality_wb_b)
-      if(mort_age > time_horizon){mort_age <- time_horizon}
-      survival_time <- mort_age - age
+      Mort_age <- qweibull(p = dqrunif(n = 1,min = pweibull(q = CD_age+10,shape = acmmortality_wb_a,scale = acmmortality_wb_b),max = 1),shape = acmmortality_wb_a, scale = acmmortality_wb_b)
+      if(Mort_age > time_horizon){Mort_age <- time_horizon}
+      survival_time <- Mort_age - age
     }
   }
   
@@ -160,12 +160,12 @@ Ca_survival_time <- function(NPI_cat, mort_age,age, CD_age){
     if (CD_age+survival_time >=100){survival_time <- time_horizon - CD_age}
   }
   if (NPI_cat == 4){
-    survival_time <- (mort_age-CD_age) # no effect on mortality
+    survival_time <- (Mort_age-CD_age) # no effect on mortality
   }
   
   if(CD_age+survival_time > time_horizon){survival_time <- time_horizon-CD_age}
   result <- CD_age+survival_time
-  if(result>mort_age){result<-mort_age}
+  if(result>acmmortage){result<-acmmortage}
   return(result)
 }
 cmp_ca_survival_time<-cmpfun(Ca_survival_time)

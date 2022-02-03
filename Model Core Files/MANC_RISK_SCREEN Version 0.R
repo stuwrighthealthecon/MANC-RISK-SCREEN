@@ -485,8 +485,8 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     if(NPI_cat == 5){NPI5_counter = NPI5_counter+1
     costs = costs + (cost_metastatic*current_discount)}
 
-    #Generate a cancer specific survival time, acconting for competing risks
-    Ca_mort_age <- cmp_ca_survival_time(NPI_cat,Mort_age,age, CD_age)
+    #Generate a cancer specific survival time, accounting for competing risks
+    Ca_mort_age <- cmp_ca_survival_time(NPI_cat,Mort_age,age,CD_age)
     Mort_age <- Ca_mort_age
     
     cancer_diagnostic[9] <- c(Mort_age)
