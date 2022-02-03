@@ -165,7 +165,6 @@ Ca_survival_time <- function(NPI_cat, Mort_age,age, CD_age){
   
   if(CD_age+survival_time > time_horizon){survival_time <- time_horizon-CD_age}
   result <- CD_age+survival_time
-  if(result>acmmortage){result<-acmmortage}
   return(result)
 }
 cmp_ca_survival_time<-cmpfun(Ca_survival_time)

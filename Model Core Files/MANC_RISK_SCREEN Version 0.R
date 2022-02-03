@@ -487,7 +487,7 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
 
     #Generate a cancer specific survival time, accounting for competing risks
     Ca_mort_age <- cmp_ca_survival_time(NPI_cat,Mort_age,age,CD_age)
-    Mort_age <- Ca_mort_age
+    if(Ca_mort_age<Mort_age){Mort_age<-Ca_mort_age}
     
     cancer_diagnostic[9] <- c(Mort_age)
     cancer_diagnostic[2] <- c(NPI_cat) 
