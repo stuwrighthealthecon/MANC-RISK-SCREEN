@@ -41,7 +41,7 @@ source(file="MANC_RISK_SCREEN_functions.R")
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-100000
+inum<-10000
 jnum<-1
 
 #####Choose screening programme and related parameters##########
@@ -84,6 +84,7 @@ acmmortality_wb_b<-86.74
 gamma_survival_3<-exp(-2.465) #exponential distribution scale parameter NPI 3
 gamma_survival_2<-exp(-4.023) #exponential distribution scale parameter NPI 2
 gamma_survival_1<-exp(-5.413) #exponential distribution scale parameter NPI 1
+gamma_NPI <- c(gamma_survival_1,gamma_survival_2,gamma_survival_3)
 
 #Set incidence disribution
 Incidence_Mortality<-read.csv("Incidence_Mortality_ONS2.csv")
@@ -105,10 +106,6 @@ DCIS_fraction<-0.21
 NPI_by_size_mat<-data.frame("v1"=c(0.76,0.7,0.55,0.4,0.07,0.06),
                             "v2"=c(0.22,0.27,0.43,0.55,0.64,0.5),
                             "v3"=c(0.02,0.02,0.02,0.05,0.29,0.44))
-
-#Set age adjusted utility values
-utility_ages<-data.frame(c(30,35,40,45,50,55,60,65,70,75,80,85,90,95,100),
-                         c(0.9383,0.9145,0.9069,0.8824,0.8639,0.8344,0.8222,0.8072,0.8041,0.779,0.7533,0.6985,0.6497,0.6497,0.6497))
 
 #Set mean and sd of tumour doublings at clinical detection
 clin_detection_m <- 6.5 
@@ -143,6 +140,8 @@ Vm = (4/3)*pi*(max_size/2)^3 #Max volume
 meta_survival_49 <- -0.527 #age <= 49
 meta_survival_69 <- -0.537 #age 50-69
 meta_survival_99 <- -0.849 # 70-99
+
+metastatic_survival <- c(meta_survival_49, meta_survival_69, meta_survival_99)
 
 #Set screening ages
 screen_startage <- 50
@@ -180,6 +179,10 @@ recall_rate <- 0.045 #approx UK recall rate
 biopsy_rate <- 0.024 #proporiton of referrals without cancer that have biopsy - Madan
 
 #######################Utility Weights#########################################
+
+#Set age adjusted utility values
+utility_ages<-data.frame(c(30,35,40,45,50,55,60,65,70,75,80,85,90,95,100),
+                         c(0.9383,0.9145,0.9069,0.8824,0.8639,0.8344,0.8222,0.8072,0.8041,0.779,0.7533,0.6985,0.6497,0.6497,0.6497))
 
 #Set time independent utility decrements
 #Metastatic cancer 
@@ -485,9 +488,9 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     if(NPI_cat == 5){NPI5_counter = NPI5_counter+1
     costs = costs + (cost_metastatic*current_discount)}
 
-    #Generate a cancer specific survival time, acconting for competing risks
-    Ca_mort_age <- cmp_ca_survival_time(NPI_cat,Mort_age,age, CD_age)
-    Mort_age <- Ca_mort_age
+    #Generate a cancer specific survival time, accounting for competing risks
+    Ca_mort_age <- cmp_ca_survival_time(NPI_cat,Mort_age,age,CD_age)
+    if(Ca_mort_age<Mort_age){Mort_age<-Ca_mort_age}
     
     cancer_diagnostic[9] <- c(Mort_age)
     cancer_diagnostic[2] <- c(NPI_cat) 
@@ -524,6 +527,7 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
   QALY_vect <- rep(0,QALY_length)
   for (y in 1:length(QALY_vect)){
     QALY_vect[y] <- (utility_ages[match((ceiling((start_age+y)/5)*5),utility_ages[,1]),2])*(1/(1+discount_health)^y)
+    QALY_vect[QALY_Length]<-QALY_vect[QALY_length]*(1-(ceiling(Mort_age)-Mort_age))
   }
   if (incidence_age_record > 0){
     QALY_vect[floor(incidence_age_record)-start_age] <- utility_NPI_cat_y1[NPI_cat]*QALY_vect[floor(incidence_age_record)-start_age]}
