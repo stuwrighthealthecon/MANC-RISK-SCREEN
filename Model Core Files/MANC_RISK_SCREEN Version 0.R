@@ -527,7 +527,7 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
   QALY_vect <- rep(0,QALY_length)
   for (y in 1:length(QALY_vect)){
     QALY_vect[y] <- (utility_ages[match((ceiling((start_age+y)/5)*5),utility_ages[,1]),2])*(1/(1+discount_health)^y)
-    QALY_vect[QALY_Length]<-QALY_vect[QALY_length]*(1-(ceiling(Mort_age)-Mort_age))
+    QALY_vect[QALY_length]<-QALY_vect[QALY_length]*(1-(ceiling(Mort_age)-Mort_age))
   }
   if (incidence_age_record > 0){
     QALY_vect[floor(incidence_age_record)-start_age] <- utility_NPI_cat_y1[NPI_cat]*QALY_vect[floor(incidence_age_record)-start_age]}
