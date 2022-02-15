@@ -41,7 +41,7 @@ source(file="MANC_RISK_SCREEN_functions.R")
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-10000
+inum<-100000
 jnum<-1
 
 #####Choose screening programme and related parameters##########
@@ -49,8 +49,9 @@ jnum<-1
 #Set the screening strategy: 1=PROCAS, 2=Risk tertiles, 
 #3=3 yearly, 4=2 yearly, 5=5 yearly, 
 #6=2 rounds at 50 and 60 (10 yearly), 
+#7=Low risk (5 yearly), 8=Low risk (6 yearly)
 #Other num=no screening
-screen_strategy<-1
+screen_strategy<-8
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
@@ -243,6 +244,10 @@ if(screen_strategy==1) {
 if(screen_strategy==2) {
   risk_group<-1+findInterval(ten_year_risk,risk_cutoffs_tert)
 }
+if(screen_strategy==7 | screen_strategy==8) {
+  if(ten_year_risk<1.5){risk_group<-1}
+  if(ten_year_risk>=1.5){risk_group<-2}
+}
 
 #Set VDG based on breast density
 if(risk_data[1]<4.5){VDG<-1} else
@@ -285,12 +290,19 @@ if (screen_strategy==1) {
     screen_times <- med_risk_screentimes
     }
   if(screen_strategy==5){
-    screen_times <- seq(screen_startage, start_startage+(5*4),5)
+    screen_times <- seq(screen_startage, screen_startage+(5*4),5)
   }
   if(screen_strategy==6){
-    screen_times <- seq(screen_startage, start_startage+10,10)
+    screen_times <- seq(screen_startage, screen_startage+10,10)
   }
-
+  if(screen_strategy==7){
+    if(risk_group==1){screen_times<-seq(screen_startage, screen_startage+(5*4),5)}
+    if(risk_group==2){screen_times<-low_risk_screentimes}
+  }
+  if(screen_strategy==8){
+    if(risk_group==1){screen_times<-seq(screen_startage,screen_startage+(6*3),6)}
+    if(risk_group==2){screen_times<-low_risk_screentimes}
+  }
 ##########Counters i loop level######################
 #screen-detected cancer counts
 screen_detected_count <- 0
@@ -412,6 +424,8 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     screen_count<-screen_count+1
     costs<-costs+(cost_screen*current_discount)
     if(screen_count==1 & screen_strategy<3){costs<-costs+(cost_strat*current_discount)}
+    if(screen_count==1 & screen_strategy==7){costs<-costs+(cost_strat*current_discount)}
+    if(screen_count==1 & screen_strategy==8){costs<-costs+(cost_strat*current_discount)}
     if(screen_count == length(screen_times)){lastscreen_count <- 1}
     if(US_screening == 1){US_count <- US_count + 1
     costs <- costs + (cost_US*current_discount)
@@ -527,7 +541,7 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
   QALY_vect <- rep(0,QALY_length)
   for (y in 1:length(QALY_vect)){
     QALY_vect[y] <- (utility_ages[match((ceiling((start_age+y)/5)*5),utility_ages[,1]),2])*(1/(1+discount_health)^y)
-    QALY_vect[QALY_Length]<-QALY_vect[QALY_length]*(1-(ceiling(Mort_age)-Mort_age))
+    QALY_vect[QALY_length]<-QALY_vect[QALY_length]*(1-(ceiling(Mort_age)-Mort_age))
   }
   if (incidence_age_record > 0){
     QALY_vect[floor(incidence_age_record)-start_age] <- utility_NPI_cat_y1[NPI_cat]*QALY_vect[floor(incidence_age_record)-start_age]*(1-(incidence_age_record-floor(incidence_age_record)))}
