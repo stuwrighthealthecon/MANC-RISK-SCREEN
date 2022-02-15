@@ -544,10 +544,13 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     QALY_vect[QALY_length]<-QALY_vect[QALY_length]*(1-(ceiling(Mort_age)-Mort_age))
   }
   if (incidence_age_record > 0){
-    QALY_vect[floor(incidence_age_record)-start_age] <- utility_NPI_cat_y1[NPI_cat]*QALY_vect[floor(incidence_age_record)-start_age]}
-  
-  if(incidence_age_record > 0 && ceiling(if(Mort_age<100){Mort_age}else{100}) > incidence_age_record+1){
-    for (y in (incidence_age_record+1):min((incidence_age_record+9),ceiling(if(Mort_age<100){Mort_age}else{100}))){
+    QALY_vect[floor(incidence_age_record)-start_age] <- utility_NPI_cat_y1[NPI_cat]*QALY_vect[floor(incidence_age_record)-start_age]*(1-(incidence_age_record-floor(incidence_age_record)))}
+  if(incidence_age_record>0 & Mort_age-incidence_age_record>1){
+    QALY_vect[(floor(incidence_age_record)-start_age)+1]<-(utility_NPI_cat_y1[NPI_cat]*QALY_vect[(floor(incidence_age_record)-start_age)+1]*(incidence_age_record-floor(incidence_age_record)))+
+                                                           (utility_NPI_cat_follow[NPI_cat]*QALY_vect[(floor(incidence_age_record)-start_age)+1]*(1-(incidence_age_record-floor(incidence_age_record))))}
+  }
+  if(incidence_age_record > 0 && ceiling(if(Mort_age<100){Mort_age}else{100}) > incidence_age_record+2){
+    for (y in (incidence_age_record+2):min((incidence_age_record+8),ceiling(if(Mort_age<100){Mort_age}else{100}))){
       QALY_vect[y-start_age] <- QALY_vect[y-start_age]*utility_NPI_cat_follow[NPI_cat]
     }
   }
