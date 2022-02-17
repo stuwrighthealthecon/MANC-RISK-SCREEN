@@ -517,7 +517,7 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     Ca_mort_age <- cmp_ca_survival_time(NPI_cat,Mort_age,age,CD_age)
     if(Ca_mort_age<Mort_age){Mort_age<-Ca_mort_age}
     
-    if(NPI_cat<3){iStage<-"Early"} else {{iStage<-"Late"}}
+    if(NPI_cat<3){iStage<-"Early"} else {iStage<-"Late"}
     if(age<65){iAge<-"18.64"} else {iAge<-"65plus"}
     if(NPI_cat !=4){costs=costs+(fnModPred(iStage,iAge,Mort_age-age)*current_discount)}
     
