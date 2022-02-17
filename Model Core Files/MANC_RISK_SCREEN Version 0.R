@@ -191,7 +191,7 @@ tbl <- tribble(~Yr, ~Early_18.64, ~Late_18.64, ~Diff1, ~Early_65plus, ~Late_65pl
   group_by(Stage, Age) %>%
   mutate(DCost      = Cost - first(Cost),
          DCost.i    = DCost * 1.219312579, # NHSCII inflator for 2010/11-->2020/21
-         disc       = 1/1.035^(Yr-0.5),
+         disc       = 1/(1+discount_health)^(Yr-0.5),
          DCost.i.d  = DCost.i * disc,
          CDCost.i.d = cumsum(DCost.i.d),
          Yr1        = as.factor(Yr==1),
@@ -517,10 +517,8 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     Ca_mort_age <- cmp_ca_survival_time(NPI_cat,Mort_age,age,CD_age)
     if(Ca_mort_age<Mort_age){Mort_age<-Ca_mort_age}
     
-    if(NPI_cat<3){iStage<-"Early"}
-    if(NPI_cat==3 || NPI_cat==5){iStage<-"Late"}
-    if(age<65){iAge<-"18.64"}
-    if(age>=65){iAge<-"65plus"}
+    if(NPI_cat<3){iStage<-"Early"} else {{iStage<-"Late"}}
+    if(age<65){iAge<-"18.64"} else {iAge<-"65plus"}
     if(NPI_cat !=4){costs=costs+(fnModPred(iStage,iAge,Mort_age-age)*current_discount)}
     
     cancer_diagnostic[9] <- c(Mort_age)
