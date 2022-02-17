@@ -1,3 +1,10 @@
+#Lookup function for costs
+fnModPred <- function(iStage, iAge, iLE) {
+  as.numeric(predict(modC, newdata = list(Stage=iStage, Age=iAge, Yr=iLE, Yr1 = as.factor(iLE==1),
+                                          Yr2 = as.factor(iLE==2),
+                                          Yr3 = as.factor(iLE==3))))
+}
+
 #Load functions required for model
 Incidence_function <- function(){
   
