@@ -12,24 +12,26 @@
 #no screening
 
 #For further details see readme file and text algorithm 
-#files on project GitHub
 
 #Install required packages
 install.packages("doParallel")
 install.packages("MASS")
 install.packages("dqrng")
+install.packages("compiler")
+install.packages("tidyverse")
 
 #Run required packages
 library("doParallel")
 library("MASS")
 library("dqrng")
 library("compiler")
+library("tidyverse")
 
 #Set working directory
-setwd(dir="C:/Users/mdxassw4/Dropbox (The University of Manchester)/MANC-RISK-SCREEN")
+#setwd(dir="C:/Users/mdxassw4/Dropbox (The University of Manchester)/MANC-RISK-SCREEN")
 
 #Register number of cores for foreach loop
-registerDoParallel(cores=5)
+registerDoParallel(cores=8)
 
 #Set timer to record duration of simulation
 ptm <- proc.time()
@@ -168,12 +170,39 @@ cost_screen <- 54
 cost_follow_up <- 95
 cost_biop <- 160
 cost_DCIS <- 8806
-cost_NPI_Good <- 11630
-cost_NPI_Moderate <- 12978
-cost_NPI_Poor <- 15405
-cost_metastatic <- 23449
 cost_US <- 80
 cost_MRI <-220
+
+tbl <- tribble(~Yr, ~Early_18.64, ~Late_18.64, ~Diff1, ~Early_65plus, ~Late_65plus, ~Diff2,
+               0, 464, 607, 143, 1086, 1324, 238,
+               1, 10746, 13315, 2569, 7597, 8804, 1207,
+               2, 3357, 5785, 2429, 2529, 3650, 1121,
+               3, 1953, 3782, 1829, 2156, 3170, 1014,
+               4, 1627, 2932, 1305, 2230, 2924, 693,
+               5, 1617, 2841, 1225, 2077, 2957, 880,
+               6, 1547, 2645, 1099, 2174, 2783, 609,
+               7, 1394, 2618, 1225, 2063, 2903, 840,
+               8, 1376, 2559, 1183, 2134, 2454, 320,
+               9, 1279, 1848, 569, 2204, 2932, 728) %>%
+  select(-Diff1, -Diff2) %>%
+  pivot_longer(cols      = contains("6"),
+               names_to  = c("Stage", "Age"),
+               names_sep = "_",
+               values_to = "Cost") %>%
+  group_by(Stage, Age) %>%
+  mutate(DCost      = Cost - first(Cost),
+         DCost.i    = DCost * 1.219312579, # NHSCII inflator for 2010/11-->2020/21
+         disc       = 1/(1+discount_health)^(Yr-0.5),
+         DCost.i.d  = DCost.i * disc,
+         CDCost.i.d = cumsum(DCost.i.d),
+         Yr1        = as.factor(Yr==1),
+         Yr2        = as.factor(Yr==2),
+         Yr3        = as.factor(Yr==3)) %>%
+  filter(Yr > 0) %>%
+  arrange(Stage, Age, Yr)
+
+modC <- lm(data = tbl,
+           formula = (CDCost.i.d) ~ (Yr1 + Yr2 + Yr3 + Yr) * Stage * Age)
   
 ##########False Positive and Overdiagnosis parameters################
 recall_rate <- 0.045 #approx UK recall rate
@@ -227,7 +256,7 @@ total_QALYs <- 0
 total_costs_follow_up <- 0
 
 #Open loop
-results <- foreach(i=1:(inum/10),.combine = 'rbind',.packages = c('MASS','dqrng')) %dopar% {
+results <- foreach(i=1:(inum/10),.combine = 'rbind',.packages = c('MASS','dqrng','tidyverse')) %dopar% {
 
 #Set up record of age, size, mode of detection of each detected cancer
 cancer_diagnostic <- rep(0,10)
@@ -491,20 +520,20 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     
     #Assign an NPI category based on tumour size
     NPI_cat <- cmp_NPI_by_size(Ca_size, screen_detected_ca)
-    if(NPI_cat == 1){NPI1_counter = NPI1_counter+1
-    costs = costs + (cost_NPI_Good*current_discount)}
-    if(NPI_cat == 2){NPI2_counter = NPI2_counter+1
-    costs = costs + (cost_NPI_Moderate*current_discount)}
-    if(NPI_cat == 3){NPI3_counter = NPI3_counter+1
-    costs = costs + (cost_NPI_Poor*current_discount)}
+    if(NPI_cat == 1){NPI1_counter = NPI1_counter+1}
+    if(NPI_cat == 2){NPI2_counter = NPI2_counter+1}
+    if(NPI_cat == 3){NPI3_counter = NPI3_counter+1}
     if(NPI_cat == 4){NPI4_counter = NPI4_counter+1
     costs = costs + (cost_DCIS*current_discount)}
-    if(NPI_cat == 5){NPI5_counter = NPI5_counter+1
-    costs = costs + (cost_metastatic*current_discount)}
+    if(NPI_cat == 5){NPI5_counter = NPI5_counter+1}
 
     #Generate a cancer specific survival time, accounting for competing risks
     Ca_mort_age <- cmp_ca_survival_time(NPI_cat,Mort_age,age,CD_age)
     if(Ca_mort_age<Mort_age){Mort_age<-Ca_mort_age}
+    
+    if(NPI_cat<3){iStage<-"Early"} else {iStage<-"Late"}
+    if(age<65){iAge<-"18.64"} else {iAge<-"65plus"}
+    if(NPI_cat !=4){costs=costs+(fnModPred(iStage,iAge,Mort_age-age)*current_discount)}
     
     cancer_diagnostic[9] <- c(Mort_age)
     cancer_diagnostic[2] <- c(NPI_cat) 
