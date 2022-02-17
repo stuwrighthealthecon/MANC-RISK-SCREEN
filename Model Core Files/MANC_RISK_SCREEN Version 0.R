@@ -26,10 +26,10 @@ library("dqrng")
 library("compiler")
 
 #Set working directory
-setwd(dir="C:/Users/mdxassw4/Dropbox (The University of Manchester)/MANC-RISK-SCREEN")
+#setwd(dir="C:/Users/mdxassw4/Dropbox (The University of Manchester)/MANC-RISK-SCREEN")
 
 #Register number of cores for foreach loop
-registerDoParallel(cores=5)
+registerDoParallel(cores=8)
 
 #Set timer to record duration of simulation
 ptm <- proc.time()
