@@ -155,9 +155,9 @@ Ca_survival_time <- function(NPI_cat, Mort_age,age, CD_age){
   }
   
   if (NPI_cat == 5){
-    if (age < 50){age_cat_M <- 1}
-    if (age >=50 && age <70){age_cat_M <- 2}
-    if (age >= 70){age_cat_M <- 3}
+    if (age < 55){age_cat_M <- 1}
+    if (age >=55 && age <75){age_cat_M <- 2}
+    if (age >= 75){age_cat_M <- 3}
     survival_time <- -(log(dqrunif(1,0,1))/metastatic_survival[age_cat_M])
     #check lifetime does not exceed horizon and set to less than 100 if it does
     if (CD_age+survival_time >=100){survival_time <- time_horizon - CD_age}

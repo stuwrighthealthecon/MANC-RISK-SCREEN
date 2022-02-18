@@ -140,11 +140,11 @@ Vc = (4/3)*pi*(start_size/2)^3 #Volume at start
 Vm = (4/3)*pi*(max_size/2)^3 #Max volume
 
 #Metatstatic survival parameters
-meta_survival_49 <- exp(-1.787) #age <= 49
-meta_survival_69 <- exp(-1.388) #age 50-69
+meta_survival_54 <- exp(-1.787) #age <= 49
+meta_survival_74 <- exp(-1.388) #age 50-69
 meta_survival_99 <- exp(-1.011) # 70-99
 
-metastatic_survival <- c(meta_survival_49, meta_survival_69, meta_survival_99)
+metastatic_survival <- c(meta_survival_54, meta_survival_74, meta_survival_99)
 
 #Set screening ages
 screen_startage <- 50
