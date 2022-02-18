@@ -47,11 +47,16 @@ tblNewDat %>%
 
 # make lookup table
 tblLookup <- tblPred %>%
+  filter(Yr==1) %>%
+  mutate(across(c(Yr, pred, DCost.p), ~0)) %>%
+  bind_rows(tblPred) %>%
   group_by(Stage, Age) %>%
   mutate(DCost.p.i    = DCost.p * 1.219312579, # NHSCII inflator for 2010/11-->2020/21
          disc         = 1/1.035^(Yr-0.5),
          DCost.p.i.d  = DCost.p.i * disc,
-         CDCost.p.i.d = cumsum(DCost.p.i.d)) %>%
+         CDCost.p.i.d = cumsum(DCost.p.i.d),
+         StageEarly   = Stage=="Early",
+         AgeYoung     = Age=="18.64") %>%
   arrange(Stage, Age, Yr) %>%
   ungroup()
 
@@ -63,16 +68,18 @@ tblPred %>%
 
 # visualise fitted model (cumulative, inflated, discounted costs)
 tblLookup %>%
+  filter(Yr>0) %>%
   ggplot() +
   geom_line(aes(x=Yr, y=CDCost.p.i.d, colour = interaction(Stage, Age)), size = 1, lty = 1) +
   geom_point(data = tbl, aes(x=Yr, y=CDCost.i.d, colour = interaction(Stage, Age)), size = 3)
 
 # function to generate expected discounted lifetime costs, given age & stage categories and life expectancy
-fnLookup_BCCosts <- function(iStage, iAge, iLE) {
-  as.numeric(tblLookup$CDCost.p.i.d[tblLookup$Stage==iStage & tblLookup$Age==iAge & tblLookup$Yr==iLE])
+fnLookup_BCCosts <- function(blnStageEarly, blnAgeYoung, LE) {
+  as.numeric(tblLookup$CDCost.p.i.d[tblLookup$StageEarly==blnStageEarly & tblLookup$AgeYoung==blnAgeYoung & tblLookup$Yr==floor(LE)]) +
+    as.numeric(tblLookup$DCost.p.i.d[tblLookup$StageEarly==blnStageEarly & tblLookup$AgeYoung==blnAgeYoung & tblLookup$Yr==ceiling(LE)]) * (LE - floor(LE))
 }
 # example usage
-fnLookup_BCCosts("Early", "18.64", 12)
+fnLookup_BCCosts(blnStageEarly = T, blnAgeYoung = T, LE = 0.9999)
 
 
 ## ==== alternative approaches explored but turned out slower ==== 
