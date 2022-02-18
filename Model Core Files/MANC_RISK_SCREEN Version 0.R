@@ -43,7 +43,7 @@ source(file="MANC_RISK_SCREEN_functions.R")
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-100000
+inum<-10000
 jnum<-1
 
 #####Choose screening programme and related parameters##########
@@ -53,7 +53,7 @@ jnum<-1
 #6=2 rounds at 50 and 60 (10 yearly), 
 #7=Low risk (5 yearly), 8=Low risk (6 yearly)
 #Other num=no screening
-screen_strategy<-8
+screen_strategy<-1
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
@@ -84,10 +84,10 @@ acmmortality_wb_a<-8.97
 acmmortality_wb_b<-86.74
 
 #Set parameters for all cause mortality following breast cancer
-gamma_survival_3<-exp(-2.465) #exponential distribution scale parameter NPI 3
-gamma_survival_2<-exp(-4.023) #exponential distribution scale parameter NPI 2
-gamma_survival_1<-exp(-5.413) #exponential distribution scale parameter NPI 1
-gamma_NPI <- c(gamma_survival_1,gamma_survival_2,gamma_survival_3)
+gamma_survival_3<-exp(-2.723) #exponential distribution scale parameter NPI 3
+gamma_survival_2<-exp(-3.814) #exponential distribution scale parameter NPI 2
+gamma_survival_1<-exp(-5.462) #exponential distribution scale parameter NPI 1
+gamma_stage <- c(gamma_survival_1,gamma_survival_2,gamma_survival_3)
 
 #Set incidence disribution
 Incidence_Mortality<-read.csv("Incidence_Mortality_ONS2.csv")

@@ -140,11 +140,11 @@ cmp_screening_result<-cmpfun(screening_result)
 Ca_survival_time <- function(NPI_cat, Mort_age,age, CD_age){
   
   if (NPI_cat< 4){
-    survival_time <- -(log(x = dqrunif(1,0,1))/gamma_NPI[NPI_cat]) #inverse of cdf when rate is gamma_NPI[x]
+    survival_time <- -(log(x = dqrunif(1,0,1))/gamma_stage[NPI_cat]) #inverse of cdf when rate is gamma_stage[x]
     
     #adjust for additional mortality at ages above 65
     if (CD_age > 65){
-      survival_time <- -(log(x = dqrunif(1,0,1))/((Incidence_Mortality[min((floor(CD_age)+1),100),5]/Incidence_Mortality[66,5])*gamma_NPI[NPI_cat]))
+      survival_time <- -(log(x = dqrunif(1,0,1))/((Incidence_Mortality[min((floor(CD_age)+1),100),5]/Incidence_Mortality[66,5])*gamma_stage[NPI_cat]))
     }
     #data are for 10-year survival, after 10 years assume that pop mortality rates apply
     if(survival_time > 10){
