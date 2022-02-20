@@ -58,33 +58,33 @@ Incidence_function <- function(){
 }
 cmp_incidence_function<-cmpfun(Incidence_function)
 
-#NPI calculator 
+#stage calculator 
 
-#matrix with proporiton in each ?NPI group for each size category
+#matrix with proporiton in each ?stage group for each size category
 #Updated 1010 include DCIS
-NPI_by_size <- function(Ca_size,screen_detected_ca){
+stage_by_size <- function(Ca_size,screen_detected_ca){
   stage_cat <- 0
   if (dqrunif(1,0,1)<DCIS_fraction && screen_detected_ca == 1){
-    stage_cat <-4
+    stage_cat <-5
   }
   #first determine if advanced cancer or not based on metastatic prob by size (categorical)
   if(Ca_size<= 25){m_size <- 25}else{m_size <- ceiling((Ca_size-25)/10)*10+25}
   if (m_size > 85){m_size <- 85}
-  if(dqrunif(1,0,1) < metastatic_prob[match(m_size, metastatic_prob[,1]),2] && stage_cat == 0){stage_cat <- 5} 
+  if(dqrunif(1,0,1) < metastatic_prob[match(m_size, metastatic_prob[,1]),2] && stage_cat == 0){stage_cat <- 4} 
   
-  #sample from categories 1,2 & 3 with probability of each based on the correct row of NPIbysize matrix 
-  # Ca_size is continuous, need to match to closest larger value in NPI_by_size column 1
+  #sample from categories 1,2 & 3 with probability of each based on the correct row of stagebysize matrix 
+  # Ca_size is continuous, need to match to closest larger value in stage_by_size column 1
   if(stage_cat == 0){
     v <- c(0.025, 5, 10, 15, 20, 30, 128) #category cut-points from Kolias 1999
     size_cat <- findInterval(Ca_size,v)
-    stage_cat <- sample(x=c(1,2,3),size = 1,prob = c(NPI_by_size_mat[size_cat,])) #1 best 3 worst prognosis
+    stage_cat <- sample(x=c(1,2,3),size = 1,prob = c(stage_by_size_mat[size_cat,])) #1 best 3 worst prognosis
   }
-  #return the NPI category
+  #return the stage category
   result <- stage_cat
   
   return(result)
 }
-cmp_NPI_by_size<-cmpfun(NPI_by_size)
+cmp_stage_by_size<-cmpfun(stage_by_size)
 
 #Screen test results simulation
 #Updated 0915 with weedon-fekjaer 2008 estimates
@@ -132,7 +132,7 @@ screening_result <- function(Ca_size,VDG,MRI_screening,US_screening){
 }
 cmp_screening_result<-cmpfun(screening_result)
 
-#Simulate survival by NPI 
+#Simulate survival by stage 
 #Needs to know stage_cat to generate a survival time from current age (currently 10-yr with cancer survival is irrespective of age), mort_age and age are need for those suviving beyond 10 years.
 
 #Further assumption to guard against (reverse)lead-time bias is that cancer-specific survival is calculated from the age the cancer would have been clinically detected. Assumes no mortality effect of treatment.
@@ -154,7 +154,7 @@ Ca_survival_time <- function(stage_cat, Mort_age,age, CD_age){
     }
   }
   
-  if (stage_cat == 5){
+  if (stage_cat == 4){
     if (age < 55){age_cat_M <- 1}
     if (age >=55 && age <75){age_cat_M <- 2}
     if (age >= 75){age_cat_M <- 3}
@@ -162,7 +162,7 @@ Ca_survival_time <- function(stage_cat, Mort_age,age, CD_age){
     #check lifetime does not exceed horizon and set to less than 100 if it does
     if (CD_age+survival_time >=100){survival_time <- time_horizon - CD_age}
   }
-  if (stage_cat == 4){
+  if (stage_cat == 5){
     survival_time <- (Mort_age-CD_age) # no effect on mortality
   }
   
