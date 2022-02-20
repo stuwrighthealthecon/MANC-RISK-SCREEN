@@ -1,4 +1,4 @@
-#########  MANC-RISK-SCREEN #########
+#########  MANC-RISK-SCREEN PSA#########
 
 #This model was developed by Ewan Gray and Katherine Payne
 #and validated by Stuart Wright, Gabriel Rogers, Katherine
@@ -29,6 +29,7 @@ library("tidyverse")
 
 #Set working directory
 #setwd(dir="C:/Users/mdxassw4/Dropbox (The University of Manchester)/MANC-RISK-SCREEN")
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Register number of cores for foreach loop
 registerDoParallel(cores=8)
@@ -37,14 +38,15 @@ registerDoParallel(cores=8)
 ptm <- proc.time()
 
 #Load file containing required functions for the model
-source(file="MANC_RISK_SCREEN_functions.R")
+source(file="MANC_RISK_SCREEN_functions Version 1.R")
 
 #Set loop numbers
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-10000
+inum<-100000
 jnum<-1
+mcruns<-10
 
 #####Choose screening programme and related parameters##########
 
@@ -235,13 +237,9 @@ utility_NPI_cat_follow <- c("NPI1"=0.779/0.822,
                             "DCIS"=utility_DCIS,
                             "Metastatic"=utility_metastatic)
 
+##################Loop for Monte Carlo Simulation################
 
-
-
-################Outer Individual sampling loop##############################
-
-#Set loop to divide i loop into 10 sub-loops in case of simulation break
-for (ii in 1:10) {
+for (ii in 1:mcruns){
   
 #Set counters for individual sampling loop
 total_screens <- 0
@@ -606,16 +604,16 @@ names(results)[14] <- 'Postca_mortality'
 names(results)[15] <- 'screening_round'
 
 #directory to save inum/10 sets of case histories and name of files
-save(results,file = paste("",ii,".Rdata",sep = "")) 
+save(results,file = paste("PSA/PSA_",ii,".Rdata",sep = "")) 
 
 } #End 1 million simulation loop
 #results #see result if parellel version
 #save results
 #see results
 merged_result <- matrix(0,nrow = 10,ncol = 5)
-for (i in 1:10){
+for (i in 1:mcruns){
   #name of saved files needed
-  load(paste("",i,".Rdata",sep = ""))
+  load(paste("PSA/PSA_",i,".Rdata",sep = ""))
   merged_result[i,1] <- mean(results[,2])
   merged_result[i,2] <- mean(results[,3])
   merged_result[i,3] <- mean(results[,4])
@@ -623,6 +621,6 @@ for (i in 1:10){
   merged_result[i,5] <- mean(results[,9])
 }
 #store main outputs as csv
-write.csv(merged_result,file = "results.csv")
+write.csv(merged_result,file = "PSAresults.csv")
 
 
