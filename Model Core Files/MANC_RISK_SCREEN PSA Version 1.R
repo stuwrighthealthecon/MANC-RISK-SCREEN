@@ -86,9 +86,9 @@ acmmortality_wb_a<-8.97
 acmmortality_wb_b<-86.74
 
 #Set parameters for all cause mortality following breast cancer
-gamma_survival_3<-exp(-2.723) #exponential distribution scale parameter NPI 3
-gamma_survival_2<-exp(-3.814) #exponential distribution scale parameter NPI 2
-gamma_survival_1<-exp(-5.462) #exponential distribution scale parameter NPI 1
+gamma_survival_3<-exp(-2.723) #exponential distribution scale parameter stage 3
+gamma_survival_2<-exp(-3.814) #exponential distribution scale parameter stage 2
+gamma_survival_1<-exp(-5.462) #exponential distribution scale parameter stage 1
 gamma_stage <- c(gamma_survival_1,gamma_survival_2,gamma_survival_3)
 
 #Set incidence disribution
@@ -108,7 +108,7 @@ metastatic_prob <- data.frame(c(25,35,45,55,65,75,85),
 DCIS_fraction<-0.211 
 
 #Create matrix of Nottingham Prognostic Indicator by cancer size
-NPI_by_size_mat<-data.frame("v1"=c(0.76,0.7,0.55,0.4,0.07,0.06),
+stage_by_size_mat<-data.frame("v1"=c(0.76,0.7,0.55,0.4,0.07,0.06),
                             "v2"=c(0.22,0.27,0.43,0.55,0.64,0.5),
                             "v3"=c(0.02,0.02,0.02,0.05,0.29,0.44))
 
@@ -224,19 +224,20 @@ utility_DCIS <- 1 #assumes no effect
 
 #Set first year utilities: 
 #Lidgren 0.696 (mean age 57, range(28-93)), metastatic 0.685 permanent
-utility_stage_cat_y1 <- c("NPI1"=0.696/0.822, 
-                        "NPI2"=0.696/0.822,
-                        "NPI3"=0.696/0.822,
-                        "DCIS"=utility_DCIS,
-                        "Metastatic"=utility_metastatic) 
+utility_stage_cat_y1 <- c("stage1"=0.696/0.822, 
+                        "stage2"=0.696/0.822,
+                        "stage3"=0.696/0.822,
+                        "Metastatic"=utility_metastatic,
+                        "DCIS"=utility_DCIS)
+                         
 
 #Set following year utilities:
 #0.779
-utility_stage_cat_follow <- c("NPI1"=0.779/0.822,
-                            "NPI2"=0.779/0.822,
-                            "NPI3"=0.779/0.822,
-                            "DCIS"=utility_DCIS,
-                            "Metastatic"=utility_metastatic)
+utility_stage_cat_follow <- c("stage1"=0.779/0.822,
+                            "stage2"=0.779/0.822,
+                            "stage3"=0.779/0.822,
+                            "Metastatic"=utility_metastatic,
+                            "DCIS"=utility_DCIS)
 
 ##################Loop for Monte Carlo Simulation################
 
@@ -352,12 +353,12 @@ cost_counter <- 0
 LY_counter <- 0
 #total QALYs
 QALY_counter <- 0
-#NPI group cancers counters
-NPI1_counter <- 0
-NPI2_counter <- 0
-NPI3_counter <- 0
-NPI4_counter <- 0
-NPI5_counter <- 0
+#stage group cancers counters
+stage1_counter <- 0
+stage2_counter <- 0
+stage3_counter <- 0
+stage4_counter <- 0
+DCIS_counter <- 0
 
 ###Preload incidence, mortality and clinical detection times for j cases
 mort_sample<- rweibull(n = jnum,shape = acmmortality_wb_a, scale = acmmortality_wb_b)
@@ -520,14 +521,14 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     age <- age + Next_event_time
     if(interval_ca == 1){Ca_size <- CD_size}
     
-    #Assign an NPI category based on tumour size
-    stage_cat <- cmp_NPI_by_size(Ca_size, screen_detected_ca)
-    if(stage_cat == 1){NPI1_counter = NPI1_counter+1}
-    if(stage_cat == 2){NPI2_counter = NPI2_counter+1}
-    if(stage_cat == 3){NPI3_counter = NPI3_counter+1}
-    if(stage_cat == 4){NPI4_counter = NPI4_counter+1
+    #Assign an stage category based on tumour size
+    stage_cat <- cmp_stage_by_size(Ca_size, screen_detected_ca)
+    if(stage_cat == 1){stage1_counter = stage1_counter+1}
+    if(stage_cat == 2){stage2_counter = stage2_counter+1}
+    if(stage_cat == 3){stage3_counter = stage3_counter+1}
+    if(stage_cat == 4){stage4_counter = stage4_counter+1}
+    if(stage_cat == 5){DCIS_counter = DCIS_counter+1
     costs = costs + (cost_DCIS*current_discount)}
-    if(stage_cat == 5){NPI5_counter = NPI5_counter+1}
 
     #Generate a cancer specific survival time, accounting for competing risks
     Ca_mort_age <- cmp_ca_survival_time(stage_cat,Mort_age,age,CD_age)
@@ -597,7 +598,7 @@ names(results)[3] <- 'cost'
 names(results)[4] <- 'screens'
 names(results)[5] <- 'cancer'
 names(results)[6] <- 'age'
-names(results)[7] <- 'NPI'
+names(results)[7] <- 'stage'
 names(results)[8] <- 'ca_size'
 names(results)[9] <- 'screen_detected'
 names(results)[10] <- 'US'
