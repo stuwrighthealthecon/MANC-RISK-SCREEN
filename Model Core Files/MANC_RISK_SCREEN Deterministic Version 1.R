@@ -28,7 +28,7 @@ library("compiler")
 library("tidyverse")
 
 #Set working directory
-#setwd(dir="C:/Users/mdxassw4/Dropbox (The University of Manchester)/MANC-RISK-SCREEN")
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Register number of cores for foreach loop
 registerDoParallel(cores=8)
@@ -37,7 +37,7 @@ registerDoParallel(cores=8)
 ptm <- proc.time()
 
 #Load file containing required functions for the model
-source(file="MANC_RISK_SCREEN_functions.R")
+source(file="MANC_RISK_SCREEN_functions Version 1.R")
 
 #Set loop numbers
 #To attain stable results it is recommended that inum is set
