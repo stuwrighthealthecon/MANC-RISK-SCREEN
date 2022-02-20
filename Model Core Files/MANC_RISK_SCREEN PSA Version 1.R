@@ -75,7 +75,7 @@ discount_cost<-0.035
 ##############Set clinical parameters for screening########################
 
 #Set proportion of cancers in screening age range detected by screen
-prop_screen_detected<-0.5
+prop_screen_detected<-0.431
 
 #Set the mean and standard deviation of the doubling rate for tumours
 screen_detection_m<-4.12
@@ -105,7 +105,7 @@ metastatic_prob <- data.frame(c(25,35,45,55,65,75,85),
 
 #Set proportion of ductal carcinoma in situ (DCIS)
 #detected in screening
-DCIS_fraction<-0.21 
+DCIS_fraction<-0.211 
 
 #Create matrix of Nottingham Prognostic Indicator by cancer size
 NPI_by_size_mat<-data.frame("v1"=c(0.76,0.7,0.55,0.4,0.07,0.06),
@@ -125,8 +125,8 @@ beta1 <- 1.47
 beta2 <- 6.51
 
 #Mammography sensitivity by volpara density grade from PREVENTICON
-Sen_VDG <- c(0.85,0.776,0.69,0.586)
-Sen_VDG_av <- 0.735
+Sen_VDG <- c(0.85,0.776,0.695,0.61)
+Sen_VDG_av <- 0.757
 
 #Supplemental screening sensitivity parameters from CEPAC
 Mammo_cdr <- 4.2 #Cancer detection rate per 1000 high dense screens Mammo CEPAC
