@@ -536,7 +536,7 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     
     if(stage_cat<3){iStage<-"Early"} else {iStage<-"Late"}
     if(age<65){iAge<-"18.64"} else {iAge<-"65plus"}
-    if(stage_cat !=4){costs=costs+(fnModPred(iStage,iAge,Mort_age-age)*current_discount)}
+    if(stage_cat <5){costs=costs+(fnModPred(iStage,iAge,Mort_age-age)*current_discount)}
     
     cancer_diagnostic[9] <- c(Mort_age)
     cancer_diagnostic[2] <- c(stage_cat) 
