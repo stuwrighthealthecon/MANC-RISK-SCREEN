@@ -167,7 +167,8 @@ density_cutoff <- 3 #VDG groups 3 and 4
 
 #######################Cost Data#########################################
 
-cost_strat<-8.17
+PSA_cost_strat<-rlnorm(mcruns,2.09023848,0.05673483)
+print(cost_strat)
 cost_screen <- 54
 cost_follow_up <- 95
 cost_biop <- 160
@@ -240,6 +241,9 @@ utility_NPI_cat_follow <- c("NPI1"=0.779/0.822,
 ##################Loop for Monte Carlo Simulation################
 
 for (ii in 1:mcruns){
+  
+#Cost data
+cost_strat<-PSA_cost_strat[ii]
   
 #Set counters for individual sampling loop
 total_screens <- 0
