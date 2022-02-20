@@ -224,7 +224,7 @@ utility_DCIS <- 1 #assumes no effect
 
 #Set first year utilities: 
 #Lidgren 0.696 (mean age 57, range(28-93)), metastatic 0.685 permanent
-utility_NPI_cat_y1 <- c("NPI1"=0.696/0.822, 
+utility_stage_cat_y1 <- c("NPI1"=0.696/0.822, 
                         "NPI2"=0.696/0.822,
                         "NPI3"=0.696/0.822,
                         "DCIS"=utility_DCIS,
@@ -232,7 +232,7 @@ utility_NPI_cat_y1 <- c("NPI1"=0.696/0.822,
 
 #Set following year utilities:
 #0.779
-utility_NPI_cat_follow <- c("NPI1"=0.779/0.822,
+utility_stage_cat_follow <- c("NPI1"=0.779/0.822,
                             "NPI2"=0.779/0.822,
                             "NPI3"=0.779/0.822,
                             "DCIS"=utility_DCIS,
@@ -374,7 +374,7 @@ recall_count <- 0
 sdlast_cancer <-0
 lastscreen_count <- 0
 sdfirst_cancer <- 0
-NPI_cat <- 0
+stage_cat <- 0
 MRI_count <- 0
 US_count <- 0
 incidence_age_record <- 0
@@ -521,24 +521,24 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     if(interval_ca == 1){Ca_size <- CD_size}
     
     #Assign an NPI category based on tumour size
-    NPI_cat <- cmp_NPI_by_size(Ca_size, screen_detected_ca)
-    if(NPI_cat == 1){NPI1_counter = NPI1_counter+1}
-    if(NPI_cat == 2){NPI2_counter = NPI2_counter+1}
-    if(NPI_cat == 3){NPI3_counter = NPI3_counter+1}
-    if(NPI_cat == 4){NPI4_counter = NPI4_counter+1
+    stage_cat <- cmp_NPI_by_size(Ca_size, screen_detected_ca)
+    if(stage_cat == 1){NPI1_counter = NPI1_counter+1}
+    if(stage_cat == 2){NPI2_counter = NPI2_counter+1}
+    if(stage_cat == 3){NPI3_counter = NPI3_counter+1}
+    if(stage_cat == 4){NPI4_counter = NPI4_counter+1
     costs = costs + (cost_DCIS*current_discount)}
-    if(NPI_cat == 5){NPI5_counter = NPI5_counter+1}
+    if(stage_cat == 5){NPI5_counter = NPI5_counter+1}
 
     #Generate a cancer specific survival time, accounting for competing risks
-    Ca_mort_age <- cmp_ca_survival_time(NPI_cat,Mort_age,age,CD_age)
+    Ca_mort_age <- cmp_ca_survival_time(stage_cat,Mort_age,age,CD_age)
     if(Ca_mort_age<Mort_age){Mort_age<-Ca_mort_age}
     
-    if(NPI_cat<3){iStage<-"Early"} else {iStage<-"Late"}
+    if(stage_cat<3){iStage<-"Early"} else {iStage<-"Late"}
     if(age<65){iAge<-"18.64"} else {iAge<-"65plus"}
-    if(NPI_cat !=4){costs=costs+(fnModPred(iStage,iAge,Mort_age-age)*current_discount)}
+    if(stage_cat !=4){costs=costs+(fnModPred(iStage,iAge,Mort_age-age)*current_discount)}
     
     cancer_diagnostic[9] <- c(Mort_age)
-    cancer_diagnostic[2] <- c(NPI_cat) 
+    cancer_diagnostic[2] <- c(stage_cat) 
     
   }else{age <- age + Next_event_time #update age if no cancer
   }
@@ -575,13 +575,13 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     QALY_vect[QALY_length]<-QALY_vect[QALY_length]*(1-(ceiling(Mort_age)-Mort_age))
   }
   if (incidence_age_record > 0){
-    QALY_vect[floor(incidence_age_record)-start_age] <- utility_NPI_cat_y1[NPI_cat]*QALY_vect[floor(incidence_age_record)-start_age]*(1-(incidence_age_record-floor(incidence_age_record)))}
+    QALY_vect[floor(incidence_age_record)-start_age] <- utility_stage_cat_y1[stage_cat]*QALY_vect[floor(incidence_age_record)-start_age]*(1-(incidence_age_record-floor(incidence_age_record)))}
   if(incidence_age_record>0 & Mort_age-incidence_age_record>1){
-    QALY_vect[(floor(incidence_age_record)-start_age)+1]<-(utility_NPI_cat_y1[NPI_cat]*QALY_vect[(floor(incidence_age_record)-start_age)+1]*(incidence_age_record-floor(incidence_age_record)))+
-                                                           (utility_NPI_cat_follow[NPI_cat]*QALY_vect[(floor(incidence_age_record)-start_age)+1]*(1-(incidence_age_record-floor(incidence_age_record))))}
+    QALY_vect[(floor(incidence_age_record)-start_age)+1]<-(utility_stage_cat_y1[stage_cat]*QALY_vect[(floor(incidence_age_record)-start_age)+1]*(incidence_age_record-floor(incidence_age_record)))+
+                                                           (utility_stage_cat_follow[stage_cat]*QALY_vect[(floor(incidence_age_record)-start_age)+1]*(1-(incidence_age_record-floor(incidence_age_record))))}
   if(incidence_age_record > 0 && ceiling(if(Mort_age<100){Mort_age}else{100}) > incidence_age_record+2){
     for (y in (incidence_age_record+2):min((incidence_age_record+8),ceiling(if(Mort_age<100){Mort_age}else{100}))){
-      QALY_vect[y-start_age] <- QALY_vect[y-start_age]*utility_NPI_cat_follow[NPI_cat]
+      QALY_vect[y-start_age] <- QALY_vect[y-start_age]*utility_stage_cat_follow[stage_cat]
     }
   }
   
