@@ -221,7 +221,7 @@ utility_DCIS <- 1 #assumes no effect
 
 #Set first year utilities: 
 #Lidgren 0.696 (mean age 57, range(28-93)), metastatic 0.685 permanent
-utility__y1 <- c("NPI1"=0.696/0.822, 
+utility_stage_cat_y1 <- c("NPI1"=0.696/0.822, 
                         "NPI2"=0.696/0.822,
                         "NPI3"=0.696/0.822,
                         "DCIS"=utility_DCIS,
@@ -229,7 +229,7 @@ utility__y1 <- c("NPI1"=0.696/0.822,
 
 #Set following year utilities:
 #0.779
-utility__follow <- c("NPI1"=0.779/0.822,
+utility_stage_cat_follow <- c("NPI1"=0.779/0.822,
                             "NPI2"=0.779/0.822,
                             "NPI3"=0.779/0.822,
                             "DCIS"=utility_DCIS,
@@ -536,7 +536,7 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     if(stage_cat !=4){costs=costs+(fnModPred(iStage,iAge,Mort_age-age)*current_discount)}
     
     cancer_diagnostic[9] <- c(Mort_age)
-    cancer_diagnostic[2] <- c() 
+    cancer_diagnostic[2] <- c(stage_cat) 
     
   }else{age <- age + Next_event_time #update age if no cancer
   }
@@ -573,13 +573,13 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     QALY_vect[QALY_length]<-QALY_vect[QALY_length]*(1-(ceiling(Mort_age)-Mort_age))
   }
   if (incidence_age_record > 0){
-    QALY_vect[floor(incidence_age_record)-start_age] <- utility__y1[]*QALY_vect[floor(incidence_age_record)-start_age]*(1-(incidence_age_record-floor(incidence_age_record)))}
+    QALY_vect[floor(incidence_age_record)-start_age] <- utility_stage_cat_y1[stage_cat]*QALY_vect[floor(incidence_age_record)-start_age]*(1-(incidence_age_record-floor(incidence_age_record)))}
   if(incidence_age_record>0 & Mort_age-incidence_age_record>1){
-    QALY_vect[(floor(incidence_age_record)-start_age)+1]<-(utility__y1[]*QALY_vect[(floor(incidence_age_record)-start_age)+1]*(incidence_age_record-floor(incidence_age_record)))+
-                                                           (utility__follow[]*QALY_vect[(floor(incidence_age_record)-start_age)+1]*(1-(incidence_age_record-floor(incidence_age_record))))}
+    QALY_vect[(floor(incidence_age_record)-start_age)+1]<-(utility_stage_cat_y1[stage_cat]*QALY_vect[(floor(incidence_age_record)-start_age)+1]*(incidence_age_record-floor(incidence_age_record)))+
+                                                           (utility_stage_cat_follow[stage_cat]*QALY_vect[(floor(incidence_age_record)-start_age)+1]*(1-(incidence_age_record-floor(incidence_age_record))))}
   if(incidence_age_record > 0 && ceiling(if(Mort_age<100){Mort_age}else{100}) > incidence_age_record+2){
     for (y in (incidence_age_record+2):min((incidence_age_record+8),ceiling(if(Mort_age<100){Mort_age}else{100}))){
-      QALY_vect[y-start_age] <- QALY_vect[y-start_age]*utility__follow[]
+      QALY_vect[y-start_age] <- QALY_vect[y-start_age]*utility_stage_cat_follow[stage_cat]
     }
   }
   
