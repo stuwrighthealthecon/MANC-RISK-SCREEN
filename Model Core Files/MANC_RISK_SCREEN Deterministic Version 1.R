@@ -168,10 +168,10 @@ density_cutoff <- 3 #VDG groups 3 and 4
 cost_strat<-8.17
 cost_screen <- 54
 cost_follow_up <- 95
-cost_biop <- 160
+cost_biop <- 290
 cost_DCIS <- 8806
-cost_US <- 80
-cost_MRI <-220
+cost_US <- 52
+cost_MRI <-114
 
 tbl <- tribble(~Yr, ~Early_18.64, ~Late_18.64, ~Diff1, ~Early_65plus, ~Late_65plus, ~Diff2,
                0, 464, 607, 143, 1086, 1324, 238,
