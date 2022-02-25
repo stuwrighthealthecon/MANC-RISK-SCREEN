@@ -216,24 +216,25 @@ utility_ages<-data.frame(c(30,35,40,45,50,55,60,65,70,75,80,85,90,95,100),
 
 #Set time independent utility decrements
 #Metastatic cancer 
-utility_metastatic <- 0.685/0.822
 utility_DCIS <- 1 #assumes no effect
 
 #Set first year utilities: 
 #Lidgren 0.696 (mean age 57, range(28-93)), metastatic 0.685 permanent
-utility_stage_cat_y1 <- c("Stage1"=0.696/0.822, 
-                        "Stage2"=0.696/0.822,
-                        "Stage3"=0.696/0.822,
-                        "Metastatic"=utility_metastatic,
-                        "DCIS"=utility_DCIS) 
+utility_stage_cat_y1 <- c("stage1"=0.85/0.822, 
+                          "stage2"=0.85/0.822,
+                          "stage3"=0.85/0.822,
+                          "Metastatic"=0.74/0.822,
+                          "DCIS"=utility_DCIS)
+
 
 #Set following year utilities:
 #0.779
-utility_stage_cat_follow <- c("Stage1"=0.779/0.822,
-                            "Stage2"=0.779/0.822,
-                            "Stage3"=0.779/0.822,
-                            "Metastatic"=utility_metastatic,
-                            "DCIS"=utility_DCIS)
+utility_stage_cat_follow <- c("stage1"=0.87/0.822,
+                              "stage2"=0.87/0.822,
+                              "stage3"=0.87/0.822,
+                              "Metastatic"=0.51/0.822,
+                              "DCIS"=utility_DCIS)
+
 
 ################Outer Individual sampling loop##############################
 
