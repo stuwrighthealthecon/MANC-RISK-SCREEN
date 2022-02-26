@@ -80,8 +80,8 @@ screen_detection_m<-4.12
 screen_detection_sd<-3.93
 
 #Set parameters of a Weibull survival curve to represent all cause mortality
-acmmortality_wb_a<-8.97
-acmmortality_wb_b<-86.74
+acmmortality_wb_a<-8.38
+acmmortality_wb_b<-87.69
 
 #Set parameters for all cause mortality following breast cancer
 gamma_survival_3<-exp(-2.723) #exponential distribution scale parameter stage 3
