@@ -166,7 +166,7 @@ density_cutoff <- 3 #VDG groups 3 and 4
 #######################Cost Data#########################################
 
 cost_strat<-8.17
-cost_screen <- 54
+cost_screen <- 60.93
 cost_follow_up <- 95
 cost_biop <- 290
 cost_DCIS <- 8806

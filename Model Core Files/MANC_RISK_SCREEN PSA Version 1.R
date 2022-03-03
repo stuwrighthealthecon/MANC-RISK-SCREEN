@@ -169,7 +169,7 @@ density_cutoff <- 3 #VDG groups 3 and 4
 
 PSA_cost_strat<-rlnorm(mcruns,2.09023848,0.05673483)
 print(cost_strat)
-cost_screen <- 54
+cost_screen <- 60.93
 cost_follow_up <- 95
 cost_biop <- 290
 cost_DCIS <- 8806
