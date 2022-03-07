@@ -207,7 +207,7 @@ modC <- lm(data = tbl,
            formula = (CDCost.i.d) ~ (Yr1 + Yr2 + Yr3 + Yr) * Stage * Age)
   
 ##########False Positive and Overdiagnosis parameters################
-recall_rate <- 0.045 #approx UK recall rate
+recall_rate <- 0.0456 #approx UK recall rate
 biopsy_rate <- 0.024 #proporiton of referrals without cancer that have biopsy - Madan
 
 #######################Utility Weights#########################################
