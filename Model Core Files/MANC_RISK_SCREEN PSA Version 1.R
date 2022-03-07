@@ -124,7 +124,7 @@ PSA_beta1 <- rnorm(mcruns,1.47,0.1)
 PSA_beta2 <- rnorm(mcruns,6.51,0.5)
 
 #Mammography sensitivity by volpara density grade from PREVENTICON
-Sen_VDG <- c(0.85,0.776,0.695,0.61)
+PSA_Sen_VDG <- data.frame(rbeta(mcruns,96,16),rbeta(mcruns,298,86),rbeta(mcruns,212,93),rbeta(mcruns,61,39))
 Sen_VDG_av <- 0.757
 
 #Supplemental screening sensitivity parameters from CEPAC
@@ -246,7 +246,10 @@ beta1<-PSA_beta1[ii]
 beta2<-PSA_beta2[ii]
 
 log_norm_mean<-PSA_log_norm_mean[ii]
-log_norm_sd<-PSA_log_norm_sd[ii]  
+log_norm_sd<-PSA_log_norm_sd[ii]
+
+sen_VDG<-c(PSA_Sen_VDG[[1]][ii],PSA_Sen_VDG[[2]][ii],PSA_Sen_VDG[[3]][ii],PSA_Sen_VDG[[4]][ii])
+Sen_VDG_av<-mean(sen_VDG)
 
 #Cost data
 cost_strat<-PSA_cost_strat[ii]
