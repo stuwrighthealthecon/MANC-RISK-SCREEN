@@ -44,7 +44,7 @@ source(file="MANC_RISK_SCREEN_functions Version 1.R")
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-100000
+inum<-1000
 jnum<-1
 mcruns<-10
 
@@ -133,8 +133,8 @@ MRI_cdr <- 5 #CDR for MRI in Mammo negative women (incremental)
 US_cdr <- 3 #CDR for US in Mammo negative women (incremental)
 
 #Set tumour growth rate parameters
-log_norm_mean <- 1.07
-log_norm_sd <- 1.31
+PSA_log_norm_mean <- rnorm(mcruns,1.07,0.09)
+PSA_log_norm_sd <- rnorm(mcruns,1.31,0.11)
 max_size <- 128 #mm diameter
 start_size <- 0.25 #starting size of tumours, diameter in mm
 Vc = (4/3)*pi*(start_size/2)^3 #Volume at start
@@ -241,6 +241,10 @@ utility_stage_cat_follow <- c("stage1"=0.87/0.822,
 
 for (ii in 1:mcruns){
   
+#Clinical data
+log_norm_mean<-PSA_log_norm_mean[ii]
+log_norm_sd<-PSA_log_norm_sd[ii]  
+
 #Cost data
 cost_strat<-PSA_cost_strat[ii]
   
