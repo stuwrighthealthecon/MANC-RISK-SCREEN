@@ -84,9 +84,9 @@ acmmortality_wb_a<-8.38
 acmmortality_wb_b<-87.69
 
 #Set parameters for all cause mortality following breast cancer
-gamma_survival_3<-exp(-2.723) #exponential distribution scale parameter stage 3
-gamma_survival_2<-exp(-3.814) #exponential distribution scale parameter stage 2
 gamma_survival_1<-exp(-5.462) #exponential distribution scale parameter stage 1
+gamma_survival_2<-exp(-3.814) #exponential distribution scale parameter stage 2
+gamma_survival_3<-exp(-2.723) #exponential distribution scale parameter stage 3
 gamma_stage <- c(gamma_survival_1,gamma_survival_2,gamma_survival_3)
 
 #Set incidence disribution

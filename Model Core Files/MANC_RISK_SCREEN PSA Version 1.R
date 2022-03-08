@@ -86,10 +86,10 @@ acmmortality_wb_a<-8.38
 acmmortality_wb_b<-87.69
 
 #Set parameters for all cause mortality following breast cancer
-gamma_survival_3<-exp(-2.723) #exponential distribution scale parameter stage 3
-gamma_survival_2<-exp(-3.814) #exponential distribution scale parameter stage 2
-gamma_survival_1<-exp(-5.462) #exponential distribution scale parameter stage 1
-gamma_stage <- c(gamma_survival_1,gamma_survival_2,gamma_survival_3)
+survmvn<-data.frame(c(-5.46208,-5.2077,-5.8016),c(-3.8163,-3.75901,-3.8811),c(-2.72264,-2.66053,-2.78617))
+survcovmat<-cov(survmvn)
+survmeans<-c(survmvn[1,1],survmvn[1,2],survmvn[1,3])
+PSA_gamma_survival<-mvrnorm(mcruns,survmeans,survcovmat)
 
 #Set incidence disribution
 Incidence_Mortality<-read.csv("Incidence_Mortality_ONS2.csv")
@@ -248,8 +248,13 @@ beta2<-PSA_beta2[ii]
 log_norm_mean<-PSA_log_norm_mean[ii]
 log_norm_sd<-PSA_log_norm_sd[ii]
 
-sen_VDG<-c(PSA_Sen_VDG[[1]][ii],PSA_Sen_VDG[[2]][ii],PSA_Sen_VDG[[3]][ii],PSA_Sen_VDG[[4]][ii])
-Sen_VDG_av<-mean(sen_VDG)
+gamma_survival_1<-PSA_gamma_survival[ii,1] #exponential distribution scale parameter stage 1
+gamma_survival_2<-PSA_gamma_survival[ii,2] #exponential distribution scale parameter stage 2
+gamma_survival_3<-PSA_gamma_survival[ii,3] #exponential distribution scale parameter stage 3
+gamma_stage <- c(gamma_survival_1,gamma_survival_2,gamma_survival_3)
+
+Sen_VDG<-c(PSA_Sen_VDG[[1]][ii],PSA_Sen_VDG[[2]][ii],PSA_Sen_VDG[[3]][ii],PSA_Sen_VDG[[4]][ii])
+Sen_VDG_av<-mean(Sen_VDG)
 
 #Cost data
 cost_strat<-PSA_cost_strat[ii]
