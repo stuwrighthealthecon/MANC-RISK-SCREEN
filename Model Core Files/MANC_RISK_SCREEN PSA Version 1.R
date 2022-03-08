@@ -141,11 +141,10 @@ Vc = (4/3)*pi*(start_size/2)^3 #Volume at start
 Vm = (4/3)*pi*(max_size/2)^3 #Max volume
 
 #Metatstatic survival parameters
-meta_survival_54 <- exp(-1.787) #age <= 54
-meta_survival_74 <- exp(-1.388) #age 55-74
-meta_survival_99 <- exp(-1.011) # 75+
-
-metastatic_survival <- c(meta_survival_54, meta_survival_74, meta_survival_99)
+metmvn<-data.frame(c(-1.78723,-1.67922,-1.89434),c(-1.38762,-1.33512,-1.49956),c(-1.01051,-0.93338,-1.08304))
+metmat<-cov(metmvn)
+metmeans<-c(metmvn[1,1],metmvn[1,2],metmvn[1,3])
+PSA_meta_survival<-mvrnorm(mcruns,metmeans,metmat)
 
 #Set screening ages
 screen_startage <- 50
@@ -252,6 +251,11 @@ gamma_survival_1<-PSA_gamma_survival[ii,1] #exponential distribution scale param
 gamma_survival_2<-PSA_gamma_survival[ii,2] #exponential distribution scale parameter stage 2
 gamma_survival_3<-PSA_gamma_survival[ii,3] #exponential distribution scale parameter stage 3
 gamma_stage <- c(gamma_survival_1,gamma_survival_2,gamma_survival_3)
+
+meta_survival_54 <- PSA_meta_survival[ii,1] #age <= 54
+meta_survival_74 <- PSA_meta_survival[ii,2] #age 55-74
+meta_survival_99 <- PSA_meta_survival[ii,3] # 75+
+metastatic_survival <- c(meta_survival_54, meta_survival_74, meta_survival_99)
 
 Sen_VDG<-c(PSA_Sen_VDG[[1]][ii],PSA_Sen_VDG[[2]][ii],PSA_Sen_VDG[[3]][ii],PSA_Sen_VDG[[4]][ii])
 Sen_VDG_av<-mean(Sen_VDG)
