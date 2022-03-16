@@ -220,19 +220,19 @@ utility_DCIS <- 1 #assumes no effect
 
 #Set first year utilities: 
 #Lidgren 0.696 (mean age 57, range(28-93)), metastatic 0.685 permanent
-utility_stage_cat_y1 <- c("stage1"=0.85/0.822, 
-                          "stage2"=0.85/0.822,
-                          "stage3"=0.85/0.822,
-                          "Metastatic"=0.74/0.822,
+utility_stage_cat_y1 <- c("stage1"=0.82/0.822, 
+                          "stage2"=0.82/0.822,
+                          "stage3"=0.75/0.822,
+                          "Metastatic"=0.75/0.822,
                           "DCIS"=utility_DCIS)
 
 
 #Set following year utilities:
 #0.779
-utility_stage_cat_follow <- c("stage1"=0.87/0.822,
-                              "stage2"=0.87/0.822,
-                              "stage3"=0.87/0.822,
-                              "Metastatic"=0.51/0.822,
+utility_stage_cat_follow <- c("stage1"=0.82/0.822,
+                              "stage2"=0.82/0.822,
+                              "stage3"=0.75/0.822,
+                              "Metastatic"=0.75/0.822,
                               "DCIS"=utility_DCIS)
 
 
