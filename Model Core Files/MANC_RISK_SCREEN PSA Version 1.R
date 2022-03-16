@@ -129,8 +129,8 @@ Sen_VDG_av <- 0.757
 
 #Supplemental screening sensitivity parameters from CEPAC
 Mammo_cdr <- 4.2 #Cancer detection rate per 1000 high dense screens Mammo CEPAC
-MRI_cdr <- 5 #CDR for MRI in Mammo negative women (incremental)
-US_cdr <- 3 #CDR for US in Mammo negative women (incremental)
+PSA_MRI_cdr <- rbeta(mcruns,99.495,19799.5) #CDR for MRI in Mammo negative women (incremental)
+PSA_US_cdr <- rbeta(mcruns,35.89,11927) #CDR for US in Mammo negative women (incremental)
 
 #Set tumour growth rate parameters
 PSA_log_norm_mean <- rnorm(mcruns,1.07,0.09)
@@ -166,7 +166,6 @@ density_cutoff <- 3 #VDG groups 3 and 4
 #######################Cost Data#########################################
 
 PSA_cost_strat<-rlnorm(mcruns,2.09023848,0.05673483)
-print(cost_strat)
 cost_screen <- 60.93
 cost_follow_up <- 106
 cost_biop <- 290
@@ -250,6 +249,9 @@ metastatic_survival <- c(meta_survival_54, meta_survival_74, meta_survival_99)
 
 Sen_VDG<-c(PSA_Sen_VDG[[1]][ii],PSA_Sen_VDG[[2]][ii],PSA_Sen_VDG[[3]][ii],PSA_Sen_VDG[[4]][ii])
 Sen_VDG_av<-mean(Sen_VDG)
+
+MRI_cdr<-PSA_MRI_cdr[ii]
+US_cdr<-PSA_US_cdr[ii]
 
 #Utilities
 #Set first year utilities: 
