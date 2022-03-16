@@ -219,22 +219,13 @@ utility_ages<-data.frame(c(30,35,40,45,50,55,60,65,70,75,80,85,90,95,100),
 #Metastatic cancer 
 utility_DCIS <- 1 #assumesno effect
 
-#Set first year utilities: 
-#Lidgren 0.696 (mean age 57, range(28-93)), metastatic 0.685 permanent
-utility_stage_cat_y1 <- c("stage1"=0.82/0.822, 
-                        "stage2"=0.82/0.822,
-                        "stage3"=0.75/0.822,
-                        "Metastatic"=0.75/0.822,
-                        "DCIS"=utility_DCIS)
-                         
+#Generate utility draws
+utilmat<-data.frame(c(1-0.82,1-0.81,1-0.83),c(1-0.75,1-0.73,1-0.77))
+lnutilmat<-log(utilmat)
+covutil<-cov(lnutilmat)
+utilmeans<-c(log(1-0.82),log(1-0.75))
+PSA_util<-1-exp(mvrnorm(mcruns,utilmeans,covutil))
 
-#Set following year utilities:
-#0.779
-utility_stage_cat_follow <- c("stage1"=0.82/0.822,
-                            "stage2"=0.82/0.822,
-                            "stage3"=0.75/0.822,
-                            "Metastatic"=0.75/0.822,
-                            "DCIS"=utility_DCIS)
 
 ##################Loop for Monte Carlo Simulation################
 
@@ -259,6 +250,22 @@ metastatic_survival <- c(meta_survival_54, meta_survival_74, meta_survival_99)
 
 Sen_VDG<-c(PSA_Sen_VDG[[1]][ii],PSA_Sen_VDG[[2]][ii],PSA_Sen_VDG[[3]][ii],PSA_Sen_VDG[[4]][ii])
 Sen_VDG_av<-mean(Sen_VDG)
+
+#Utilities
+#Set first year utilities: 
+utility_stage_cat_y1 <- c("stage1"=PSA_util[ii,1]/0.822, 
+                          "stage2"=PSA_util[ii,1]/0.822,
+                          "stage3"=PSA_util[ii,2]/0.822,
+                          "Metastatic"=PSA_util[ii,2]/0.822,
+                          "DCIS"=utility_DCIS)
+
+
+#Set following year utilities:
+utility_stage_cat_follow <- c("stage1"=PSA_util[ii,1]/0.822, 
+                              "stage2"=PSA_util[ii,1]/0.822,
+                              "stage3"=PSA_util[ii,2]/0.822,
+                              "Metastatic"=PSA_util[ii,2]/0.822,
+                              "DCIS"=utility_DCIS)
 
 #Cost data
 cost_strat<-PSA_cost_strat[ii]
