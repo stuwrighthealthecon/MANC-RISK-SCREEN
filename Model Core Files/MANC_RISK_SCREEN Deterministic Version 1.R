@@ -31,7 +31,7 @@ library("tidyverse")
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Register number of cores for foreach loop
-registerDoParallel(cores=7)
+registerDoParallel(cores=6)
 
 #Set timer to record duration of simulation
 ptm <- proc.time()
@@ -43,7 +43,7 @@ source(file="MANC_RISK_SCREEN_functions Version 1.R")
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-1000000
+inum<-100000
 jnum<-1
 
 #####Choose screening programme and related parameters##########
@@ -53,10 +53,10 @@ jnum<-1
 #6=2 rounds at 50 and 60 (10 yearly), 
 #7=Low risk (5 yearly), 8=Low risk (6 yearly)
 #Other num=no screening
-screen_strategy<-1
+screen_strategy<-3
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
-supplemental_screening<-0
+supplemental_screening<-1
 
 #Age of an individual at start of simulation
 start_age<-38
