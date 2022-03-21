@@ -32,7 +32,7 @@ library("tidyverse")
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Register number of cores for foreach loop
-registerDoParallel(cores=8)
+registerDoParallel(cores=7)
 
 #Set timer to record duration of simulation
 ptm <- proc.time()
@@ -46,7 +46,7 @@ source(file="MANC_RISK_SCREEN_functions Version 1.R")
 #model
 inum<-1000
 jnum<-1
-mcruns<-10
+mcruns<-100
 
 #####Choose screening programme and related parameters##########
 
@@ -200,9 +200,9 @@ tbl <- tribble(~Yr, ~Early_18.64, ~Late_18.64, ~Diff1, ~Early_65plus, ~Late_65pl
          Yr3        = as.factor(Yr==3)) %>%
   filter(Yr > 0) %>%
   arrange(Stage, Age, Yr)
+basecost<-tbl$CDCost.i.d
+PSA_costvar<-rnorm(mcruns,0,0.1020408)
 
-modC <- lm(data = tbl,
-           formula = (CDCost.i.d) ~ (Yr1 + Yr2 + Yr3 + Yr) * Stage * Age)
   
 ##########False Positive and Overdiagnosis parameters################
 recall_rate <- 0.0456 #approx UK recall rate
@@ -271,6 +271,10 @@ utility_stage_cat_follow <- c("stage1"=PSA_util[ii,1]/0.822,
 
 #Cost data
 cost_strat<-PSA_cost_strat[ii]
+
+tbl$CDCost.i.d<-basecost*(1+PSA_costvar[ii])
+modC <- lm(data = tbl,
+           formula = (CDCost.i.d) ~ (Yr1 + Yr2 + Yr3 + Yr) * Stage * Age)
   
 #Set counters for individual sampling loop
 total_screens <- 0
@@ -641,7 +645,7 @@ save(results,file = paste("PSA/PSA_",ii,".Rdata",sep = ""))
 #results #see result if parellel version
 #save results
 #see results
-merged_result <- matrix(0,nrow = 10,ncol = 5)
+merged_result <- matrix(0,nrow = mcruns,ncol = 5)
 for (i in 1:mcruns){
   #name of saved files needed
   load(paste("PSA/PSA_",i,".Rdata",sep = ""))
