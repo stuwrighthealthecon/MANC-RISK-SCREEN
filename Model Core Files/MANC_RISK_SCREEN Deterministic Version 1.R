@@ -143,7 +143,6 @@ Vm = (4/3)*pi*(max_size/2)^3 #Max volume
 meta_survival_54 <- exp(-1.787) #age <= 54
 meta_survival_74 <- exp(-1.388) #age 55-74
 meta_survival_99 <- exp(-1.011) # 75+
-
 metastatic_survival <- c(meta_survival_54, meta_survival_74, meta_survival_99)
 
 #Set screening ages
@@ -219,7 +218,6 @@ utility_ages<-data.frame(c(30,35,40,45,50,55,60,65,70,75,80,85,90,95,100),
 utility_DCIS <- 1 #assumes no effect
 
 #Set first year utilities: 
-#Lidgren 0.696 (mean age 57, range(28-93)), metastatic 0.685 permanent
 utility_stage_cat_y1 <- c("stage1"=0.82/0.822, 
                           "stage2"=0.82/0.822,
                           "stage3"=0.75/0.822,
@@ -228,7 +226,6 @@ utility_stage_cat_y1 <- c("stage1"=0.82/0.822,
 
 
 #Set following year utilities:
-#0.779
 utility_stage_cat_follow <- c("stage1"=0.82/0.822,
                               "stage2"=0.82/0.822,
                               "stage3"=0.75/0.822,

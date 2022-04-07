@@ -46,7 +46,6 @@ source(file="MANC_RISK_SCREEN_functions Version 1.R")
 #model
 inum<-1000
 jnum<-1
-mcruns<-100
 
 #####Choose screening programme and related parameters##########
 
@@ -86,10 +85,10 @@ acmmortality_wb_a<-8.38
 acmmortality_wb_b<-87.69
 
 #Set parameters for all cause mortality following breast cancer
-survmvn<-data.frame(c(-5.46208,-5.2077,-5.8016),c(-3.8163,-3.75901,-3.8811),c(-2.72264,-2.66053,-2.78617))
-survcovmat<-cov(survmvn)
-survmeans<-c(survmvn[1,1],survmvn[1,2],survmvn[1,3])
-PSA_gamma_survival<-mvrnorm(mcruns,survmeans,survcovmat)
+gamma_survival_1<-exp(-5.462) #exponential distribution scale parameter stage 1
+gamma_survival_2<-exp(-3.814) #exponential distribution scale parameter stage 2
+gamma_survival_3<-exp(-2.723) #exponential distribution scale parameter stage 3
+gamma_stage <- c(gamma_survival_1,gamma_survival_2,gamma_survival_3)
 
 #Set incidence disribution
 Incidence_Mortality<-read.csv("Incidence_Mortality_ONS2.csv")
@@ -120,31 +119,31 @@ screen_detection_m <- 6.12
 screen_detection_sd <- 0.96 
 
 #Mammography with sensitivity conditional on tumour diameter parameters W-F
-PSA_beta1 <- rnorm(mcruns,1.47,0.1)
-PSA_beta2 <- rnorm(mcruns,6.51,0.5)
+beta1 <- 1.47 
+beta2 <- 6.51
 
 #Mammography sensitivity by volpara density grade from PREVENTICON
-PSA_Sen_VDG <- data.frame(rbeta(mcruns,96,16),rbeta(mcruns,298,86),rbeta(mcruns,212,93),rbeta(mcruns,61,39))
+Sen_VDG <- c(0.85,0.776,0.695,0.61)
 Sen_VDG_av <- 0.757
 
 #Supplemental screening sensitivity parameters from CEPAC
 Mammo_cdr <- 4.2 #Cancer detection rate per 1000 high dense screens Mammo CEPAC
-PSA_MRI_cdr <- rbeta(mcruns,99.495,19799.5) #CDR for MRI in Mammo negative women (incremental)
-PSA_US_cdr <- rbeta(mcruns,35.89,11927) #CDR for US in Mammo negative women (incremental)
+MRI_cdr <- 5 #CDR for MRI in Mammo negative women (incremental)
+US_cdr <- 3 #CDR for US in Mammo negative women (incremental)
 
 #Set tumour growth rate parameters
-PSA_log_norm_mean <- rnorm(mcruns,1.07,0.09)
-PSA_log_norm_sd <- rnorm(mcruns,1.31,0.11)
+log_norm_mean <- 1.07
+log_norm_sd <- 1.31
 max_size <- 128 #mm diameter
 start_size <- 0.25 #starting size of tumours, diameter in mm
 Vc = (4/3)*pi*(start_size/2)^3 #Volume at start
 Vm = (4/3)*pi*(max_size/2)^3 #Max volume
 
 #Metatstatic survival parameters
-metmvn<-data.frame(c(-1.78723,-1.67922,-1.89434),c(-1.38762,-1.33512,-1.49956),c(-1.01051,-0.93338,-1.08304))
-metmat<-cov(metmvn)
-metmeans<-c(metmvn[1,1],metmvn[1,2],metmvn[1,3])
-PSA_meta_survival<-mvrnorm(mcruns,metmeans,metmat)
+meta_survival_54 <- exp(-1.787) #age <= 54
+meta_survival_74 <- exp(-1.388) #age 55-74
+meta_survival_99 <- exp(-1.011) # 75+
+metastatic_survival <- c(meta_survival_54, meta_survival_74, meta_survival_99)
 
 #Set screening ages
 screen_startage <- 50
@@ -165,7 +164,7 @@ density_cutoff <- 3 #VDG groups 3 and 4
 
 #######################Cost Data#########################################
 
-PSA_cost_strat<-rlnorm(mcruns,2.09023848,0.05673483)
+cost_strat<-8.17
 cost_screen <- 60.93
 cost_follow_up <- 106
 cost_biop <- 290
@@ -201,7 +200,6 @@ tbl <- tribble(~Yr, ~Early_18.64, ~Late_18.64, ~Diff1, ~Early_65plus, ~Late_65pl
   filter(Yr > 0) %>%
   arrange(Stage, Age, Yr)
 basecost<-tbl$CDCost.i.d
-PSA_costvar<-rnorm(mcruns,0,0.1020408)
 
   
 ##########False Positive and Overdiagnosis parameters################
@@ -218,12 +216,20 @@ utility_ages<-data.frame(c(30,35,40,45,50,55,60,65,70,75,80,85,90,95,100),
 #Metastatic cancer 
 utility_DCIS <- 1 #assumesno effect
 
-#Generate utility draws
-utilmat<-data.frame(c(1-0.82,1-0.81,1-0.83),c(1-0.75,1-0.73,1-0.77))
-lnutilmat<-log(utilmat)
-covutil<-cov(lnutilmat)
-utilmeans<-c(log(1-0.82),log(1-0.75))
-PSA_util<-1-exp(mvrnorm(mcruns,utilmeans,covutil))
+#Set first year utilities: 
+utility_stage_cat_y1 <- c("stage1"=0.82/0.822, 
+                          "stage2"=0.82/0.822,
+                          "stage3"=0.75/0.822,
+                          "Metastatic"=0.75/0.822,
+                          "DCIS"=utility_DCIS)
+
+
+#Set following year utilities:
+utility_stage_cat_follow <- c("stage1"=0.82/0.822,
+                              "stage2"=0.82/0.822,
+                              "stage3"=0.75/0.822,
+                              "Metastatic"=0.75/0.822,
+                              "DCIS"=utility_DCIS)
 
 
 ##################Loop for Monte Carlo Simulation################
