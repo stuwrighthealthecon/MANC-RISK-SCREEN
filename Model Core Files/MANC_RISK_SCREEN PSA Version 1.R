@@ -645,7 +645,7 @@ save(results,file = paste("PSA/PSA_",ii,".Rdata",sep = ""))
 #results #see result if parellel version
 #save results
 #see results
-merged_result <- matrix(0,nrow = mcruns,ncol = 5)
+merged_result <- matrix(0,nrow = mcruns,ncol = 6)
 for (i in 1:mcruns){
   #name of saved files needed
   load(paste("PSA/PSA_",i,".Rdata",sep = ""))
@@ -654,6 +654,7 @@ for (i in 1:mcruns){
   merged_result[i,3] <- mean(results[,4])
   merged_result[i,4] <- mean(results[,5])
   merged_result[i,5] <- mean(results[,9])
+  merged_result[i,6] <- mean(results[,1])
 }
 #store main outputs as csv
 write.csv(merged_result,file = "PSAresults.csv")
