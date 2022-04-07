@@ -55,4 +55,4 @@ colnames(PSA_all_p)<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_
                        "PSA_log_norm_mean","PSA_log_norm_sd","PSA_cost_strat","PSA_costvar",
                        "PSA_util_1:3","PSA_util_4")
 
-save(PSA_all_p,file="PSA_value.RData")
+save(PSA_all_p,file="PSA_values.RData")

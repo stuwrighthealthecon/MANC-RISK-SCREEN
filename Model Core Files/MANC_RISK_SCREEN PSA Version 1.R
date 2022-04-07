@@ -41,7 +41,7 @@ ptm <- proc.time()
 source(file="MANC_RISK_SCREEN_functions Version 1.R")
 
 #Load file with pre-run monte carlo draws
-load("PSA_value.RData")
+load("PSA_values.RData")
 
 #Set loop numbers
 #To attain stable results it is recommended that inum is set
@@ -237,7 +237,7 @@ utility_stage_cat_follow <- c("stage1"=0.82/0.822,
 
 ##################Loop for Monte Carlo Simulation################
 
-for (ii in 1:length(PSA_all_p)){
+for (ii in 1:nrow(PSA_all_p)){
   
 #Clinical data
 beta1<-PSA_all_p$PSA_beta_1[ii]
@@ -654,8 +654,8 @@ save(results,file = paste("PSA/PSA_",ii,".Rdata",sep = ""))
 #results #see result if parellel version
 #save results
 #see results
-merged_result <- matrix(0,nrow = length(PSA_all_p),ncol = 6)
-for (i in 1:length(PSA_all_p)){
+merged_result <- matrix(0,nrow = nrow(PSA_all_p),ncol = 6)
+for (i in 1:nrow(PSA_all_p)){
   #name of saved files needed
   load(paste("PSA/PSA_",i,".Rdata",sep = ""))
   merged_result[i,1] <- mean(results[,2])
