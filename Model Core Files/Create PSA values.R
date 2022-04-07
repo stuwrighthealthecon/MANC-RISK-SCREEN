@@ -48,9 +48,11 @@ PSA_all_p<-cbind(PSA_gamma_survival,PSA_meta_survival,PSA_beta1,PSA_beta2,
                  PSA_Sen_VDG,PSA_MRI_cdr,PSA_US_cdr,PSA_log_norm_mean,
                  PSA_log_norm_sd,PSA_cost_strat,PSA_costvar,PSA_util)
 PSA_all_p<-as.data.frame(PSA_all_p)
-colnames(PSA_all_p)<-c("PSA_gamma_surival_1","PSA_gamma_surival_2","PSA_gamma_survival_3",
+colnames(PSA_all_p)<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_survival_3",
                        "PSA_meta_survival_54","PSA_meta_survival_74","PSA_meta_survival_99",
                        "PSA_beta_1","PSA_beta_2",'PSA_VDG1_sen','PSA_VDG2_sen',
                        'PSA_VDG3_sen', 'PSA_VDG4_sen',"PSA_MRI_cdr","PSA_US_cdr",
                        "PSA_log_norm_mean","PSA_log_norm_sd","PSA_cost_strat","PSA_costvar",
                        "PSA_util_1:3","PSA_util_4")
+
+save(PSA_all_p,file="PSA_value.RData")

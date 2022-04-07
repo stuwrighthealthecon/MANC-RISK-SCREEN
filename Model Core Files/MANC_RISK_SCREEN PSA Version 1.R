@@ -29,7 +29,7 @@ library("tidyverse")
 
 #Set working directory
 #setwd(dir="C:/Users/mdxassw4/Dropbox (The University of Manchester)/MANC-RISK-SCREEN")
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+#setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Register number of cores for foreach loop
 registerDoParallel(cores=7)
@@ -40,11 +40,14 @@ ptm <- proc.time()
 #Load file containing required functions for the model
 source(file="MANC_RISK_SCREEN_functions Version 1.R")
 
+#Load file with pre-run monte carlo draws
+load("PSA_value.RData")
+
 #Set loop numbers
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-1000
+inum<-100
 jnum<-1
 
 #####Choose screening programme and related parameters##########
@@ -234,51 +237,51 @@ utility_stage_cat_follow <- c("stage1"=0.82/0.822,
 
 ##################Loop for Monte Carlo Simulation################
 
-for (ii in 1:mcruns){
+for (ii in 1:length(PSA_all_p)){
   
 #Clinical data
-beta1<-PSA_beta1[ii]
-beta2<-PSA_beta2[ii]
+beta1<-PSA_all_p$PSA_beta_1[ii]
+beta2<-PSA_all_p$PSA_beta_2[ii]
 
-log_norm_mean<-PSA_log_norm_mean[ii]
-log_norm_sd<-PSA_log_norm_sd[ii]
+log_norm_mean<-PSA_all_p$PSA_log_norm_mean[ii]
+log_norm_sd<-PSA_all_p$PSA_log_norm_sd[ii]
 
-gamma_survival_1<-PSA_gamma_survival[ii,1] #exponential distribution scale parameter stage 1
-gamma_survival_2<-PSA_gamma_survival[ii,2] #exponential distribution scale parameter stage 2
-gamma_survival_3<-PSA_gamma_survival[ii,3] #exponential distribution scale parameter stage 3
+gamma_survival_1<-PSA_all_p$PSA_gamma_survival_1[ii] #exponential distribution scale parameter stage 1
+gamma_survival_2<-PSA_all_p$PSA_gamma_survival_2[ii] #exponential distribution scale parameter stage 2
+gamma_survival_3<-PSA_all_p$PSA_gamma_survival_3[ii] #exponential distribution scale parameter stage 3
 gamma_stage <- c(gamma_survival_1,gamma_survival_2,gamma_survival_3)
 
-meta_survival_54 <- PSA_meta_survival[ii,1] #age <= 54
-meta_survival_74 <- PSA_meta_survival[ii,2] #age 55-74
-meta_survival_99 <- PSA_meta_survival[ii,3] # 75+
+meta_survival_54 <- PSA_all_p$PSA_meta_survival_54[ii] #age <= 54
+meta_survival_74 <- PSA_all_p$PSA_meta_survival_74[ii] #age 55-74
+meta_survival_99 <- PSA_all_p$PSA_meta_survival_99[ii] # 75+
 metastatic_survival <- c(meta_survival_54, meta_survival_74, meta_survival_99)
 
-Sen_VDG<-c(PSA_Sen_VDG[[1]][ii],PSA_Sen_VDG[[2]][ii],PSA_Sen_VDG[[3]][ii],PSA_Sen_VDG[[4]][ii])
+Sen_VDG<-c(PSA_all_p$PSA_VDG1_sen[ii],PSA_all_p$PSA_VDG2_sen[ii],PSA_all_p$PSA_VDG3_sen[ii],PSA_all_p$PSA_VDG4_sen[ii])
 Sen_VDG_av<-mean(Sen_VDG)
 
-MRI_cdr<-PSA_MRI_cdr[ii]
-US_cdr<-PSA_US_cdr[ii]
+MRI_cdr<-PSA_all_p$PSA_MRI_cdr[ii]
+US_cdr<-PSA_all_p$PSA_US_cdr[ii]
 
 #Utilities
 #Set first year utilities: 
-utility_stage_cat_y1 <- c("stage1"=PSA_util[ii,1]/0.822, 
-                          "stage2"=PSA_util[ii,1]/0.822,
-                          "stage3"=PSA_util[ii,2]/0.822,
-                          "Metastatic"=PSA_util[ii,2]/0.822,
+utility_stage_cat_y1 <- c("stage1"=PSA_all_p$`PSA_util_1:3`[ii]/0.822, 
+                          "stage2"=PSA_all_p$`PSA_util_1:3`[ii]/0.822,
+                          "stage3"=PSA_all_p$`PSA_util_1:3`[ii]/0.822,
+                          "Metastatic"=PSA_all_p$PSA_util_4[ii]/0.822,
                           "DCIS"=utility_DCIS)
 
 
 #Set following year utilities:
-utility_stage_cat_follow <- c("stage1"=PSA_util[ii,1]/0.822, 
-                              "stage2"=PSA_util[ii,1]/0.822,
-                              "stage3"=PSA_util[ii,2]/0.822,
-                              "Metastatic"=PSA_util[ii,2]/0.822,
+utility_stage_cat_follow <- c("stage1"=PSA_all_p$`PSA_util_1:3`[ii]/0.822, 
+                              "stage2"=PSA_all_p$`PSA_util_1:3`[ii]/0.822,
+                              "stage3"=PSA_all_p$`PSA_util_1:3`[ii]/0.822,
+                              "Metastatic"=PSA_all_p$PSA_util_4[ii]/0.822,
                               "DCIS"=utility_DCIS)
 
 #Cost data
-cost_strat<-PSA_cost_strat[ii]
+cost_strat<-PSA_all_p$PSA_cost_strat[ii]
 
-tbl$CDCost.i.d<-basecost*(1+PSA_costvar[ii])
+tbl$CDCost.i.d<-basecost*(1+PSA_all_p$PSA_costvar[ii])
 modC <- lm(data = tbl,
            formula = (CDCost.i.d) ~ (Yr1 + Yr2 + Yr3 + Yr) * Stage * Age)
   
@@ -651,8 +654,8 @@ save(results,file = paste("PSA/PSA_",ii,".Rdata",sep = ""))
 #results #see result if parellel version
 #save results
 #see results
-merged_result <- matrix(0,nrow = mcruns,ncol = 6)
-for (i in 1:mcruns){
+merged_result <- matrix(0,nrow = length(PSA_all_p),ncol = 6)
+for (i in 1:length(PSA_all_p)){
   #name of saved files needed
   load(paste("PSA/PSA_",i,".Rdata",sep = ""))
   merged_result[i,1] <- mean(results[,2])
