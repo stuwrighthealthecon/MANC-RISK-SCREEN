@@ -57,7 +57,7 @@ jnum<-1
 #6=2 rounds at 50 and 60 (10 yearly), 
 #7=Low risk (5 yearly), 8=Low risk (6 yearly)
 #Other num=no screening
-screen_strategy<-1
+screen_strategy<-0
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
@@ -186,7 +186,7 @@ tbl <- tribble(~Yr, ~Early_18.64, ~Late_18.64, ~Diff1, ~Early_65plus, ~Late_65pl
                7, 1394, 2618, 1225, 2063, 2903, 840,
                8, 1376, 2559, 1183, 2134, 2454, 320,
                9, 1279, 1848, 569, 2204, 2932, 728) %>%
-  select(-Diff1, -Diff2) %>%
+  dplyer:select(-Diff1, -Diff2) %>%
   pivot_longer(cols      = contains("6"),
                names_to  = c("Stage", "Age"),
                names_sep = "_",
