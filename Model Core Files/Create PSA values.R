@@ -53,6 +53,6 @@ colnames(PSA_all_p)<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_
                        "PSA_beta_1","PSA_beta_2",'PSA_VDG1_sen','PSA_VDG2_sen',
                        'PSA_VDG3_sen', 'PSA_VDG4_sen',"PSA_MRI_cdr","PSA_US_cdr",
                        "PSA_log_norm_mean","PSA_log_norm_sd","PSA_cost_strat","PSA_costvar",
-                       "PSA_util_1:3","PSA_util_4")
+                       "PSA_util_1to3","PSA_util_4")
 
 save(PSA_all_p,file="PSA_values.RData")
