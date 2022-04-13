@@ -14,13 +14,13 @@ library("BCEA")
 load("PSA_values.RData")
 
 #Factor variable to indicate which alternative the results belong to
-alt_num <- 9 #number of alternatives
+alt_num <- 10 #number of alternatives
 alternative <- c(rep(1,1000))
 for (i in 2:alt_num){
   alternative <- c(alternative,c(rep(i,1000)))
 }
 alt_names<-c("noscreening","procas","tertiles","3yr","2yr","5yr",
-                   "10yr","lowrisk5yr","lowrisk6yr")
+                   "10yr","lowrisk5yr","lowrisk6yr","fullstrat")
 alternative <- as.data.frame(factor(alternative, labels = alt_names))
 colnames(alternative) <- c("alternative")
 
@@ -105,7 +105,7 @@ base_data <- base_data %>%
   mutate(delta_QALY_10yr = QALY_10yr - QALY_noscreening) %>%
   mutate(delta_QALY_lowrisk5yr = QALY_lowrisk5yr - QALY_noscreening) %>%
   mutate(delta_QALY_lowrisk6yr = QALY_lowrisk6yr - QALY_noscreening) %>%
-  #mutate(delta_QALY_fullstrat = QALY_fullstrat - QALY_noscreening) %>%
+  mutate(delta_QALY_fullstrat = QALY_fullstrat - QALY_noscreening) %>%
   
   mutate(delta_cost_noscreening = cost_noscreening - cost_noscreening) %>%
   mutate(delta_cost_procas = cost_procas - cost_noscreening) %>%
@@ -116,7 +116,7 @@ base_data <- base_data %>%
   mutate(delta_cost_10yr = cost_10yr - cost_noscreening) %>%
   mutate(delta_cost_lowrisk5yr = cost_lowrisk5yr - cost_noscreening) %>%
   mutate(delta_cost_lowrisk6yr = cost_lowrisk6yr - cost_noscreening) #%>%
-  #mutate(delta_cost_fullstrat = cost_fullstrat - cost_noscreening)
+  mutate(delta_cost_fullstrat = cost_fullstrat - cost_noscreening)
 
 #Fitting the GAM
 #colnames(PSA_all_p) <- var_names
