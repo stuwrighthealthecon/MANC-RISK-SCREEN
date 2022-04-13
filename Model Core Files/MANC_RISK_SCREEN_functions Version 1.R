@@ -75,8 +75,7 @@ stage_by_size <- function(Ca_size,screen_detected_ca){
   #sample from categories 1,2 & 3 with probability of each based on the correct row of stagebysize matrix 
   # Ca_size is continuous, need to match to closest larger value in stage_by_size column 1
   if(stage_cat == 0){
-    v <- c(0.025, 5, 10, 15, 20, 30, 128) #category cut-points from Kolias 1999
-    size_cat <- findInterval(Ca_size,v)
+    size_cat <- findInterval(Ca_size,ca_size_cut)
     stage_cat <- sample(x=c(1,2,3),size = 1,prob = c(stage_by_size_mat[size_cat,])) #1 best 3 worst prognosis
   }
   #return the stage category

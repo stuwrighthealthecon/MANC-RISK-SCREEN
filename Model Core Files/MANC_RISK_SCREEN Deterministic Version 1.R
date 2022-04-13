@@ -163,6 +163,9 @@ risk_cutoffs_tert <- c(2.328355,3.067665) #tertiles of risk
 #Breast density cut-offs for supplemental sreening
 density_cutoff <- 3 #VDG groups 3 and 4
 
+#Cancer size cut-points
+ca_size_cut <- c(0.025, 5, 10, 15, 20, 30, 128) #category cut-points from Kolias 1999
+
 #######################Cost Data#########################################
 
 cost_strat<-8.17
