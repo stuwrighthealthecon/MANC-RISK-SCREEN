@@ -166,6 +166,9 @@ risk_cutoffs_tert <- c(2.328355,3.067665) #tertiles of risk
 #Breast density cut-offs for supplemental sreening
 density_cutoff <- 3 #VDG groups 3 and 4
 
+#Cancer size cut-points
+ca_size_cut <- c(0.025, 5, 10, 15, 20, 30, 128) #category cut-points from Kolias 1999
+
 #######################Cost Data#########################################
 
 cost_strat<-8.17
@@ -305,19 +308,18 @@ cancer_diagnostic <- rep(0,10)
 
 #Draw a breast density, 10 year, and lifetime risk of cancer for the individual
 risk_data<-risk_mat[sample(nrow(risk_mat),1),]
-ten_year_risk<-risk_data[2]
 
 #If risk based screening is being used then place 
 #individual into a risk group
 if(screen_strategy==1 | screen_strategy==9) {
-  risk_group<-1+findInterval(ten_year_risk,risk_cutoffs_procas)
+  risk_group<-1+findInterval(risk_data[2],risk_cutoffs_procas)
 } else
 if(screen_strategy==2) {
-  risk_group<-1+findInterval(ten_year_risk,risk_cutoffs_tert)
+  risk_group<-1+findInterval(risk_data[2],risk_cutoffs_tert)
 }
 if(screen_strategy==7 | screen_strategy==8) {
-  if(ten_year_risk<1.5){risk_group<-1}
-  if(ten_year_risk>=1.5){risk_group<-2}
+  if(risk_data[2]<1.5){risk_group<-1}
+  if(risk_data[2]>=1.5){risk_group<-2}
 }
 
 #Set VDG based on breast density
@@ -333,7 +335,7 @@ if(supplemental_screening==0){
     if (VDG>density_cutoff){
       MRI_screening<-0
       US_screening<-0
-      if(ten_year_risk>8){MRI_screening<-1} else{US_screening<-1}
+      if(risk_data[2]>8){MRI_screening<-1} else{US_screening<-1}
     } else {
        MRI_screening<-1
        US_screening<-1
