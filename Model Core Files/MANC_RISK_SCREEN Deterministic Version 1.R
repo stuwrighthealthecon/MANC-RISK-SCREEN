@@ -31,7 +31,7 @@ library("tidyverse")
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Register number of cores for foreach loop
-registerDoParallel(cores=6)
+registerDoParallel(cores=7)
 
 #Set timer to record duration of simulation
 ptm <- proc.time()
@@ -51,9 +51,10 @@ jnum<-1
 #Set the screening strategy: 1=PROCAS, 2=Risk tertiles, 
 #3=3 yearly, 4=2 yearly, 5=5 yearly, 
 #6=2 rounds at 50 and 60 (10 yearly), 
-#7=Low risk (5 yearly), 8=Low risk (6 yearly)
+#7=Low risk (5 yearly), 8=Low risk (6 yearly),
+#9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-3
+screen_strategy<-9
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-1
@@ -156,7 +157,7 @@ low_risk_screentimes <- seq(screen_startage,screen_endage,3) #Three yearly
 sensitivity_max <- 0.95
 
 #Risk cut-offs for different screening approaches
-risk_cutoffs_procas <- c(2,3.5,5,8,100) #procas plan
+risk_cutoffs_procas <- c(1.5,3.5,5,8,100) #procas plan
 risk_cutoffs_tert <- c(2.328355,3.067665) #tertiles of risk
 
 #Breast density cut-offs for supplemental sreening
@@ -262,16 +263,16 @@ ten_year_risk<-risk_data[2]
 
 #If risk based screening is being used then place 
 #individual into a risk group
-if(screen_strategy==1) {
+if(screen_strategy==1 | screen_strategy==9) {
   risk_group<-1+findInterval(ten_year_risk,risk_cutoffs_procas)
 } else
 if(screen_strategy==2) {
   risk_group<-1+findInterval(ten_year_risk,risk_cutoffs_tert)
-}
+} else
 if(screen_strategy==7 | screen_strategy==8) {
   if(ten_year_risk<1.5){risk_group<-1}
   if(ten_year_risk>=1.5){risk_group<-2}
-}
+} 
 
 #Set VDG based on breast density
 if(risk_data[1]<4.5){VDG<-1} else
@@ -326,6 +327,12 @@ if (screen_strategy==1) {
   if(screen_strategy==8){
     if(risk_group==1){screen_times<-seq(screen_startage,screen_startage+(6*3),6)}
     if(risk_group==2){screen_times<-low_risk_screentimes}
+  }
+  if(screen_strategy==9){
+    if (risk_group==1) {screen_times<-seq(screen_startage, screen_startage+(5*4),5)} else
+    if (risk_group==2 | risk_group==3) {screen_times<-low_risk_screentimes} else
+    if (risk_group==4) {screen_times<-med_risk_screentimes} else
+    if (risk_group==5) {screen_times<-high_risk_screentimes}
   }
 ##########Counters i loop level######################
 #screen-detected cancer counts
