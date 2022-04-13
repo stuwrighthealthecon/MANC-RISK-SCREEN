@@ -63,6 +63,9 @@ screen_strategy<-0
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
 
+#Screening uptake
+uptake<-0.691
+
 #Age of an individual at start of simulation
 start_age<-38
 
@@ -417,6 +420,7 @@ for (j in jnum){
   
 #Set J level counters
 screen_count <- 0
+missed_screen <- 0
 recall_count <- 0
 sdlast_cancer <-0
 lastscreen_count <- 0
@@ -499,6 +503,7 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     
   #Open screening event
   if(Event_place == 1){
+    if (dqrunif(1,0,1)<uptake) {missed_screen<-missed_screen+1} else{
     screen_count<-screen_count+1
     costs<-costs+(cost_screen*current_discount)
     if(screen_count==1 & screen_strategy<3){costs<-costs+(cost_strat*current_discount)}
@@ -550,7 +555,7 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
       recall_count <- recall_count+1
       costs=costs+(cost_follow_up*current_discount)+(biopsy_rate*cost_biop*current_discount)
       costs_follow_up=costs_follow_up+(costs_follow_up*current_discount)+(biopsy_rate*cost_biop*current_discount)}
-      } #End screening event
+      }} #End screening event
 
     #Clinical cancer diagnosis event
     if(Event_place == 3){
@@ -590,7 +595,7 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
   }else{age <- age + Next_event_time #update age if no cancer
   }
     #update times for next event
-    if(screen_count < length(screen_times)){Time_to_screen <- screen_times[screen_count+1] - age}else{Time_to_screen <- 101} #when screen times runs out set time to age 101
+    if(screen_count+missed_screen < length(screen_times)){Time_to_screen <- screen_times[screen_count+1] - age}else{Time_to_screen <- 101} #when screen times runs out set time to age 101
     Time_to_death <- Mort_age - age 
     Time_to_CD <- CD_age - age
     
