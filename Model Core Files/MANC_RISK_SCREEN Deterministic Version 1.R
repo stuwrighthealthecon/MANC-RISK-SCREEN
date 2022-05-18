@@ -54,13 +54,18 @@ jnum<-1
 #7=Low risk (5 yearly), 8=Low risk (6 yearly),
 #9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-3
+screen_strategy<-1
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-1
 
 #Screening uptake
 uptake<-0.691
+
+#Uptake for risk stratification
+risk_uptake<-0.6 #Proportion of women who want risk predicted
+risk_feedback<-0.95 #Proportion of women who attend risk consultation
+screen_change<-0.8 #Proportion of women with high/moderate/low risk who change screening interval
 
 #Age of an individual at start of simulation
 start_age<-38
@@ -263,6 +268,16 @@ results <- foreach(i=1:(inum/10),.combine = 'rbind',.packages = c('MASS','dqrng'
 #Set up record of age, size, mode of detection of each detected cancer
 cancer_diagnostic <- rep(0,10)
 
+#Determine uptake of risk stratification
+risk_predicted<-0
+feedback<-0
+interval_change<-0
+if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strategy<10)){
+  risk_predicted<-if(dqrunif(1,0,1)>risk_uptake){1}else{0}
+  feedback<-if(risk_predicted==1 & dqrunif(1,0,1)>risk_feedback){1}else{0}
+  interval_change<-if(feedback==1 & dqrunif(1,0,1)>screen_change){1}else{0}
+}
+
 #Draw a breast density, 10 year, and lifetime risk of cancer for the individual
 risk_data<-risk_mat[sample(nrow(risk_mat),1),]
 
@@ -303,16 +318,16 @@ if(supplemental_screening==0){
 ###############Screen times###############################
 
 screen_times <- c(999)
-if (screen_strategy==1) {
+if (screen_strategy==1 & interval_change==1) {
   if (risk_group<3) {screen_times<-low_risk_screentimes} else
   if (risk_group>2 & risk_group<5) {screen_times<-med_risk_screentimes} else
   if (risk_group>4) {screen_times<-high_risk_screentimes}
-}
-  if(screen_strategy==2){
+} else if(screen_strategy==1 & interval_change==0) {screen_times<-low_risk_screentimes}
+  if(screen_strategy==2 & interval_change==1){
   if(risk_group==1){screen_times<-low_risk_screentimes} else
   if(risk_group==2){screen_times<-med_risk_screentimes} else
   if(risk_group==3){screen_times<-high_risk_screentimes}
-  }
+  } else if(screen_strategy==1 & interval_change==0) {screen_times<-low_risk_screentimes}
   if(screen_strategy==3){
     screen_times <- low_risk_screentimes
   }
@@ -325,20 +340,20 @@ if (screen_strategy==1) {
   if(screen_strategy==6){
     screen_times <- seq(screen_startage, screen_startage+10,10)
   }
-  if(screen_strategy==7){
+  if(screen_strategy==7 & interval_change==1){
     if(risk_group==1){screen_times<-seq(screen_startage, screen_startage+(5*4),5)}
     if(risk_group==2){screen_times<-low_risk_screentimes}
-  }
-  if(screen_strategy==8){
+  } else if(screen_strategy==7 & interval_change==0) {screen_times<-low_risk_screentimes}
+  if(screen_strategy==8 & interval_change==1){
     if(risk_group==1){screen_times<-seq(screen_startage,screen_startage+(6*3),6)}
     if(risk_group==2){screen_times<-low_risk_screentimes}
-  }
-  if(screen_strategy==9){
+  } else if (screen_strategy==8 & interval_change==0) {screen_times<-low_risk_screentimes}
+  if(screen_strategy==9 & interval_change==1){
     if (risk_group==1) {screen_times<-seq(screen_startage, screen_startage+(5*4),5)} else
     if (risk_group==2 | risk_group==3) {screen_times<-low_risk_screentimes} else
     if (risk_group==4) {screen_times<-med_risk_screentimes} else
     if (risk_group==5) {screen_times<-high_risk_screentimes}
-  }
+  } else if(screen_strategy==9 & interval_change==0) {screen_times<-low_risk_screentimes}
 ##########Counters i loop level######################
 #screen-detected cancer counts
 screen_detected_count <- 0
@@ -461,9 +476,10 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     if (dqrunif(1,0,1)>uptake) {missed_screen<-missed_screen+1}else{
     screen_count<-screen_count+1
     costs<-costs+(cost_screen*current_discount)
-    if(screen_count==1 & screen_strategy<3){costs<-costs+(cost_strat*current_discount)}
-    if(screen_count==1 & screen_strategy==7){costs<-costs+(cost_strat*current_discount)}
-    if(screen_count==1 & screen_strategy==8){costs<-costs+(cost_strat*current_discount)}
+    if(screen_count==1 & screen_strategy<3 & risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
+    if(screen_count==1 & screen_strategy==7 & risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
+    if(screen_count==1 & screen_strategy==8 & risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
+    if(screen_count==1 & screen_strategy==9 & risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
     if(screen_count == length(screen_times)){lastscreen_count <- 1}
     if(US_screening == 1){US_count <- US_count + 1
     costs <- costs + (cost_US*current_discount)
@@ -633,5 +649,6 @@ for (i in 1:10){
 }
 #store main outputs as csv
 write.csv(merged_result,file = "results.csv")
+
 
 
