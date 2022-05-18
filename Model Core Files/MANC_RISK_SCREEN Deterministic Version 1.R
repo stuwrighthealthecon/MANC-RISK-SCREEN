@@ -269,10 +269,10 @@ results <- foreach(i=1:(inum/10),.combine = 'rbind',.packages = c('MASS','dqrng'
 cancer_diagnostic <- rep(0,10)
 
 #Determine uptake of risk stratification
-risk_predicted<-0
-feedback<-0
-interval_change<-0
 if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strategy<10)){
+  risk_predicted<-0
+  feedback<-0
+  interval_change<-0
   risk_predicted<-if(dqrunif(1,0,1)>risk_uptake){1}else{0}
   feedback<-if(risk_predicted==1 & dqrunif(1,0,1)>risk_feedback){1}else{0}
   interval_change<-if(feedback==1 & dqrunif(1,0,1)>screen_change){1}else{0}
@@ -354,6 +354,7 @@ if (screen_strategy==1 & interval_change==1) {
     if (risk_group==4) {screen_times<-med_risk_screentimes} else
     if (risk_group==5) {screen_times<-high_risk_screentimes}
   } else if(screen_strategy==9 & interval_change==0) {screen_times<-low_risk_screentimes}
+
 ##########Counters i loop level######################
 #screen-detected cancer counts
 screen_detected_count <- 0
