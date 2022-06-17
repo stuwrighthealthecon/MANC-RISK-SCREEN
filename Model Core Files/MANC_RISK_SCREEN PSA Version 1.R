@@ -170,6 +170,7 @@ sensitivity_max <- 0.95
 #Risk cut-offs for different screening approaches
 risk_cutoffs_procas <- c(1.5,3.5,5,8,100) #procas plan
 risk_cutoffs_tert <- c(2.328355,3.067665) #tertiles of risk
+low_risk_cut<-1.5 #cut off in low risk only strategies
 
 #Breast density cut-offs for supplemental sreening
 density_cutoff <- 3 #VDG groups 3 and 4
@@ -336,8 +337,8 @@ if(screen_strategy==2) {
   risk_group<-1+findInterval(risk_data[2],risk_cutoffs_tert)
 }
 if(screen_strategy==7 | screen_strategy==8) {
-  if(risk_data[2]<1.5){risk_group<-1}
-  if(risk_data[2]>=1.5){risk_group<-2}
+  if(risk_data[2]<low_risk_cut){risk_group<-1}
+  if(risk_data[2]>=low_risk_cut){risk_group<-2}
 }
 
 #Set VDG based on breast density
