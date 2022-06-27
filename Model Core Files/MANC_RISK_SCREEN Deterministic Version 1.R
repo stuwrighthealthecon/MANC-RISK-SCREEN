@@ -43,7 +43,7 @@ source(file="MANC_RISK_SCREEN_functions Version 1.R")
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-10000
+inum<-2000000
 jnum<-1
 
 #####Choose screening programme and related parameters##########
@@ -54,18 +54,22 @@ jnum<-1
 #7=Low risk (5 yearly), 8=Low risk (6 yearly),
 #9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-3
+screen_strategy<-4
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
-supplemental_screening<-1
+supplemental_screening<-0
 
 #Screening uptake
-uptake<-0.691
+uptakefirstscreen<-0.605
+uptakeotherscreen<-0.852
 
 #Uptake for risk stratification
-risk_uptake<-0.6 #Proportion of women who want risk predicted
-risk_feedback<-0.95 #Proportion of women who attend risk consultation
-screen_change<-0.8 #Proportion of women with high/moderate/low risk who change screening interval
+risk_uptake<-1
+  #0.6 #Proportion of women who want risk predicted
+risk_feedback<-1
+  #0.95 #Proportion of women who attend risk consultation
+screen_change<-1
+  #0.8 #Proportion of women with high/moderate/low risk who change screening interval
 
 #Age of an individual at start of simulation
 start_age<-38
@@ -274,9 +278,9 @@ risk_predicted<-0
 feedback<-0
 interval_change<-0
 if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strategy<10)){
-  risk_predicted<-if(dqrunif(1,0,1)>risk_uptake){1}else{0}
-  feedback<-if(risk_predicted==1 & dqrunif(1,0,1)>risk_feedback){1}else{0}
-  interval_change<-if(feedback==1 & dqrunif(1,0,1)>screen_change){1}else{0}
+  risk_predicted<-if(dqrunif(1,0,1)<risk_uptake){1}else{0}
+  feedback<-if(risk_predicted==1 & dqrunif(1,0,1)<risk_feedback){1}else{0}
+  interval_change<-if(feedback==1 & dqrunif(1,0,1)<screen_change){1}else{0}
 }
 
 #Draw a breast density, 10 year, and lifetime risk of cancer for the individual
@@ -475,7 +479,7 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     
   #Open screening event
   if(Event_place == 1){
-    if (dqrunif(1,0,1)>uptake) {missed_screen<-missed_screen+1}else{
+    if (screen_count==0 & dqrunif(1,0,1)>uptakefirstscreen | screen_count>0 & dqrunif(1,0,1)>uptakeotherscreen) {missed_screen<-missed_screen+1}else{
     screen_count<-screen_count+1
     costs<-costs+(cost_screen*current_discount)
     if(screen_count==1 & screen_strategy<3 & risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
@@ -635,7 +639,8 @@ names(results)[15] <- 'screening_round'
 #directory to save inum/10 sets of case histories and name of files
 save(results,file = paste("",ii,".Rdata",sep = "")) 
 
-} #End 1 million simulation loop
+
+print(paste(ii*10,"%"))} #End 1 million simulation loop
 #results #see result if parellel version
 #save results
 #see results
