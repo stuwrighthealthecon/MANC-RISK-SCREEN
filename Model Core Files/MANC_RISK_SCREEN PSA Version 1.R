@@ -64,7 +64,8 @@ screen_strategy<-1
 supplemental_screening<-0
 
 #Screening uptake
-uptake<-0.691
+uptakefirstscreen<-0.605
+uptakeotherscreen<-0.852
 
 #Uptake for risk stratification
 risk_uptake<-0.6 #Proportion of women who want risk predicted
@@ -320,9 +321,9 @@ risk_predicted<-0
 feedback<-0
 interval_change<-0
 if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strategy<10)){
-  risk_predicted<-if(dqrunif(1,0,1)>risk_uptake){1}else{0}
-  feedback<-if(risk_predicted==1 & dqrunif(1,0,1)>risk_feedback){1}else{0}
-  interval_change<-if(feedback==1 & dqrunif(1,0,1)>screen_change){1}else{0}
+  risk_predicted<-if(dqrunif(1,0,1)<risk_uptake){1}else{0}
+  feedback<-if(risk_predicted==1 & dqrunif(1,0,1)<risk_feedback){1}else{0}
+  interval_change<-if(feedback==1 & dqrunif(1,0,1)<screen_change){1}else{0}
 }
 
 #Draw a breast density, 10 year, and lifetime risk of cancer for the individual
@@ -520,7 +521,7 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     
   #Open screening event
   if(Event_place == 1){
-    if (dqrunif(1,0,1)<uptake) {missed_screen<-missed_screen+1} else{
+    if (screen_count==0 & dqrunif(1,0,1)>uptakefirstscreen | screen_count>0 & dqrunif(1,0,1)>uptakeotherscreen) {missed_screen<-missed_screen+1}else{
     screen_count<-screen_count+1
     costs<-costs+(cost_screen*current_discount)
     if(screen_count==1 & screen_strategy<3 & risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
