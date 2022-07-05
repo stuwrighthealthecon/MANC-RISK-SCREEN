@@ -62,6 +62,7 @@ supplemental_screening<-0
 #Screening uptake
 uptakefirstscreen<-0.605
 uptakeotherscreen<-0.852
+uptakenoscreen<-0.191
 
 #Uptake for risk stratification
 risk_uptake<-1
@@ -479,7 +480,9 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     
   #Open screening event
   if(Event_place == 1){
-    if (screen_count==0 & dqrunif(1,0,1)>uptakefirstscreen | screen_count>0 & dqrunif(1,0,1)>uptakeotherscreen) {missed_screen<-missed_screen+1}else{
+       if (screen_count==0 & missed_screen==0 & dqrunif(1,0,1)>uptakefirstscreen |
+        screen_count==0 & missed_screen>0 & dqrunif(1,0,1)>uptakenoscreen|
+        screen_count>0 & dqrunif(1,0,1)>uptakeotherscreen) {missed_screen<-missed_screen+1}else{
     screen_count<-screen_count+1
     costs<-costs+(cost_screen*current_discount)
     if(screen_count==1 & screen_strategy<3 & risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
