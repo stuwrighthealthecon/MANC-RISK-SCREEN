@@ -93,8 +93,8 @@ screen_detection_m<-4.12
 screen_detection_sd<-3.93
 
 #Set parameters of a Weibull survival curve to represent all cause mortality
-acmmortality_wb_a<-8.38
-acmmortality_wb_b<-87.69
+acmmortality_wb_a<-7.937
+acmmortality_wb_b<-86.788
 
 #Set parameters for all cause mortality following breast cancer
 gamma_survival_1<-exp(-5.462) #exponential distribution scale parameter stage 1
@@ -119,9 +119,9 @@ metastatic_prob <- data.frame(c(25,35,45,55,65,75,85),
 DCIS_fraction<-0.211
 
 #Create matrix of Nottingham Prognostic Indicator by cancer size
-stage_by_size_mat<-data.frame("v1"=c(0.8,0.77,0.68,0.61,0,0),
-                            "v2"=c(0.09,0.13,0.18,0.21,0.77,0.65),
-                            "v3"=c(0.11,0.10,0.14,0.18,0.23,0.35))
+stage_by_size_mat<-data.frame("v1"=c(0.81,0.77,0.69,0.61,0,0),
+                            "v2"=c(0.07,0.15,0.21,0.23,0.78,0.62),
+                            "v3"=c(0.12,0.08,0.10,0.16,0.22,0.38))
 
 #Set mean and sd of tumour doublings at clinical detection
 clin_detection_m <- 6.5 
