@@ -43,7 +43,7 @@ source(file="MANC_RISK_SCREEN_functions Version 1.R")
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-1000000
+inum<-10000000
 jnum<-1
 
 #####Choose screening programme and related parameters##########
@@ -117,12 +117,14 @@ metastatic_prob <- data.frame(c(25,35,45,55,65,75,85),
 
 #Set proportion of ductal carcinoma in situ (DCIS)
 #detected in screening
-DCIS_fraction<-0.211
+DCIS_fraction<-0
+  #0.211
 
 #Create matrix of Nottingham Prognostic Indicator by cancer size
-stage_by_size_mat<-data.frame("v1"=c(0.81,0.77,0.69,0.61,0,0),
-                            "v2"=c(0.07,0.15,0.21,0.23,0.78,0.62),
-                            "v3"=c(0.12,0.08,0.10,0.16,0.22,0.38))
+stage_by_size_mat<-data.frame("v1"=c(0.418,0.598,0.659,0.604,0,0),
+                            "v2"=c(0.019,0.090,0.152,0.180,0.737,0.577),
+                            "v3"=c(0.038,0.047,0.069,0.127,0.192,0.337),
+                            "v5"=c(0.525,0.265,0.120,0.088,0.071,0.086))
 
 #Set mean and sd of tumour doublings at clinical detection
 clin_detection_m <- 6.5 
@@ -254,7 +256,7 @@ utility_stage_cat_follow <- c("stage1"=0.82/0.822,
 ################Outer Individual sampling loop##############################
 
 #Set loop to divide i loop into 10 sub-loops in case of simulation break
-for (ii in 1:10) {
+for (ii in 1:1) {
   
 #Set counters for individual sampling loop
 total_screens <- 0

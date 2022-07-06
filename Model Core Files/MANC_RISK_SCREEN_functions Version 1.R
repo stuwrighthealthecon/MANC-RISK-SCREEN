@@ -64,9 +64,9 @@ cmp_incidence_function<-cmpfun(Incidence_function)
 #Updated 1010 include DCIS
 stage_by_size <- function(Ca_size,screen_detected_ca){
   stage_cat <- 0
-  if (dqrunif(1,0,1)<DCIS_fraction && screen_detected_ca == 1){
-    stage_cat <-5
-  }
+  #if (dqrunif(1,0,1)<DCIS_fraction && screen_detected_ca == 1){
+    #stage_cat <-5
+ # }
   #first determine if advanced cancer or not based on metastatic prob by size (categorical)
   if(Ca_size<= 25){m_size <- 25}else{m_size <- ceiling((Ca_size-25)/10)*10+25}
   if (m_size > 85){m_size <- 85}
@@ -76,7 +76,7 @@ stage_by_size <- function(Ca_size,screen_detected_ca){
   # Ca_size is continuous, need to match to closest larger value in stage_by_size column 1
   if(stage_cat == 0){
     size_cat <- findInterval(Ca_size,ca_size_cut)
-    stage_cat <- sample(x=c(1,2,3),size = 1,prob = c(stage_by_size_mat[size_cat,])) #1 best 3 worst prognosis
+    stage_cat <- sample(x=c(1,2,3,5),size = 1,prob = c(stage_by_size_mat[size_cat,])) #1 best 3 worst prognosis
   }
   #return the stage category
   result <- stage_cat
