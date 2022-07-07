@@ -43,7 +43,7 @@ source(file="MANC_RISK_SCREEN_functions Version 1.R")
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-10000000
+inum<-100000
 jnum<-1
 
 #####Choose screening programme and related parameters##########
@@ -114,11 +114,6 @@ risk_mat<-read.csv("synthetic_risk_data.csv")[,2:4]
 #Set metastatic cancer probabilities by age
 metastatic_prob <- data.frame(c(25,35,45,55,65,75,85),
                               c(0.046218154,0.086659039,0.109768116,0.127099924,0.142505975,0.159837783,1.73E-01))
-
-#Set proportion of ductal carcinoma in situ (DCIS)
-#detected in screening
-DCIS_fraction<-0
-  #0.211
 
 #Create matrix of Nottingham Prognostic Indicator by cancer size
 stage_by_size_mat<-data.frame("v1"=c(0.418,0.598,0.659,0.604,0,0),
@@ -256,7 +251,7 @@ utility_stage_cat_follow <- c("stage1"=0.82/0.822,
 ################Outer Individual sampling loop##############################
 
 #Set loop to divide i loop into 10 sub-loops in case of simulation break
-for (ii in 1:1) {
+for (ii in 1:10) {
   
 #Set counters for individual sampling loop
 total_screens <- 0
@@ -555,7 +550,7 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     if(interval_ca == 1){Ca_size <- CD_size}
     
     #Assign a Stage based on tumour size
-    stage_cat <- cmp_stage_by_size(Ca_size, screen_detected_ca)
+    stage_cat <- cmp_stage_by_size(Ca_size)
     if(stage_cat == 1){stage1_counter = stage1_counter+1}
     if(stage_cat == 2){stage2_counter = stage2_counter+1}
     if(stage_cat == 3){stage3_counter = stage3_counter+1}

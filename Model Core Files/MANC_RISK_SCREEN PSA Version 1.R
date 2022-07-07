@@ -116,14 +116,12 @@ risk_mat<-read.csv("synthetic_risk_data.csv")[,2:4]
 metastatic_prob <- data.frame(c(25,35,45,55,65,75,85),
                               c(0.046218154,0.086659039,0.109768116,0.127099924,0.142505975,0.159837783,1.73E-01))
 
-#Set proportion of ductal carcinoma in situ (DCIS)
-#detected in screening
-DCIS_fraction<-0.211 
-
 #Create matrix of Nottingham Prognostic Indicator by cancer size
-stage_by_size_mat<-data.frame("v1"=c(0.81,0.77,0.69,0.61,0,0),
-                            "v2"=c(0.07,0.15,0.21,0.23,0.78,0.62),
-                            "v3"=c(0.12,0.08,0.10,0.16,0.22,0.38))
+stage_by_size_mat<-data.frame("v1"=c(0.418,0.598,0.659,0.604,0,0),
+                              "v2"=c(0.019,0.090,0.152,0.180,0.737,0.577),
+                              "v3"=c(0.038,0.047,0.069,0.127,0.192,0.337),
+                              "v5"=c(0.525,0.265,0.120,0.088,0.071,0.086))
+
 #Set mean and sd of tumour doublings at clinical detection
 clin_detection_m <- 6.5 
 clin_detection_sd <- 0.535
@@ -201,7 +199,7 @@ tbl <- tribble(~Yr, ~Early_18.64, ~Late_18.64, ~Diff1, ~Early_65plus, ~Late_65pl
                7, 1394, 2618, 1225, 2063, 2903, 840,
                8, 1376, 2559, 1183, 2134, 2454, 320,
                9, 1279, 1848, 569, 2204, 2932, 728) %>%
-  dplyer:select(-Diff1, -Diff2) %>%
+  dplyr::select(-Diff1, -Diff2) %>%
   pivot_longer(cols      = contains("6"),
                names_to  = c("Stage", "Age"),
                names_sep = "_",
@@ -595,7 +593,7 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     if(interval_ca == 1){Ca_size <- CD_size}
     
     #Assign an stage category based on tumour size
-    stage_cat <- cmp_stage_by_size(Ca_size, screen_detected_ca)
+    stage_cat <- cmp_stage_by_size(Ca_size)
     if(stage_cat == 1){stage1_counter = stage1_counter+1}
     if(stage_cat == 2){stage2_counter = stage2_counter+1}
     if(stage_cat == 3){stage3_counter = stage3_counter+1}

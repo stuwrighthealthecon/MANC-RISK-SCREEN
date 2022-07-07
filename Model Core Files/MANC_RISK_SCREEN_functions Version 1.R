@@ -62,11 +62,9 @@ cmp_incidence_function<-cmpfun(Incidence_function)
 
 #matrix with proporiton in each ?stage group for each size category
 #Updated 1010 include DCIS
-stage_by_size <- function(Ca_size,screen_detected_ca){
+stage_by_size <- function(Ca_size){
   stage_cat <- 0
-  #if (dqrunif(1,0,1)<DCIS_fraction && screen_detected_ca == 1){
-    #stage_cat <-5
- # }
+  
   #first determine if advanced cancer or not based on metastatic prob by size (categorical)
   if(Ca_size<= 25){m_size <- 25}else{m_size <- ceiling((Ca_size-25)/10)*10+25}
   if (m_size > 85){m_size <- 85}
