@@ -34,7 +34,7 @@ PSA_log_norm_mean <- rnorm(mcruns,1.07,0.09)
 PSA_log_norm_sd <- rnorm(mcruns,1.31,0.11)
 
 #Costs
-PSA_cost_strat<-rlnorm(mcruns,2.09023848,0.05673483)
+PSA_cost_strat<-rlnorm(mcruns,2.36932871,0.05601143)
 PSA_costvar<-rnorm(mcruns,0,0.1020408)
 
 #Generate utility draws
