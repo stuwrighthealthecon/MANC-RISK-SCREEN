@@ -29,7 +29,7 @@ library("tidyverse")
 
 #Set working directory
 #setwd(dir="C:/Users/mdxassw4/Dropbox (The University of Manchester)/MANC-RISK-SCREEN")
-#setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Register number of cores for foreach loop
 registerDoParallel(cores=7)
@@ -47,7 +47,7 @@ load("PSA_values.RData")
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-100
+inum<-10
 jnum<-10
 
 #####Choose screening programme and related parameters##########
@@ -184,7 +184,7 @@ cost_strat<-8.17
 cost_screen <- 60.93
 cost_follow_up <- 106
 cost_biop <- 290
-cost_DCIS <- 9840
+base_cost_DCIS <- 9840
 cost_US <- 52
 cost_MRI <-114
 
@@ -296,7 +296,8 @@ cost_strat<-PSA_all_p$PSA_cost_strat[ii]
 tbl$CDCost.i.d<-basecost*(1+PSA_all_p$PSA_costvar[ii])
 modC <- lm(data = tbl,
            formula = (CDCost.i.d) ~ (Yr1 + Yr2 + Yr3 + Yr) * Stage * Age)
-  
+cost_DCIS<-base_cost_DCIS*(1+PSA_all_p$PSA_costvar[ii])
+
 #Set counters for individual sampling loop
 total_screens <- 0
 total_cancers_detected <- 0
