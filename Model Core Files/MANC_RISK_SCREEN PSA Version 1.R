@@ -47,7 +47,7 @@ load("PSA_values.RData")
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-10
+inum<-100
 jnum<-10
 
 #####Choose screening programme and related parameters##########
