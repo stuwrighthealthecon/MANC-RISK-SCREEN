@@ -169,7 +169,7 @@ sensitivity_max <- 0.95
 
 #Risk cut-offs for different screening approaches
 risk_cutoffs_procas <- c(1.5,3.5,5,8,100) #procas plan
-risk_cutoffs_tert <- c(2.328355,3.067665) #tertiles of risk
+risk_cutoffs_tert <- c(1.946527,2.942792) #tertiles of risk
 low_risk_cut<-1.5 #cut off in low risk only strategies
 
 #Breast density cut-offs for supplemental sreening
