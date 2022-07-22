@@ -116,9 +116,9 @@ metastatic_prob <- data.frame(c(25,35,45,55,65,75,85),
                               c(0.046218154,0.086659039,0.109768116,0.127099924,0.142505975,0.159837783,1.73E-01))
 
 #Create matrix of Nottingham Prognostic Indicator by cancer size
-stage_by_size_mat<-data.frame("v1"=c(0.383,0.583,0.611,0.557,0,0),
-                            "v2"=c(0.033,0.102,0.172,0.208,0.703,0.551),
-                            "v3"=c(0.058,0.050,0.097,0.147,0.227,0.63),
+stage_by_size_mat<-data.frame("v1"=c(0.383,0.567,0.611,0.557,0,0),
+                            "v2"=c(0.033,0.111,0.180,0.208,0.723,0.563),
+                            "v3"=c(0.058,0.057,0.208,0.147,0.206,0.351),
                             "v5"=c(0.525,0.265,0.120,0.088,0.071,0.086))
 
 #Set mean and sd of tumour doublings at clinical detection
