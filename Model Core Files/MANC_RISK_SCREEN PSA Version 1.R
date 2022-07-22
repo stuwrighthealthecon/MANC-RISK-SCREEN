@@ -117,9 +117,9 @@ metastatic_prob <- data.frame(c(25,35,45,55,65,75,85),
                               c(0.046218154,0.086659039,0.109768116,0.127099924,0.142505975,0.159837783,1.73E-01))
 
 #Create matrix of Nottingham Prognostic Indicator by cancer size
-stage_by_size_mat<-data.frame("v1"=c(0.418,0.598,0.659,0.604,0,0),
-                              "v2"=c(0.019,0.090,0.152,0.180,0.737,0.577),
-                              "v3"=c(0.038,0.047,0.069,0.127,0.192,0.337),
+stage_by_size_mat<-data.frame("v1"=c(0.383,0.583,0.611,0.557,0,0),
+                              "v2"=c(0.033,0.102,0.172,0.208,0.703,0.551),
+                              "v3"=c(0.058,0.050,0.097,0.147,0.227,0.63),
                               "v5"=c(0.525,0.265,0.120,0.088,0.071,0.086))
 
 #Set mean and sd of tumour doublings at clinical detection
@@ -366,8 +366,8 @@ if(supplemental_screening==0){
 
 screen_times <- c(999)
 if (screen_strategy==1 & interval_change==1) {
-  if (risk_group<3) {screen_times<-low_risk_screentimes} else
-    if (risk_group>2 & risk_group<5) {screen_times<-med_risk_screentimes} else
+  if (risk_group<4) {screen_times<-low_risk_screentimes} else
+    if (risk_group>3 & risk_group<5) {screen_times<-med_risk_screentimes} else
       if (risk_group>4) {screen_times<-high_risk_screentimes}
 } else if(screen_strategy==1 & interval_change==0) {screen_times<-low_risk_screentimes}
 if(screen_strategy==2 & interval_change==1){
