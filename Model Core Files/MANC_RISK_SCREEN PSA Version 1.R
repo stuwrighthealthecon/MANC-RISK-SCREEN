@@ -48,7 +48,7 @@ load("PSA_values.RData")
 #to 10,000,000. However, this will significantly slow the 
 #model
 inum<-100
-jnum<-10
+jnum<-1000
 
 #####Choose screening programme and related parameters##########
 
@@ -58,7 +58,7 @@ jnum<-10
 #7=Low risk (5 yearly), 8=Low risk (6 yearly),
 #9=Fully stratified screening programme
 #Other num=no screening
-screen_strategy<-1
+screen_strategy<-9
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0

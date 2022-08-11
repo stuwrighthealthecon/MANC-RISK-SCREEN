@@ -115,7 +115,7 @@ base_data <- base_data %>%
   mutate(delta_cost_5yr = cost_5yr - cost_noscreening) %>%
   mutate(delta_cost_10yr = cost_10yr - cost_noscreening) %>%
   mutate(delta_cost_lowrisk5yr = cost_lowrisk5yr - cost_noscreening) %>%
-  mutate(delta_cost_lowrisk6yr = cost_lowrisk6yr - cost_noscreening) #%>%
+  mutate(delta_cost_lowrisk6yr = cost_lowrisk6yr - cost_noscreening) %>%
   mutate(delta_cost_fullstrat = cost_fullstrat - cost_noscreening)
 
 #Fitting the GAM
