@@ -18,7 +18,7 @@ alt_names<-c("noscreening","procas","tertiles","3yr","2yr","5yr",
 subD <- "Model Core Files"
 load(here(subD, "PSA_values.RData"))
 
-PSA_all <- list(alt_names) %>%
+PSA_all <- tibble(strat = factor(alt_names)) %>%
   pmap_dfr(~ read.csv(here(subD, paste0(.x, "_PSA.csv"))) %>%
              set_names(c("id","QALY","cost","screens","cancer","screen_detected","LY")) %>%
              bind_cols(alternative = .x,
@@ -55,29 +55,9 @@ incCU %>%
 
 #  Fit GAMs ------------------------------------------------------------------------------------
 ## QALYs ---------------------------------------------------------------------------------------
-modQ <- bam(data = PSA_all, formula = QALY ~ s(PSA_gamma_survival_1, by = alternative, bs = "tp") +
-                s(PSA_gamma_survival_2, by = alternative, bs = "tp") +
-                s(PSA_gamma_survival_3, by = alternative, bs = "tp") +
-                s(PSA_meta_survival_54, by = alternative, bs = "tp") +
-                s(PSA_meta_survival_74, by = alternative, bs = "tp") +
-                s(PSA_meta_survival_99, by = alternative, bs = "tp") +
-                s(PSA_beta_1, by = alternative, bs = "tp") +
-                s(PSA_beta_2, by = alternative, bs = "tp") +
-                s(PSA_VDG1_sen, by = alternative, bs = "tp") +
-                s(PSA_VDG2_sen, by = alternative, bs = "tp") +
-                s(PSA_VDG3_sen, by = alternative, bs = "tp") +
-                s(PSA_VDG4_sen, by = alternative, bs = "tp") +
-                s(PSA_MRI_cdr, by = alternative, bs = "tp") +
-                s(PSA_US_cdr, by = alternative, bs = "tp") +
-                s(PSA_log_norm_mean, by = alternative, bs = "tp") +
-                s(PSA_log_norm_sd, by = alternative, bs = "tp") +
-                s(PSA_util_1to3, by = alternative, bs = "tp") +
-                s(PSA_util_4, by = alternative, bs = "tp") +
-                alternative)
-summary(modQ)
-
-## Costs ---------------------------------------------------------------------------------------
-modC <- bam(data = PSA_all, formula = cost ~ s(PSA_gamma_survival_1, by = alternative, bs = "tp") +
+modQ <- bam(data = PSA_all,
+            formula = QALY ~
+              s(PSA_gamma_survival_1, by = alternative, bs = "tp") +
               s(PSA_gamma_survival_2, by = alternative, bs = "tp") +
               s(PSA_gamma_survival_3, by = alternative, bs = "tp") +
               s(PSA_meta_survival_54, by = alternative, bs = "tp") +
@@ -95,6 +75,30 @@ modC <- bam(data = PSA_all, formula = cost ~ s(PSA_gamma_survival_1, by = altern
               s(PSA_log_norm_sd, by = alternative, bs = "tp") +
               s(PSA_util_1to3, by = alternative, bs = "tp") +
               s(PSA_util_4, by = alternative, bs = "tp") +
+              alternative)
+summary(modQ)
+
+## Costs ---------------------------------------------------------------------------------------
+modC <- bam(data = PSA_all,
+            formula = cost ~ 
+              s(PSA_cost_strat, by = alternative, bs = "tp") +
+              s(PSA_costvar, by = alternative, bs = "tp") +
+              s(PSA_gamma_survival_1, by = alternative, bs = "tp") +
+              s(PSA_gamma_survival_2, by = alternative, bs = "tp") +
+              s(PSA_gamma_survival_3, by = alternative, bs = "tp") +
+              s(PSA_meta_survival_54, by = alternative, bs = "tp") +
+              s(PSA_meta_survival_74, by = alternative, bs = "tp") +
+              s(PSA_meta_survival_99, by = alternative, bs = "tp") +
+              s(PSA_beta_1, by = alternative, bs = "tp") +
+              s(PSA_beta_2, by = alternative, bs = "tp") +
+              s(PSA_VDG1_sen, by = alternative, bs = "tp") +
+              s(PSA_VDG2_sen, by = alternative, bs = "tp") +
+              s(PSA_VDG3_sen, by = alternative, bs = "tp") +
+              s(PSA_VDG4_sen, by = alternative, bs = "tp") +
+              s(PSA_MRI_cdr, by = alternative, bs = "tp") +
+              s(PSA_US_cdr, by = alternative, bs = "tp") +
+              s(PSA_log_norm_mean, by = alternative, bs = "tp") +
+              s(PSA_log_norm_sd, by = alternative, bs = "tp") +
               alternative)
 summary(modC)
 
