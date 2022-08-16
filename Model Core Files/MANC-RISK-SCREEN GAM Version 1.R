@@ -4,7 +4,7 @@ install.packages("ggplot2")
 install.packages("mgcv")
 install.packages("BCEA")
 
-#Libraries
+# Libraries -----------------------------------------------------------------------------------
 library("mgcv")
 library("BCEA")
 library(tidyverse)
@@ -12,17 +12,16 @@ library(here)
 library(magrittr)
 library(devtools)
 
+# Load data -----------------------------------------------------------------------------------
+alt_names<-c("noscreening","procas","tertiles","3yr","2yr","5yr",
+             "10yr","lowrisk5yr","lowrisk6yr","fullstrat")
 subD <- "Model Core Files"
 load(here(subD, "PSA_values.RData"))
 
-alt_names<-c("noscreening","procas","tertiles","3yr","2yr","5yr",
-             "10yr","lowrisk5yr","lowrisk6yr","fullstrat")
-
-#Load the results data and store in a list
-PSA_all <- tibble(strat = alt_names) %>%
-  pmap_dfr(function(strat) read.csv(here(subD, paste0(strat, "_PSA.csv"))) %>%
+PSA_all <- list(alt_names) %>%
+  pmap_dfr(~ read.csv(here(subD, paste0(.x, "_PSA.csv"))) %>%
              set_names(c("id","QALY","cost","screens","cancer","screen_detected","LY")) %>%
-             bind_cols(alternative = strat,
+             bind_cols(alternative = .x,
                        PSA_all_p))
 
 # CE results ----------------------------------------------------------------------------------
@@ -53,8 +52,6 @@ incCU <- PSA_all %>%
 source_gist("https://gist.github.com/gbrlrgrs/5b905bdb5ce597c01f3551746154b45a", encoding = "UTF-8")
 incCU %>%
   fnIncCU()
-
-
 
 #  Fit GAMs ------------------------------------------------------------------------------------
 ## QALYs ---------------------------------------------------------------------------------------
@@ -101,8 +98,8 @@ modC <- bam(data = PSA_all, formula = cost ~ s(PSA_gamma_survival_1, by = altern
               alternative)
 summary(modC)
 
-
-# examine model fit ---------------------------------------------------------------------------
+# Model fit ---------------------------------------------------------------------------
+## Expected costs and QALYs fitted at the mean of sampled parameter values --------------------
 ftd <- PSA_all_p %>%
   summarise(across(everything(), mean)) %>%
   crossing(tibble(alternative = alt_names))
@@ -112,6 +109,6 @@ ftdCE <- ftd %>%
               predict(newdata = ftd),
             ftdC = modC %>%
               predict(newdata = ftd))
-ftdCE %>%
-  left_join(incCU, by = c("alternative" = "StratName")) %>%
-  select(!starts_with("PSA"))
+incCU %>%
+  left_join(ftdCE, by = c("StratName" = "alternative")) %>%
+  select(ID, StratName, Costs, QALYs, ftdC, ftdQ)
