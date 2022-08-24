@@ -56,3 +56,4 @@ colnames(PSA_all_p)<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_
                        "PSA_util_1to3","PSA_util_4")
 
 save(PSA_all_p,file="PSA_values.RData")
+save(PSA_all_p,file="GAM inputs/PSA_values.RData")

@@ -28,7 +28,7 @@ library("compiler")
 library("tidyverse")
 
 #Set working directory
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+#setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Register number of cores for foreach loop
 registerDoParallel(cores=7)
