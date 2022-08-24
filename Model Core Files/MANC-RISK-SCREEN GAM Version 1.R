@@ -3,6 +3,9 @@ install.packages("tidyr")
 install.packages("ggplot2")
 install.packages("mgcv")
 install.packages("BCEA")
+install.packages("devtools")
+install.packages("here")
+
 
 # Libraries -----------------------------------------------------------------------------------
 library("mgcv")
