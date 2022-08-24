@@ -18,7 +18,7 @@ library(devtools)
 # Load data -----------------------------------------------------------------------------------
 alt_names<-c("noscreening","procas","tertiles","3yr","2yr","5yr",
              "10yr","lowrisk5yr","lowrisk6yr","fullstrat")
-subD <- "GAM inputs"
+subD <- "GitHub/MANC-RISK-SCREEN/Model Core Files/GAM inputs"
 load(here(subD, "PSA_values.RData"))
 
 PSA_all <- tibble(strat = factor(alt_names)) %>%
