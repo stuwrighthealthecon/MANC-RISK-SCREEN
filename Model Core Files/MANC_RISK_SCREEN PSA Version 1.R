@@ -180,7 +180,7 @@ ca_size_cut <- c(0.025, 5, 10, 15, 20, 30, 128) #category cut-points from Kolias
 #######################Cost Data#########################################
 
 cost_strat<-8.45
-cost_screen <- 60.93
+cost_screen <- 60.56
 cost_follow_up <- 106
 cost_biop <- 290
 base_cost_DCIS <- 9840
