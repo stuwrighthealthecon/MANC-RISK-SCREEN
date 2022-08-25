@@ -10,13 +10,14 @@ This discrete event simulation model estimates the QALYs, costs, and clinical ou
    5) 5 yearly breast cancer screening
    6) 10 yearly breast cancer screening (at age 50 and 60)
    7) No breast cancer screening
+   8) 5 yearly breast cancer screening for women at low risk predict using Tyrer-Cuzick V8 questionnaire and Volpara breast density scan using risk cut-offs defined in the PROCAS project
+   9) 6 yearly breast cancer screening for women at low risk predict using Tyrer-Cuzick V8 questionnaire and Volpara breast density scan using risk cut-offs defined in the PROCAS project
+   10) A fully stratified breast cancer screening programme with women at high or moderate risk receiving annual and bi-annual screening respectively and lower risk women receiving 5 yearly screening.
 
 The model was originally published as an early economic evaluation in the journal Value in Health:
 Gray E, Donten A, Karssemeijer N, et al. Evaluation of a Stratified National Breast Screening Program in the United Kingdom: An Early Model-Based Cost-Effectiveness Analysis. Value Heal 2017;20:1100–9.
 
-Work is currently under way to validate the model and update the input parameters.
-
-The accompanying file titled "Model Text Algorithm" was created by Stuart Wright and checked by Ewan Gray in the model validation process. This file contains a step by step text based explanation of the processes taking place in the model. The research team recommend reading this file and the published economic evaluation to gain a full understanding of the model.
+The documentation folder contains information about the model. An overall summary is provided in the Model Summary word document. The accompanying file titled "Model Text Algorithm" was created by Stuart Wright and checked by Ewan Gray in the model validation process. This file contains a step by step text based explanation of the processes taking place in the model. The research team recommend reading this file and the published economic evaluation to gain a full understanding of the model. The documentation folder also contains diagrams outlining the structure of the model, tables of model parameters and their sources, and details about the process of updating the model parameters between version 0 and version 1.
 
 Below are some key notes about the model for new users:
 1) The model evalutes one screening strategy at a time (as defined by the user in the screen_strategy parameter). The results are therefore not incremental and need to be compared to those from another strategy which must also be run seperately
