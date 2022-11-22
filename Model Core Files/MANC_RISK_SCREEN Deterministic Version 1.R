@@ -20,6 +20,7 @@ install.packages("dqrng")
 install.packages("compiler")
 install.packages("tidyverse")
 
+
 #Run required packages
 library("doParallel")
 library("MASS")
@@ -27,8 +28,9 @@ library("dqrng")
 library("compiler")
 library("tidyverse")
 
+tic("100k:7 cores:PROCASFULL")
 #Set working directory
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+#setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Register number of cores for foreach loop
 registerDoParallel(cores=7)
@@ -43,7 +45,7 @@ source(file="MANC_RISK_SCREEN_functions Version 1.R")
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-2000000
+inum<-100000
 jnum<-1
 
 #####Choose screening programme and related parameters##########
@@ -54,7 +56,7 @@ jnum<-1
 #7=Low risk (5 yearly), 8=Low risk (6 yearly),
 #9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-2
+screen_strategy<-9
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
@@ -640,7 +642,8 @@ names(results)[15] <- 'screening_round'
 save(results,file = paste("",ii,".Rdata",sep = "")) 
 
 
-print(paste(ii*10,"%"))} #End 1 million simulation loop
+print(paste(ii*10,"%"))
+} #End 1 million simulation loop
 #results #see result if parellel version
 #save results
 #see results
@@ -657,5 +660,6 @@ for (i in 1:10){
 #store main outputs as csv
 write.csv(merged_result,file = "results.csv")
 
+toc()
 
 
