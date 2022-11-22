@@ -1017,3 +1017,6 @@ Model Core Files/9.Rdata
 Model Core Files/PSAresults.csv
 *.RData
 Model Core Files/.Rhistory
+Model Core Files/noscreening_PSA.csv
+Model Core Files/3yr_PSA.csv
+Model Core Files/PSA check.xlsx

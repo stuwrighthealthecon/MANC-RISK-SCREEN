@@ -31,7 +31,7 @@ library("tidyverse")
 #setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Register number of cores for foreach loop
-registerDoParallel(cores=7)
+registerDoParallel(cores=8)
 
 #Set timer to record duration of simulation
 ptm <- proc.time()
@@ -46,8 +46,8 @@ load("PSA_values.RData")
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-100
-jnum<-1000
+inum<-10000
+jnum<-10000
 
 #####Choose screening programme and related parameters##########
 
@@ -57,7 +57,7 @@ jnum<-1000
 #7=Low risk (5 yearly), 8=Low risk (6 yearly),
 #9=Fully stratified screening programme
 #Other num=no screening
-screen_strategy<-9
+screen_strategy<-0
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
@@ -68,9 +68,9 @@ uptakeotherscreen<-0.852
 uptakenoscreen<-0.191
 
 #Uptake for risk stratification
-risk_uptake<-0.6 #Proportion of women who want risk predicted
-risk_feedback<-0.95 #Proportion of women who attend risk consultation
-screen_change<-0.8 #Proportion of women with high/moderate/low risk who change screening interval
+risk_uptake<-1 #Proportion of women who want risk predicted
+risk_feedback<-1 #Proportion of women who attend risk consultation
+screen_change<-1 #Proportion of women with high/moderate/low risk who change screening interval
 
 #Age of an individual at start of simulation
 start_age<-38
@@ -607,7 +607,7 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     
     if(stage_cat<3){iStage<-"Early"} else {iStage<-"Late"}
     if(age<65){iAge<-"18.64"} else {iAge<-"65plus"}
-    if(stage_cat <5){costs=costs+(fnModPred(iStage,iAge,Mort_age-age)*current_discount)}
+    if(stage_cat <5){costs=costs+(fnModPred(iStage,iAge,min(c(Mort_age-age,9)),modC)*current_discount)}
     
     cancer_diagnostic[9] <- c(Mort_age)
     cancer_diagnostic[2] <- c(stage_cat) 
@@ -681,12 +681,12 @@ names(results)[15] <- 'screening_round'
 
 #directory to save inum/10 sets of case histories and name of files
 save(results,file = paste("PSA/PSA_",ii,".Rdata",sep = "")) 
-
+print(paste(ii/100,"%"))
 } #End 1 million simulation loop
 #results #see result if parellel version
 #save results
 #see results
-merged_result <- matrix(0,nrow = nrow(PSA_all_p),ncol = 6)
+merged_result <- matrix(0,nrow = nrow(PSA_all_p),ncol = 5)
 for (i in 1:nrow(PSA_all_p)){
   #name of saved files needed
   load(paste("PSA/PSA_",i,".Rdata",sep = ""))
@@ -695,9 +695,9 @@ for (i in 1:nrow(PSA_all_p)){
   merged_result[i,3] <- mean(results[,4])
   merged_result[i,4] <- mean(results[,5])
   merged_result[i,5] <- mean(results[,9])
-  merged_result[i,6] <- mean(results[,1])
 }
 #store main outputs as csv
 write.csv(merged_result,file = "PSAresults.csv")
+
 
 

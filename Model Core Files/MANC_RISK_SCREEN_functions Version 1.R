@@ -1,5 +1,5 @@
 #Lookup function for costs
-fnModPred <- function(iStage, iAge, iLE) {
+fnModPred <- function(iStage, iAge, iLE, modC) {
   as.numeric(predict(modC, newdata = list(Stage=iStage, Age=iAge, Yr=iLE, Yr1 = as.factor(iLE==1),
                                           Yr2 = as.factor(iLE==2),
                                           Yr3 = as.factor(iLE==3))))
@@ -45,7 +45,7 @@ Incidence_function <- function(){
 #Incidence Simulator
 #Load necessary ONS data
 
-  #generate (non-cancer) mortality time conidtional on survivng to time t(peroid covered by BC survival function)
+  #generate (non-cancer) mortality time conditional on survivng to time t(peroid covered by BC survival function)
   if (incidence_time<90){
     mort_time <- sample(x = Incidence_Mortality[,1][incidence_time_1:101],size = 1,prob = Incidence_Mortality[,3][incidence_time_1:101])
   }else{mort_time <- 101} # if get cancer at >90 then all time in simulation is covered 
