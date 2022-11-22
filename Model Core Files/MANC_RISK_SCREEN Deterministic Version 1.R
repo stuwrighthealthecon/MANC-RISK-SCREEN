@@ -113,6 +113,24 @@ Incidence_Mortality<-read.csv("Incidence_Mortality_ONS2.csv")
 #PROCAS2 study
 risk_mat<-read.csv("synthetic_risk_data.csv")[,2:4]
 
+#If risk based screening is being used then place 
+#individual into a risk group
+
+risk_mat[,4]<-numeric(length(risk_mat[,3]))
+if(screen_strategy==1 | screen_strategy==9) {
+  for (i in length(risk_mat[,4])){
+  risk_mat[i,4]<-1+findInterval(risk_mat[i,2],risk_cutoffs_procas)}
+} else
+  if(screen_strategy==2) {
+    for (i in length(risk_mat[,4])){
+    risk_mat[i,4]<-1+findInterval(risk_data[i,2],risk_cutoffs_tert)}
+  } else
+    if(screen_strategy==7 | screen_strategy==8) {
+      for (i in length(risk_mat[,4])){
+      if(risk_data[i,2]<low_risk_cut){risk_mat[i,4]<-1}
+      if(risk_data[i,2]>=low_risk_cut){risk_mat[i,4]<-2}}
+    } 
+
 #Set metastatic cancer probabilities by age
 metastatic_prob <- data.frame(c(25,35,45,55,65,75,85),
                               c(0.046218154,0.086659039,0.109768116,0.127099924,0.142505975,0.159837783,1.73E-01))
@@ -286,19 +304,6 @@ if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strateg
 #Draw a breast density, 10 year, and lifetime risk of cancer for the individual
 risk_data<-risk_mat[sample(nrow(risk_mat),1),]
 
-#If risk based screening is being used then place 
-#individual into a risk group
-if(screen_strategy==1 | screen_strategy==9) {
-  risk_group<-1+findInterval(risk_data[2],risk_cutoffs_procas)
-} else
-if(screen_strategy==2) {
-  risk_group<-1+findInterval(risk_data[2],risk_cutoffs_tert)
-} else
-if(screen_strategy==7 | screen_strategy==8) {
-  if(risk_data[2]<low_risk_cut){risk_group<-1}
-  if(risk_data[2]>=low_risk_cut){risk_group<-2}
-} 
-
 #Set VDG based on breast density
 if(risk_data[1]<4.5){VDG<-1} else
   if(risk_data[1]>=4.5 & risk_data[1]<7.5){VDG<-2} else
@@ -324,14 +329,14 @@ if(supplemental_screening==0){
 
 screen_times <- c(999)
 if (screen_strategy==1 & interval_change==1) {
-  if (risk_group<4) {screen_times<-low_risk_screentimes} else
-  if (risk_group>3 & risk_group<5) {screen_times<-med_risk_screentimes} else
-  if (risk_group>4) {screen_times<-high_risk_screentimes}
+  if (risk_mat[i,4]<4) {screen_times<-low_risk_screentimes} else
+  if (risk_mat[i,4]>3 & risk_mat[i,4]<5) {screen_times<-med_risk_screentimes} else
+  if (risk_mat[i,4]>4) {screen_times<-high_risk_screentimes}
 } else if(screen_strategy==1 & interval_change==0) {screen_times<-low_risk_screentimes}
   if(screen_strategy==2 & interval_change==1){
-  if(risk_group==1){screen_times<-low_risk_screentimes} else
-  if(risk_group==2){screen_times<-med_risk_screentimes} else
-  if(risk_group==3){screen_times<-high_risk_screentimes}
+  if(risk_mat[i,4]==1){screen_times<-low_risk_screentimes} else
+  if(risk_mat[i,4]==2){screen_times<-med_risk_screentimes} else
+  if(risk_mat[i,4]==3){screen_times<-high_risk_screentimes}
   } else if(screen_strategy==1 & interval_change==0) {screen_times<-low_risk_screentimes}
   if(screen_strategy==3){
     screen_times <- low_risk_screentimes
@@ -346,18 +351,18 @@ if (screen_strategy==1 & interval_change==1) {
     screen_times <- seq(screen_startage, screen_startage+10,10)
   }
   if(screen_strategy==7 & interval_change==1){
-    if(risk_group==1){screen_times<-seq(screen_startage, screen_startage+(5*4),5)}
-    if(risk_group==2){screen_times<-low_risk_screentimes}
+    if(risk_mat[i,4]==1){screen_times<-seq(screen_startage, screen_startage+(5*4),5)}
+    if(risk_mat[i,4]==2){screen_times<-low_risk_screentimes}
   } else if(screen_strategy==7 & interval_change==0) {screen_times<-low_risk_screentimes}
   if(screen_strategy==8 & interval_change==1){
-    if(risk_group==1){screen_times<-seq(screen_startage,screen_startage+(6*3),6)}
-    if(risk_group==2){screen_times<-low_risk_screentimes}
+    if(risk_mat[i,4]==1){screen_times<-seq(screen_startage,screen_startage+(6*3),6)}
+    if(risk_mat[i,4]==2){screen_times<-low_risk_screentimes}
   } else if (screen_strategy==8 & interval_change==0) {screen_times<-low_risk_screentimes}
   if(screen_strategy==9 & interval_change==1){
-    if (risk_group==1) {screen_times<-seq(screen_startage, screen_startage+(5*4),5)} else
-    if (risk_group==2 | risk_group==3) {screen_times<-low_risk_screentimes} else
-    if (risk_group==4) {screen_times<-med_risk_screentimes} else
-    if (risk_group==5) {screen_times<-high_risk_screentimes}
+    if (risk_mat[i,4]==1) {screen_times<-seq(screen_startage, screen_startage+(5*4),5)} else
+    if (risk_mat[i,4]==2 | risk_mat[i,4]==3) {screen_times<-low_risk_screentimes} else
+    if (risk_mat[i,4]==4) {screen_times<-med_risk_screentimes} else
+    if (risk_mat[i,4]==5) {screen_times<-high_risk_screentimes}
   } else if(screen_strategy==9 & interval_change==0) {screen_times<-low_risk_screentimes}
 
 ##########Counters i loop level######################
