@@ -118,19 +118,27 @@ risk_mat<-read.csv("synthetic_risk_data.csv")[,2:4]
 
 risk_mat[,4]<-numeric(length(risk_mat[,3]))
 if(screen_strategy==1 | screen_strategy==9) {
-  for (i in length(risk_mat[,4])){
+  for (i in 1:length(risk_mat[,4])){
   risk_mat[i,4]<-1+findInterval(risk_mat[i,2],risk_cutoffs_procas)}
 } else
   if(screen_strategy==2) {
-    for (i in length(risk_mat[,4])){
-    risk_mat[i,4]<-1+findInterval(risk_data[i,2],risk_cutoffs_tert)}
+    for (i in 1:length(risk_mat[,4])){
+    risk_mat[i,4]<-1+findInterval(risk_mat[i,2],risk_cutoffs_tert)}
   } else
     if(screen_strategy==7 | screen_strategy==8) {
-      for (i in length(risk_mat[,4])){
-      if(risk_data[i,2]<low_risk_cut){risk_mat[i,4]<-1}
-      if(risk_data[i,2]>=low_risk_cut){risk_mat[i,4]<-2}}
+      for (i in 1:length(risk_mat[,4])){
+      if(risk_mat[i,2]<low_risk_cut){risk_mat[i,4]<-1}
+      if(risk_mat[i,2]>=low_risk_cut){risk_mat[i,4]<-2}}
     } 
 
+#Set VDG based on breast density
+risk_mat[,5]<-numeric(length(risk_mat[,4]))
+for (i in 1:length(risk_mat[,5])){
+if(risk_mat[i,1]<4.5){risk_mat[i,5]<-1} else
+  if(risk_mat[i,1]>=4.5 & risk_mat[i,1]<7.5){risk_mat[i,5]<-2} else
+    if(risk_mat[i,1]>=7.5 & risk_mat[i,1]<15.5){risk_mat[i,5]<-3} else
+      if(risk_mat[i,1]>=15.5){risk_mat[i,5]<-4}
+}
 #Set metastatic cancer probabilities by age
 metastatic_prob <- data.frame(c(25,35,45,55,65,75,85),
                               c(0.046218154,0.086659039,0.109768116,0.127099924,0.142505975,0.159837783,1.73E-01))
@@ -302,20 +310,13 @@ if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strateg
 }
 
 #Draw a breast density, 10 year, and lifetime risk of cancer for the individual
-risk_data<-risk_mat[sample(nrow(risk_mat),1),]
-
-#Set VDG based on breast density
-if(risk_data[1]<4.5){VDG<-1} else
-  if(risk_data[1]>=4.5 & risk_data[1]<7.5){VDG<-2} else
-  if(risk_data[1]>=7.5 & risk_data[1]<15.5){VDG<-3} else
-  if(risk_data[1]>=15.5){VDG<-4}
-
+risk_data<-as.numeric(risk_mat[sample(nrow(risk_mat),1),])
 
 #Set level of supplemental screening
 if(supplemental_screening==0){
   MRI_screening<-0
   US_screening<-0} else {
-    if (VDG>density_cutoff){
+    if (risk_data[5]>density_cutoff){
       MRI_screening<-0
       US_screening<-0
       if(risk_data[2]>8){MRI_screening<-1} else{US_screening<-1}
@@ -329,14 +330,14 @@ if(supplemental_screening==0){
 
 screen_times <- c(999)
 if (screen_strategy==1 & interval_change==1) {
-  if (risk_mat[i,4]<4) {screen_times<-low_risk_screentimes} else
-  if (risk_mat[i,4]>3 & risk_mat[i,4]<5) {screen_times<-med_risk_screentimes} else
-  if (risk_mat[i,4]>4) {screen_times<-high_risk_screentimes}
+  if (risk_data[4]<4) {screen_times<-low_risk_screentimes} else
+  if (risk_data[4]>3 & risk_data[4]<5) {screen_times<-med_risk_screentimes} else
+  if (risk_data[4]>4) {screen_times<-high_risk_screentimes}
 } else if(screen_strategy==1 & interval_change==0) {screen_times<-low_risk_screentimes}
   if(screen_strategy==2 & interval_change==1){
-  if(risk_mat[i,4]==1){screen_times<-low_risk_screentimes} else
-  if(risk_mat[i,4]==2){screen_times<-med_risk_screentimes} else
-  if(risk_mat[i,4]==3){screen_times<-high_risk_screentimes}
+  if(risk_data[4]==1){screen_times<-low_risk_screentimes} else
+  if(risk_data[4]==2){screen_times<-med_risk_screentimes} else
+  if(risk_data[4]==3){screen_times<-high_risk_screentimes}
   } else if(screen_strategy==1 & interval_change==0) {screen_times<-low_risk_screentimes}
   if(screen_strategy==3){
     screen_times <- low_risk_screentimes
@@ -351,18 +352,18 @@ if (screen_strategy==1 & interval_change==1) {
     screen_times <- seq(screen_startage, screen_startage+10,10)
   }
   if(screen_strategy==7 & interval_change==1){
-    if(risk_mat[i,4]==1){screen_times<-seq(screen_startage, screen_startage+(5*4),5)}
-    if(risk_mat[i,4]==2){screen_times<-low_risk_screentimes}
+    if(risk_data[4]==1){screen_times<-seq(screen_startage, screen_startage+(5*4),5)}
+    if(risk_data[4]==2){screen_times<-low_risk_screentimes}
   } else if(screen_strategy==7 & interval_change==0) {screen_times<-low_risk_screentimes}
   if(screen_strategy==8 & interval_change==1){
-    if(risk_mat[i,4]==1){screen_times<-seq(screen_startage,screen_startage+(6*3),6)}
-    if(risk_mat[i,4]==2){screen_times<-low_risk_screentimes}
+    if(risk_data[4]==1){screen_times<-seq(screen_startage,screen_startage+(6*3),6)}
+    if(risk_data[4]==2){screen_times<-low_risk_screentimes}
   } else if (screen_strategy==8 & interval_change==0) {screen_times<-low_risk_screentimes}
   if(screen_strategy==9 & interval_change==1){
-    if (risk_mat[i,4]==1) {screen_times<-seq(screen_startage, screen_startage+(5*4),5)} else
-    if (risk_mat[i,4]==2 | risk_mat[i,4]==3) {screen_times<-low_risk_screentimes} else
-    if (risk_mat[i,4]==4) {screen_times<-med_risk_screentimes} else
-    if (risk_mat[i,4]==5) {screen_times<-high_risk_screentimes}
+    if (risk_data[4]==1) {screen_times<-seq(screen_startage, screen_startage+(5*4),5)} else
+    if (risk_data[4]==2 | risk_data[4]==3) {screen_times<-low_risk_screentimes} else
+    if (risk_data[4]==4) {screen_times<-med_risk_screentimes} else
+    if (risk_data[4]==5) {screen_times<-high_risk_screentimes}
   } else if(screen_strategy==9 & interval_change==0) {screen_times<-low_risk_screentimes}
 
 ##########Counters i loop level######################
@@ -513,6 +514,7 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
       Ca_size <- 2*(Ca_size/(4/3*pi))^(1/3)
       
     #Determine if screening detects the cancer
+      VDG<-risk_data[5]
       screen_result <- cmp_screening_result(Ca_size,VDG,MRI_screening,US_screening)
      
     #If a cancer is detected add a cancer and details to the counters
@@ -666,5 +668,4 @@ for (i in 1:10){
 write.csv(merged_result,file = "results.csv")
 
 toc()
-
 
