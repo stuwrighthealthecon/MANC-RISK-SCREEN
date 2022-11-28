@@ -1,9 +1,8 @@
 #Lookup function for costs
-fnModPred <- function(iStage, iAge, iLE, modC) {
-  as.numeric(predict(modC, newdata = list(Stage=iStage, Age=iAge, Yr=iLE, Yr1 = as.factor(iLE==1),
-                                          Yr2 = as.factor(iLE==2),
-                                          Yr3 = as.factor(iLE==3))))
+fnLookupBase <- function(iStage, iAge, iLE) {
+  as.numeric(tblLookup$CDCost.p.i.d[tblLookup$Stage==iStage & tblLookup$Age==iAge & tblLookup$Yr==iLE])
 }
+
 
 #Load functions required for model
 Incidence_function <- function(){
@@ -90,12 +89,11 @@ screening_result <- function(Ca_size,VDG,MRI_screening,US_screening){
   
   #Caculate size/density specific sensitivity  
   Sensitivity <- if(
-    exp((Ca_size - beta2)/beta1)/(1+exp((Ca_size-beta2)/beta1))>sensitivity_max){sensitivity_max}else{exp((Ca_size - beta2)/beta1)/(1+exp((Ca_size-beta2)/beta1))} #use to set max sensitivity 0.95
+    exp((Ca_size - beta2)/beta1)/(1+exp((Ca_size-beta2)/beta1))>sensitivity_max){sensitivity_max}
+  else{exp((Ca_size - beta2)/beta1)/(1+exp((Ca_size-beta2)/beta1))} #use to set max sensitivity 0.95
   
   dense_OR <- (Sen_VDG[VDG]/(1-Sen_VDG[VDG]))/(Sen_VDG_av/(1-Sen_VDG_av))
-  Sensitivity_dense <- ((Sensitivity/(1-Sensitivity))*dense_OR)/(1+((Sensitivity/(1-Sensitivity))*dense_OR))
-  
-  Sensitivity <- Sensitivity_dense
+  Sensitivity <- ((Sensitivity/(1-Sensitivity))*dense_OR)/(1+((Sensitivity/(1-Sensitivity))*dense_OR))
   
   rnd_1 <- dqrunif(1,0,1) # random number used to compare to Sensitivity with and without supplemental screening
   if(rnd_1<Sensitivity){
@@ -121,8 +119,8 @@ screening_result <- function(Ca_size,VDG,MRI_screening,US_screening){
         US_detected_ca <- 1
       }else{US_detected_ca <- 0}}else{US_detected_ca <- 0}}else{US_detected_ca <- 0
       MRI_detected_ca <- 0}
-  #Uses estimate based on increased cancer detection rate - check this then matches the number of interval cancers that are now found at screening
   
+  #Uses estimate based on increased cancer detection rate - check this then matches the number of interval cancers that are now found at screening
   
   result <- c(Screen_detected_ca,Mammo_detected_ca,MRI_detected_ca,US_detected_ca)
   return(result)

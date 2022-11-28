@@ -20,13 +20,13 @@ install.packages("dqrng")
 install.packages("compiler")
 install.packages("tidyverse")
 
-
 #Run required packages
 library("doParallel")
 library("MASS")
 library("dqrng")
 library("compiler")
 library("tidyverse")
+library("tictoc")
 
 tic("100k:7 cores:PROCASFULL")
 #Set working directory
@@ -56,7 +56,7 @@ jnum<-1
 #7=Low risk (5 yearly), 8=Low risk (6 yearly),
 #9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-9
+screen_strategy<-3
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
@@ -117,6 +117,7 @@ risk_mat<-read.csv("synthetic_risk_data.csv")[,2:4]
 #individual into a risk group
 
 risk_mat[,4]<-numeric(length(risk_mat[,3]))
+names(risk_mat)[4]<-paste("Risk Group")
 if(screen_strategy==1 | screen_strategy==9) {
   for (i in 1:length(risk_mat[,4])){
   risk_mat[i,4]<-1+findInterval(risk_mat[i,2],risk_cutoffs_procas)}
@@ -133,12 +134,27 @@ if(screen_strategy==1 | screen_strategy==9) {
 
 #Set VDG based on breast density
 risk_mat[,5]<-numeric(length(risk_mat[,4]))
+names(risk_mat)[5]<-paste("VDG")
 for (i in 1:length(risk_mat[,5])){
 if(risk_mat[i,1]<4.5){risk_mat[i,5]<-1} else
   if(risk_mat[i,1]>=4.5 & risk_mat[i,1]<7.5){risk_mat[i,5]<-2} else
     if(risk_mat[i,1]>=7.5 & risk_mat[i,1]<15.5){risk_mat[i,5]<-3} else
       if(risk_mat[i,1]>=15.5){risk_mat[i,5]<-4}
 }
+
+#Breast density cut-offs for supplemental sreening
+density_cutoff <- 3 #VDG groups 3 and 4
+
+#Set level of supplemental screening
+risk_mat[,6]<-numeric(length(risk_mat[,5]))
+names(risk_mat)[6]<-paste("MRI Screening")
+risk_mat[,7]<-numeric(length(risk_mat[,6]))
+names(risk_mat)[7]<-paste("US Screening")
+if(supplemental_screening==1){
+  for (i in 1:length(risk_mat[,6])) {
+    if(risk_mat[i,5]>=density_cutoff & risk_mat[i,2]>=8){risk_mat[i,6]<1}else
+       if(risk_mat[i,5]>=density_cutoff & risk_mat[i,2]<8){risk_mat[i,7]<-1}}}
+
 #Set metastatic cancer probabilities by age
 metastatic_prob <- data.frame(c(25,35,45,55,65,75,85),
                               c(0.046218154,0.086659039,0.109768116,0.127099924,0.142505975,0.159837783,1.73E-01))
@@ -199,9 +215,6 @@ risk_cutoffs_procas <- c(1.5,3.5,5,8,100) #procas plan
 risk_cutoffs_tert <- c(1.946527,2.942792) #tertiles of risk
 low_risk_cut<-1.5 #cut off in low risk only strategies
 
-#Breast density cut-offs for supplemental sreening
-density_cutoff <- 3 #VDG groups 3 and 4
-
 #Cancer size cut-points
 ca_size_cut <- c(0.025, 5, 10, 15, 20, 30, 128) #category cut-points from Kolias 1999
 
@@ -215,18 +228,19 @@ cost_DCIS <- 9840
 cost_US <- 52
 cost_MRI <-114
 
+# read in and refactor data from Laudicella et al. (2016) https://doi.org/10.1038/bjc.2016.77
 tbl <- tribble(~Yr, ~Early_18.64, ~Late_18.64, ~Diff1, ~Early_65plus, ~Late_65plus, ~Diff2,
-                0, 464, 607, 143, 1086, 1324, 238,
-                1, 10746, 13315, 2569, 7597, 8804, 1207,
-                2, 3357, 5785, 2429, 2529, 3650, 1121,
-                3, 1953, 3782, 1829, 2156, 3170, 1014,
-                4, 1627, 2932, 1305, 2230, 2924, 693,
-                5, 1617, 2841, 1225, 2077, 2957, 880,
-                6, 1547, 2645, 1099, 2174, 2783, 609,
-                7, 1394, 2618, 1225, 2063, 2903, 840,
-                8, 1376, 2559, 1183, 2134, 2454, 320,
-                9, 1279, 1848, 569, 2204, 2932, 728) %>%
-  dplyr::select(-Diff1, -Diff2) %>%
+               0, 464, 607, 143, 1086, 1324, 238,
+               1, 10746, 13315, 2569, 7597, 8804, 1207,
+               2, 3357, 5785, 2429, 2529, 3650, 1121,
+               3, 1953, 3782, 1829, 2156, 3170, 1014,
+               4, 1627, 2932, 1305, 2230, 2924, 693,
+               5, 1617, 2841, 1225, 2077, 2957, 880,
+               6, 1547, 2645, 1099, 2174, 2783, 609,
+               7, 1394, 2618, 1225, 2063, 2903, 840,
+               8, 1376, 2559, 1183, 2134, 2454, 320,
+               9, 1279, 1848, 569, 2204, 2932, 728) %>%
+  select(-Diff1, -Diff2) %>%
   pivot_longer(cols      = contains("6"),
                names_to  = c("Stage", "Age"),
                names_sep = "_",
@@ -243,9 +257,36 @@ tbl <- tribble(~Yr, ~Early_18.64, ~Late_18.64, ~Diff1, ~Early_65plus, ~Late_65pl
   filter(Yr > 0) %>%
   arrange(Stage, Age, Yr)
 
-modC <- lm(data = tbl,
-           formula = (CDCost.i.d) ~ (Yr1 + Yr2 + Yr3 + Yr) * Stage * Age)
-  
+# log-linear model
+mod <- lm(data = tbl,
+          formula = log(DCost) ~ (Yr1 + Yr2 + Yr3 + Yr) * Stage * Age)
+
+# prediction matrix
+tblNewDat <- crossing(Yr=1:50, Stage=c("Early", "Late"), Age=c("18.64", "65plus")) %>%
+  mutate(Yr1 = as.factor(Yr==1),
+         Yr2 = as.factor(Yr==2),
+         Yr3 = as.factor(Yr==3))
+
+# generate predictions
+tblNewDat %>%
+  bind_cols(pred = mod %>% predict(newdata = tblNewDat)) %>%
+  mutate(DCost.p = exp(pred)) -> tblPred
+
+# make lookup table
+tblLookup <- tblPred %>%
+  filter(Yr==1) %>%
+  mutate(across(c(Yr, pred, DCost.p), ~0)) %>%
+  bind_rows(tblPred) %>%
+  group_by(Stage, Age) %>%
+  mutate(DCost.p.i    = DCost.p * 1.219312579, # NHSCII inflator for 2010/11-->2020/21
+         disc         = 1/1.035^(Yr-0.5),
+         DCost.p.i.d  = DCost.p.i * disc,
+         CDCost.p.i.d = cumsum(DCost.p.i.d),
+         StageEarly   = Stage=="Early",
+         AgeYoung     = Age=="18.64") %>%
+  arrange(Stage, Age, Yr) %>%
+  ungroup()
+
 ##########False Positive and Overdiagnosis parameters################
 recall_rate <- 0.0456 #approx UK recall rate
 biopsy_rate <- 0.024 #proporiton of referrals without cancer that have biopsy - Madan
@@ -267,14 +308,12 @@ utility_stage_cat_y1 <- c("stage1"=0.82/0.822,
                           "Metastatic"=0.75/0.822,
                           "DCIS"=utility_DCIS)
 
-
 #Set following year utilities:
 utility_stage_cat_follow <- c("stage1"=0.82/0.822,
                               "stage2"=0.82/0.822,
                               "stage3"=0.75/0.822,
                               "Metastatic"=0.75/0.822,
                               "DCIS"=utility_DCIS)
-
 
 ################Outer Individual sampling loop##############################
 
@@ -311,20 +350,6 @@ if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strateg
 
 #Draw a breast density, 10 year, and lifetime risk of cancer for the individual
 risk_data<-as.numeric(risk_mat[sample(nrow(risk_mat),1),])
-
-#Set level of supplemental screening
-if(supplemental_screening==0){
-  MRI_screening<-0
-  US_screening<-0} else {
-    if (risk_data[5]>density_cutoff){
-      MRI_screening<-0
-      US_screening<-0
-      if(risk_data[2]>8){MRI_screening<-1} else{US_screening<-1}
-    } else {
-       MRI_screening<-1
-       US_screening<-1
-    }
-  }
 
 ###############Screen times###############################
 
@@ -464,7 +489,6 @@ age <- start_age
 interval_ca <- 0
 screen_detected_ca <- 0
   
-  
 #####################DES COMPONENT #######################
   
 Time_to_screen <- screen_times[1] - age #select the current next screen age and subtract age
@@ -495,10 +519,10 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     if(screen_count==1 & screen_strategy==8 & risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
     if(screen_count==1 & screen_strategy==9 & risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
     if(screen_count == length(screen_times)){lastscreen_count <- 1}
-    if(US_screening == 1){US_count <- US_count + 1
+    if(risk_data[7] == 1){US_count <- US_count + 1
     costs <- costs + (cost_US*current_discount)
     US_costs<-US_costs+(cost_US*current_discount)}
-    if(MRI_screening == 1){MRI_count <- MRI_count + 1
+    if(risk_data[6] == 1){MRI_count <- MRI_count + 1
     costs <- costs + (cost_MRI*current_discount)
     MRI_costs <- MRI_costs + (cost_MRI*current_discount)}
       
@@ -514,8 +538,7 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
       Ca_size <- 2*(Ca_size/(4/3*pi))^(1/3)
       
     #Determine if screening detects the cancer
-      VDG<-risk_data[5]
-      screen_result <- cmp_screening_result(Ca_size,VDG,MRI_screening,US_screening)
+      screen_result <- cmp_screening_result(Ca_size,VDG=risk_data[5],MRI_screening = risk_data[6],US_screening=risk_data[7])
      
     #If a cancer is detected add a cancer and details to the counters
       
@@ -573,8 +596,7 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
     
     if(stage_cat<3){iStage<-"Early"} else {iStage<-"Late"}
     if(age<65){iAge<-"18.64"} else {iAge<-"65plus"}
-    if(stage_cat <5){costs=costs+(fnModPred(iStage,iAge,min(c(Mort_age-age,9)),modC)*current_discount)}
-    max
+    if(stage_cat <5){costs<-costs+as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),50)))*current_discount)}
     cancer_diagnostic[9] <- c(Mort_age)
     cancer_diagnostic[2] <- c(stage_cat) 
     
