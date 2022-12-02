@@ -3,7 +3,6 @@ fnLookupBase <- function(iStage, iAge, iLE) {
   as.numeric(tblLookup$CDCost.p.i.d[tblLookup$Stage==iStage & tblLookup$Age==iAge & tblLookup$Yr==iLE])
 }
 
-
 #Load functions required for model
 Incidence_function <- function(){
   
