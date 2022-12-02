@@ -45,7 +45,7 @@ source(file="MANC_RISK_SCREEN_functions Version 1.R")
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-100000
+inum<-10000
 jnum<-1
 
 #####Choose screening programme and related parameters##########
@@ -240,7 +240,7 @@ tbl <- tribble(~Yr, ~Early_18.64, ~Late_18.64, ~Diff1, ~Early_65plus, ~Late_65pl
                7, 1394, 2618, 1225, 2063, 2903, 840,
                8, 1376, 2559, 1183, 2134, 2454, 320,
                9, 1279, 1848, 569, 2204, 2932, 728) %>%
-  select(-Diff1, -Diff2) %>%
+  dplyr::select(-Diff1, -Diff2) %>%
   pivot_longer(cols      = contains("6"),
                names_to  = c("Stage", "Age"),
                names_sep = "_",
