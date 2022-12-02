@@ -19,6 +19,7 @@ install.packages("MASS")
 install.packages("dqrng")
 install.packages("compiler")
 install.packages("tidyverse")
+install.packages("iterators")
 
 #Run required packages
 library("doParallel")
@@ -26,6 +27,7 @@ library("MASS")
 library("dqrng")
 library("compiler")
 library("tidyverse")
+library("iterators")
 library("tictoc")
 
 tic("100k:7 cores:PROCASFULL")
@@ -33,7 +35,8 @@ tic("100k:7 cores:PROCASFULL")
 #setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Register number of cores for foreach loop
-registerDoParallel(cores=7)
+numcores<-7
+registerDoParallel(cores=numcores)
 
 #Set timer to record duration of simulation
 ptm <- proc.time()
@@ -45,7 +48,7 @@ source(file="MANC_RISK_SCREEN_functions Version 1.R")
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-10000
+inum<-100000
 jnum<-1
 
 #####Choose screening programme and related parameters##########
@@ -56,7 +59,7 @@ jnum<-1
 #7=Low risk (5 yearly), 8=Low risk (6 yearly),
 #9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-3
+screen_strategy<-9
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
@@ -315,10 +318,13 @@ utility_stage_cat_follow <- c("stage1"=0.82/0.822,
                               "Metastatic"=0.75/0.822,
                               "DCIS"=utility_DCIS)
 
+risksample<-risk_mat[sample(nrow(risk_mat),inum,replace=TRUE),]
+itx<-iter(risksample,by="row")
+
 ################Outer Individual sampling loop##############################
 
 #Set loop to divide i loop into 10 sub-loops in case of simulation break
-for (ii in 1:10) {
+for (ii in 1:1) {
   
 #Set counters for individual sampling loop
 total_screens <- 0
@@ -333,7 +339,7 @@ total_QALYs <- 0
 total_costs_follow_up <- 0
 
 #Open loop
-results <- foreach(i=1:(inum/10),.combine = 'rbind',.packages = c('MASS','dqrng','tidyverse')) %dopar% {
+results <- foreach(i=itx,.combine = 'rbind',.packages = c('MASS','dqrng','tidyverse')) %dopar% {
 
 #Set up record of age, size, mode of detection of each detected cancer
 cancer_diagnostic <- rep(0,10)
@@ -349,7 +355,7 @@ if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strateg
 }
 
 #Draw a breast density, 10 year, and lifetime risk of cancer for the individual
-risk_data<-as.numeric(risk_mat[sample(nrow(risk_mat),1),])
+risk_data<-as.numeric(i)
 
 ###############Screen times###############################
 
