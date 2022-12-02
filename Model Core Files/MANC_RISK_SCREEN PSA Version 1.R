@@ -640,7 +640,7 @@ results <- foreach(i=1:inum,.combine = 'rbind',.packages = c('MASS','dqrng','tid
         
         if(stage_cat<3){iStage<-"Early"} else {iStage<-"Late"}
         if(age<65){iAge<-"18.64"} else {iAge<-"65plus"}
-        if(stage_cat <5){costs<-costs+as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),50)))*current_discount)}
+        if(stage_cat <5){costs<-costs+((1+PSA_all_p$PSA_costvar[ii])*as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),50)))*current_discount))}
         cancer_diagnostic[9] <- c(Mort_age)
         cancer_diagnostic[2] <- c(stage_cat) 
         
