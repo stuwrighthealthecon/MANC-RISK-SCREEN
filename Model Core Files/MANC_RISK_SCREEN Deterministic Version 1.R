@@ -59,7 +59,7 @@ jnum<-1
 #7=Low risk (5 yearly), 8=Low risk (6 yearly),
 #9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-8
+screen_strategy<-9
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
@@ -134,6 +134,7 @@ beta1 <- 1.47
 beta2 <- 6.51
 
 #Mammography sensitivity by volpara density grade from PREVENTICON
+VDG_interval<-c(4.5,7.5,15.5)
 Sen_VDG <- c(0.85,0.776,0.695,0.61)
 Sen_VDG_av <- 0.757
 
@@ -294,12 +295,7 @@ if(screen_strategy==1 | screen_strategy==9) {
 
 #Set VDG based on breast density
 risk_mat[,5]<-numeric(length(risk_mat[,4]))
-for (i in 1:length(risk_mat[,5])){
-  if(risk_mat[i,1]<4.5){risk_mat[i,5]<-1} else
-    if(risk_mat[i,1]>=4.5 & risk_mat[i,1]<7.5){risk_mat[i,5]<-2} else
-      if(risk_mat[i,1]>=7.5 & risk_mat[i,1]<15.5){risk_mat[i,5]<-3} else
-        if(risk_mat[i,1]>=15.5){risk_mat[i,5]<-4}
-}
+risk_mat[,5]<-1+findInterval(risk_mat[,1],VDG_interval)
 
 #Breast density cut-offs for supplemental sreening
 density_cutoff <- 3 #VDG groups 3 and 4
