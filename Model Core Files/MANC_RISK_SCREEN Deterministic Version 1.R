@@ -48,7 +48,7 @@ source(file="MANC_RISK_SCREEN_functions Version 1.R")
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-100000
+inum<-1000000
 jnum<-1
 
 #####Choose screening programme and related parameters##########
@@ -274,6 +274,7 @@ utility_stage_cat_follow <- c("stage1"=0.82/0.822,
 
 #########################CREATE SAMPLE OF WOMEN FOR MODEL#######
 
+
 #Import synthetic dataset of breast density, 
 #10 year, and lifetime breast cancer risk derived from 
 #PROCAS2 study
@@ -284,17 +285,16 @@ risk_mat<-read.csv("synthetic_risk_data.csv")[,2:4]
 
 risk_mat[,4]<-numeric(length(risk_mat[,3]))
 if(screen_strategy==1 | screen_strategy==9) {
-    risk_mat[,4]<-1+findInterval(risk_mat[,2],risk_cutoffs_procas)
+  risk_mat[,4]<-1+findInterval(risk_mat[,2],risk_cutoffs_procas)
 } else
   if(screen_strategy==2) {
     risk_mat[,4]<-1+findInterval(risk_mat[,2],risk_cutoffs_tert)
   } else
-  if(screen_strategy==7 | screen_strategy==8) {
-  risk_mat[,4]<-ifelse(risk_mat[,2]<low_risk_cut,1,2)
-    } 
+    if(screen_strategy==7 | screen_strategy==8) {
+      risk_mat[,4]<-ifelse(risk_mat[,2]<low_risk_cut,1,2)
+    }   
 
 #Set VDG based on breast density
-risk_mat[,5]<-numeric(length(risk_mat[,4]))
 risk_mat[,5]<-1+findInterval(risk_mat[,1],VDG_interval)
 
 #Breast density cut-offs for supplemental sreening
@@ -312,9 +312,7 @@ names(risk_mat)[4:7]<-paste(c("Risk Group","VDG","MRI Screening","US Screening")
 
 #Set up data frame of women's lifetimes to simulate
 risksample<-risk_mat[sample(nrow(risk_mat),inum,replace=TRUE),]
-risksample[,8:10]<-numeric(length=length(risksample[,7]))
-
-names(risksample)[8:10]<-paste(c("Risk Predicted","Feedback","Interval Change"))
+risksample[,8:14]<-numeric(length=length(risksample[,7]))
 
 if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strategy<10)){
   risksample[,8]<-ifelse(dqrunif(inum,0,1)<c(rep(risk_uptake,inum)),1,0)
@@ -322,12 +320,42 @@ if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strateg
   risksample[,10]<-ifelse(risksample[,9]==1 & dqrunif(inum,0,1)<c(rep(screen_change)),1,0)
 }
 
-itx<-iter(risksample,by="row")
+###Preload incidence, mortality and clinical detection times for j cases
+risksample[,11]<- rweibull(n = length(risksample[,10]),shape = acmmortality_wb_a, scale = acmmortality_wb_b)
+for (i in 1:length(risksample[,11])) {
+if(risksample[i,11] <= start_age){risksample[i,11]<-qweibull(p = dqrunif(n = 1,min = pweibull(q = start_age,shape = acmmortality_wb_a,scale = acmmortality_wb_b), max = 1),shape = acmmortality_wb_a, scale = acmmortality_wb_b)}}
+
+#Determine if a cancer will develop
+risksample[,12]<-ifelse(dqrunif(length(risksample[,11]),0,1)<(risksample[,3]/100),1,0)
+
+#Set number of tumour doublings when there is a cancer
+risksample[,13]<-risksample[,12]*max(dqrnorm(n = length(risksample[,12]),mean = clin_detection_m,sd = clin_detection_sd),4)
+for (i in 1:length(risksample[,12])){if (risksample[i,13]>9){risksample[i,13]<-9}}
+
+#Set growth rate for tumours
+risksample[,14]<-risksample[,12]*qlnorm(dqrunif(length(risksample[,12]),0,1),meanlog=log_norm_mean,sdlog=sqrt(log_norm_sd))
+
+names(risksample)[8:14]<-paste(c("Risk Predicted","Feedback","Interval Change","Life Expectancy","Cancer","Clinical Detection Size","Growth Rate"))
+risksample[,15]<-(rep(1:10,times=inum/10))
+risksplit<-split(risksample,chunk)
+
+#Save risk sample in chunks
+for(i in 1:10){
+splitsample<-as.data.frame(risksplit[i])
+save(splitsample,file = paste("Risksample/risksample_",i,".Rdata",sep=""))
+}
+rm(risksample)
+rm(risksplit)
+rm(splitsample)
 
 ################Outer Individual sampling loop##############################
 
 #Set loop to divide i loop into 10 sub-loops in case of simulation break
-for (ii in 1:1) {
+for (ii in 1:10) {
+
+load(paste("Risksample/risksample_",1,".Rdata",sep = ""))
+risksample<-splitsample
+itx<-iter(risksample,by="row")
   
 #Set counters for individual sampling loop
 total_screens <- 0
@@ -415,11 +443,6 @@ stage3_counter <- 0
 stage4_counter <- 0
 DCIS_counter <- 0
 
-###Preload incidence, mortality and clinical detection times for j cases
-mort_sample<- rweibull(n = jnum,shape = acmmortality_wb_a, scale = acmmortality_wb_b)
-clin_detect_sample <- dqrnorm(n = jnum,mean = clin_detection_m,sd = clin_detection_sd)
-clin_detect_sample[clin_detect_sample < 4] <- 4 #Prevent unrealistic left tail
-clin_detect_sample[clin_detect_sample >= 9] <- 8.99 #Prevent unrealistic right tail
 
 #######J loop for individual experience of breast cancer screening)
 for (j in jnum){
@@ -442,11 +465,11 @@ costs_follow_up <- 0
  
 #Lifetime cancer incidence
 #Determines if a cancer occurs and at what age
-if(dqrunif(1,0,1)<(risk_data[3]/100)){
+if (risk_data[12]==1){
   ca_case<-1
 
 #Determine cancer growth rate
-grow_rate_i<-qlnorm(dqrunif(1,0,1),meanlog=log_norm_mean,sdlog=sqrt(log_norm_sd))
+grow_rate_i<-risk_data[14]
 
 #Incidence age (under current programme)
 ca_incidence_i <- cmp_incidence_function()
@@ -474,8 +497,7 @@ gen_age <- CD_age - t_gen
 
 #All cause moratlity
 #Get a mortality age and make sure this is greater than start age and cancer incidence age
-Mort_age <- mort_sample[j]
-if(Mort_age <= start_age){Mort_age <-qweibull(p = dqrunif(n = 1,min = pweibull(q = start_age,shape = acmmortality_wb_a,scale = acmmortality_wb_b), max = 1),shape = acmmortality_wb_a, scale = acmmortality_wb_b)}
+Mort_age <- risk_data[11]
 
 #Ca incidence ('original' incidence time) trumps mortality
 #because it is probability conditional on survival
