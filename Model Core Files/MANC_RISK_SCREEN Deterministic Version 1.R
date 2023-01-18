@@ -31,6 +31,11 @@ library("iterators")
 library("tictoc")
 
 tic("100k:7 cores:PROCASFULL")
+
+#Generate new sample?
+#1=YES, any other number NO
+gensample<-0
+
 #Set working directory
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
@@ -273,7 +278,7 @@ utility_stage_cat_follow <- c("stage1"=0.82/0.822,
                               "DCIS"=utility_DCIS)
 
 #########################CREATE SAMPLE OF WOMEN FOR MODEL#######
-
+if(gensample==1){
 
 #Import synthetic dataset of breast density, 
 #10 year, and lifetime breast cancer risk derived from 
@@ -284,15 +289,6 @@ risk_mat<-read.csv("synthetic_risk_data.csv")[,2:4]
 #individual into a risk group
 
 risk_mat[,4]<-numeric(length(risk_mat[,3]))
-if(screen_strategy==1 | screen_strategy==9) {
-  risk_mat[,4]<-1+findInterval(risk_mat[,2],risk_cutoffs_procas)
-} else
-  if(screen_strategy==2) {
-    risk_mat[,4]<-1+findInterval(risk_mat[,2],risk_cutoffs_tert)
-  } else
-    if(screen_strategy==7 | screen_strategy==8) {
-      risk_mat[,4]<-ifelse(risk_mat[,2]<low_risk_cut,1,2)
-    }   
 
 #Set VDG based on breast density
 risk_mat[,5]<-1+findInterval(risk_mat[,1],VDG_interval)
@@ -300,25 +296,9 @@ risk_mat[,5]<-1+findInterval(risk_mat[,1],VDG_interval)
 #Breast density cut-offs for supplemental sreening
 density_cutoff <- 3 #VDG groups 3 and 4
 
-#Set level of supplemental screening
-risk_mat[,6]<-numeric(length(risk_mat[,5]))
-risk_mat[,7]<-numeric(length(risk_mat[,6]))
-if(supplemental_screening==1){
-  for (i in 1:length(risk_mat[,6])) {
-    if(risk_mat[i,5]>=density_cutoff & risk_mat[i,2]>=8){risk_mat[i,6]<1}else
-      if(risk_mat[i,5]>=density_cutoff & risk_mat[i,2]<8){risk_mat[i,7]<-1}}}
-
-names(risk_mat)[4:7]<-paste(c("Risk Group","VDG","MRI Screening","US Screening"))
-
 #Set up data frame of women's lifetimes to simulate
 risksample<-risk_mat[sample(nrow(risk_mat),inum,replace=TRUE),]
-risksample[,8:14]<-numeric(length=length(risksample[,7]))
-
-if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strategy<10)){
-  risksample[,8]<-ifelse(dqrunif(inum,0,1)<c(rep(risk_uptake,inum)),1,0)
-  risksample[,9]<-ifelse(risksample[,8]==1 & dqrunif(inum,0,1)<c(rep(risk_feedback)),1,0)
-  risksample[,10]<-ifelse(risksample[,9]==1 & dqrunif(inum,0,1)<c(rep(screen_change)),1,0)
-}
+risksample[,6:14]<-numeric(length=length(risksample[,5]))
 
 ###Preload incidence, mortality and clinical detection times for j cases
 risksample[,11]<- rweibull(n = length(risksample[,10]),shape = acmmortality_wb_a, scale = acmmortality_wb_b)
@@ -329,15 +309,14 @@ if(risksample[i,11] <= start_age){risksample[i,11]<-qweibull(p = dqrunif(n = 1,m
 risksample[,12]<-ifelse(dqrunif(length(risksample[,11]),0,1)<(risksample[,3]/100),1,0)
 
 #Set number of tumour doublings when there is a cancer
-risksample[,13]<-risksample[,12]*max(dqrnorm(n = length(risksample[,12]),mean = clin_detection_m,sd = clin_detection_sd),4)
-for (i in 1:length(risksample[,12])){if (risksample[i,13]>9){risksample[i,13]<-9}}
+risksample[,13]<-risksample[,12]*(dqrnorm(n = length(risksample[,12]),mean = clin_detection_m,sd = clin_detection_sd))
 
 #Set growth rate for tumours
 risksample[,14]<-risksample[,12]*qlnorm(dqrunif(length(risksample[,12]),0,1),meanlog=log_norm_mean,sdlog=sqrt(log_norm_sd))
 
-names(risksample)[8:14]<-paste(c("Risk Predicted","Feedback","Interval Change","Life Expectancy","Cancer","Clinical Detection Size","Growth Rate"))
+names(risksample)[4:14]<-paste(c("Risk Group","VDG","MRI Screening","US Screening","Risk Predicted","Feedback","Interval Change","Life Expectancy","Cancer","Clinical Detection Size","Growth Rate"))
 risksample[,15]<-(rep(1:10,times=inum/10))
-risksplit<-split(risksample,chunk)
+risksplit<-split(risksample,risksample[,15])
 
 #Save risk sample in chunks
 for(i in 1:10){
@@ -347,16 +326,38 @@ save(splitsample,file = paste("Risksample/risksample_",i,".Rdata",sep=""))
 rm(risksample)
 rm(risksplit)
 rm(splitsample)
-
+}
 ################Outer Individual sampling loop##############################
 
 #Set loop to divide i loop into 10 sub-loops in case of simulation break
 for (ii in 1:10) {
 
-load(paste("Risksample/risksample_",1,".Rdata",sep = ""))
+load(paste("Risksample/risksample_",ii,".Rdata",sep = ""))
 risksample<-splitsample
+
+if(screen_strategy==1 | screen_strategy==9) {
+  risksample[,4]<-1+findInterval(risksample[,2],risk_cutoffs_procas)
+} else
+  if(screen_strategy==2) {
+    risksample[,4]<-1+findInterval(risksample[,2],risk_cutoffs_tert)
+  } else
+    if(screen_strategy==7 | screen_strategy==8) {
+      risksample[,4]<-ifelse(risksample[,2]<low_risk_cut,1,2)
+    }  
+
+if(supplemental_screening==1){
+  for (i in 1:length(risksample[,6])) {
+    if(risksample[i,5]>=density_cutoff & risksample[i,2]>=8){risksample[i,6]<1}else
+      if(risksample[i,5]>=density_cutoff & risksample[i,2]<8){risksample[i,7]<-1}}}
+
+if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strategy<10)){
+  risksample[,8]<-ifelse(dqrunif(inum/10,0,1)<c(rep(risk_uptake,inum/10)),1,0)
+  risksample[,9]<-ifelse(risksample[,8]==1 & dqrunif(inum/10,0,1)<c(rep(risk_feedback)),1,0)
+  risksample[,10]<-ifelse(risksample[,9]==1 & dqrunif(inum/10,0,1)<c(rep(screen_change)),1,0)
+}
+
 itx<-iter(risksample,by="row")
-  
+
 #Set counters for individual sampling loop
 total_screens <- 0
 total_cancers_detected <- 0
@@ -442,7 +443,6 @@ stage2_counter <- 0
 stage3_counter <- 0
 stage4_counter <- 0
 DCIS_counter <- 0
-
 
 #######J loop for individual experience of breast cancer screening)
 for (j in jnum){
@@ -691,7 +691,6 @@ names(results)[15] <- 'screening_round'
 #directory to save inum/10 sets of case histories and name of files
 save(results,file = paste("",ii,".Rdata",sep = "")) 
 
-
 print(paste(ii*10,"%"))
 } #End 1 million simulation loop
 #results #see result if parellel version
@@ -711,4 +710,5 @@ for (i in 1:10){
 write.csv(merged_result,file = "results.csv")
 
 toc()
+
 
