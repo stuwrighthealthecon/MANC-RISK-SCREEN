@@ -313,9 +313,10 @@ risksample[,13]<-risksample[,12]*(dqrnorm(n = length(risksample[,12]),mean = cli
 
 #Set growth rate for tumours
 risksample[,14]<-risksample[,12]*qlnorm(dqrunif(length(risksample[,12]),0,1),meanlog=log_norm_mean,sdlog=sqrt(log_norm_sd))
-
 names(risksample)[4:14]<-paste(c("Risk Group","VDG","MRI Screening","US Screening","Risk Predicted","Feedback","Interval Change","Life Expectancy","Cancer","Clinical Detection Size","Growth Rate"))
-risksample[,15]<-(rep(1:10,times=inum/10))
+risksample[,15]<-(rep(1:10,times=round(length(risksample)/10)))
+risksample<-risksample %>% filter(risksample[,11]>=50)
+
 risksplit<-split(risksample,risksample[,15])
 
 #Save risk sample in chunks
@@ -351,9 +352,9 @@ if(supplemental_screening==1){
       if(risksample[i,5]>=density_cutoff & risksample[i,2]<8){risksample[i,7]<-1}}}
 
 if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strategy<10)){
-  risksample[,8]<-ifelse(dqrunif(inum/10,0,1)<c(rep(risk_uptake,inum/10)),1,0)
-  risksample[,9]<-ifelse(risksample[,8]==1 & dqrunif(inum/10,0,1)<c(rep(risk_feedback)),1,0)
-  risksample[,10]<-ifelse(risksample[,9]==1 & dqrunif(inum/10,0,1)<c(rep(screen_change)),1,0)
+  risksample[,8]<-ifelse(dqrunif(length(risksample[,1]),0,1)<c(rep(risk_uptake,length(risksample[,1]))),1,0)
+  risksample[,9]<-ifelse(risksample[,8]==1 & dqrunif(length(risksample[,1]),0,1)<c(rep(risk_feedback)),1,0)
+  risksample[,10]<-ifelse(risksample[,9]==1 & dqrunif(length(risksample[,1]),0,1)<c(rep(screen_change)),1,0)
 }
 
 itx<-iter(risksample,by="row")
@@ -526,7 +527,7 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
   Event_list <- c(Time_to_screen,Time_to_death,Time_to_CD)
   Event_place <- which.min(Event_list) # pick the nearest event in time
   Next_event_time <- Event_list[Event_place] # the time to nearest event
-  current_discount<-(1/((1+discount_cost)^(Next_event_time+age-start_age)))
+  current_discount<-(1/((1+discount_cost)^(Next_event_time+age-screen_startage)))
     
   #Open screening event
   if(Event_place == 1){
@@ -647,22 +648,22 @@ while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
   LY_counter <- LY_counter + (Mort_age-start_age)
   
   #QALY counter
-  QALY_length <- ceiling(Mort_age)-start_age
+  QALY_length <- ceiling(Mort_age)-(screen_startage-1)
   if(QALY_length<1){QALY_length <-1}
-  if(QALY_length>time_horizon-start_age){QALY_length <-time_horizon-start_age}
+  if(QALY_length>time_horizon-screen_startage){QALY_length <-time_horizon-screen_startage}
   QALY_vect <- rep(0,QALY_length)
   for (y in 1:length(QALY_vect)){
-    QALY_vect[y] <- (utility_ages[match((ceiling((start_age+y)/5)*5),utility_ages[,1]),2])*(1/(1+discount_health)^y)
+    QALY_vect[y] <- (utility_ages[match((ceiling(((screen_startage-1)+y)/5)*5),utility_ages[,1]),2])*(1/(1+discount_health)^y)
     QALY_vect[QALY_length]<-QALY_vect[QALY_length]*(1-(ceiling(Mort_age)-Mort_age))
   }
   if (incidence_age_record > 0){
-    QALY_vect[floor(incidence_age_record)-start_age] <- utility_stage_cat_y1[stage_cat]*QALY_vect[floor(incidence_age_record)-start_age]*(1-(incidence_age_record-floor(incidence_age_record)))}
+    QALY_vect[floor(incidence_age_record)-screen_startage] <- utility_stage_cat_y1[stage_cat]*QALY_vect[floor(incidence_age_record)-screen_startage]*(1-(incidence_age_record-floor(incidence_age_record)))}
   if(incidence_age_record>0 & Mort_age-incidence_age_record>1){
-    QALY_vect[(floor(incidence_age_record)-start_age)+1]<-(utility_stage_cat_y1[stage_cat]*QALY_vect[(floor(incidence_age_record)-start_age)+1]*(incidence_age_record-floor(incidence_age_record)))+
-                                                           (utility_stage_cat_follow[stage_cat]*QALY_vect[(floor(incidence_age_record)-start_age)+1]*(1-(incidence_age_record-floor(incidence_age_record))))}
+    QALY_vect[(floor(incidence_age_record)-screen_startage)+1]<-(utility_stage_cat_y1[stage_cat]*QALY_vect[(floor(incidence_age_record)-screen_startage)+1]*(incidence_age_record-floor(incidence_age_record)))+
+                                                           (utility_stage_cat_follow[stage_cat]*QALY_vect[(floor(incidence_age_record)-screen_startage)+1]*(1-(incidence_age_record-floor(incidence_age_record))))}
   if(incidence_age_record > 0 && ceiling(if(Mort_age<100){Mort_age}else{100}) > incidence_age_record+2){
     for (y in (incidence_age_record+2):min((incidence_age_record+8),ceiling(if(Mort_age<100){Mort_age}else{100}))){
-      QALY_vect[y-start_age] <- QALY_vect[y-start_age]*utility_stage_cat_follow[stage_cat]
+      QALY_vect[y-screen_startage] <- QALY_vect[y-screen_startage]*utility_stage_cat_follow[stage_cat]
     }
   }
   
@@ -700,9 +701,10 @@ merged_result <- matrix(0,nrow = 10,ncol = 5)
 for (i in 1:10){
   #name of saved files needed
   load(paste("",i,".Rdata",sep = ""))
+  results<-results %>% filter(results[,13]>50 | results[,13]==0)
   merged_result[i,1] <- mean(results[,2])
   merged_result[i,2] <- mean(results[,3])
-  merged_result[i,3] <- mean(results[,4])
+  merged_result[i,3] <- mean(results[,4]) 
   merged_result[i,4] <- mean(results[,5])
   merged_result[i,5] <- mean(results[,9])
 }
