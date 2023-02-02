@@ -34,7 +34,7 @@ tic("100k:7 cores:PROCASFULL")
 
 #Generate new sample?
 #1=YES, any other number NO
-gensample<-0
+gensample<-1
 
 #Set working directory
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))

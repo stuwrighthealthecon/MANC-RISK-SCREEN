@@ -26,10 +26,11 @@ library("MASS")
 library("dqrng")
 library("compiler")
 library("tidyverse")
+library("tictoc")
 
 #Set working directory
-#setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+tic()
 #Register number of cores for foreach loop
 registerDoParallel(cores=7)
 
@@ -46,8 +47,8 @@ load("PSA_values.RData")
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-100
-jnum<-1
+inum<-1000
+jnum<-1000
 
 #####Choose screening programme and related parameters##########
 
@@ -731,4 +732,4 @@ for (i in 1:nrow(PSA_all_p)){
 #store main outputs as csv
 write.csv(merged_result,file = "PSAresults.csv")
 
-
+toc()
