@@ -38,7 +38,7 @@ source(file="MANC_RISK_SCREEN_functions Version 1.R")
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-100
+inum<-1000
 jnum<-1
 mcruns<-100
 chunks<-10
@@ -170,7 +170,7 @@ ca_size_cut <- c(0.025, 5, 10, 15, 20, 30, 128) #category cut-points from Kolias
 #######################Cost Data#########################################
 
 cost_strat<-8.45
-cost_screen_base <- 60.56
+cost_screen <- 60.56
 cost_follow_up <- 106
 cost_biop <- 290
 cost_DCIS_base <- 9840
@@ -459,7 +459,6 @@ for (ii in 1:chunks) {
     #Cost data
     cost_strat<-risk_data[31]
     cost_DCIS<-cost_DCIS_base*(1+risk_data[32])
-    cost_screen<-cost_screen_base*(1+risk_data[35])
     
     ###############Screen times###############################
     
@@ -699,7 +698,7 @@ for (ii in 1:chunks) {
           
           if(stage_cat<3){iStage<-"Early"} else {iStage<-"Late"}
           if(age<65){iAge<-"18.64"} else {iAge<-"65plus"}
-          if(stage_cat <5){costs<-costs+((1+risk_data[32])*as.numeric((fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),50)))*current_discount)))}
+          if(stage_cat <5){costs<-costs+as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),50)))*current_discount)}
           cancer_diagnostic[9] <- c(Mort_age)
           cancer_diagnostic[2] <- c(stage_cat) 
           
@@ -752,19 +751,19 @@ for (ii in 1:chunks) {
     } #end j loop
     
     #c(LY_counter, QALY_counter, costs, screen_counter, (screen_detected_ca+interval_ca), cancer_diagnostic, c(risk_data[15:34]), screen_strategy)
-    c(QALY_counter, costs, screen_counter, c(risk_data[15:35]), screen_strategy)
+    c(QALY_counter, costs, screen_counter, c(risk_data[15:34]), screen_strategy)
   }
   results <- data.frame(results)
   names(results)[1] <- 'QALY'
   names(results)[2] <- 'Cost'
   names(results)[3] <- 'Screens'
-  names(results)[4:24]<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_survival_3",
+  names(results)[4:23]<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_survival_3",
                          "PSA_meta_survival_54","PSA_meta_survival_74","PSA_meta_survival_99",
                          "PSA_beta_1","PSA_beta_2",'PSA_VDG1_sen','PSA_VDG2_sen',
                          'PSA_VDG3_sen', 'PSA_VDG4_sen',"PSA_MRI_cdr","PSA_US_cdr",
                          "PSA_log_norm_mean","PSA_log_norm_sd","PSA_cost_strat","PSA_costvar",
-                         "PSA_util_1to3","PSA_util_4","PSA_cost_screen")
- names(results)[25]<-"Strategy"
+                         "PSA_util_1to3","PSA_util_4")
+ names(results)[24]<-"Strategy"
   
   #directory to save inum/10 sets of case histories and name of files
   save(results,file = paste("PSA/PSA_",screen_strategy,"_",ii,".Rdata",sep = "")) 
@@ -777,8 +776,7 @@ for (ii in 1:chunks) {
 merged_result <- matrix(0,nrow = chunks,ncol = 5)
 for (i in 1:chunks){
   #name of saved files needed
-  load(paste("PSA/PSA_",screen_strategy,"_",i,".Rdata",sep = ""))
-  results<-results %>% filter(results[,13]>50 | results[,13]==0)
+  load(paste("PSA/PSA_",screen_strategy,"_",1,".Rdata",sep = ""))
   merged_result[i,1] <- mean(results[,2])
   merged_result[i,2] <- mean(results[,3])
   merged_result[i,3] <- mean(results[,4]) 
