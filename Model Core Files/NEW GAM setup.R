@@ -41,29 +41,50 @@ psaresults[,24]<-as.factor(psaresults[,24])
 
 save(psaresults,file = paste("PSA/PSA_","psaresults",".Rdata",sep = "")) 
 
-
 modQ <- bam(data = psaresults,
             formula = QALY ~
+              s(PSA_util_1to3, by = alternative, bs = "cr") +
+              s(PSA_util_4, by = alternative, bs = "cr") +
               s(PSA_gamma_survival_1, by = alternative, bs = "cr") +
               s(PSA_gamma_survival_2, by = alternative, bs = "cr") +
               s(PSA_gamma_survival_3, by = alternative, bs = "cr") +
-              s(PSA_meta_survival_54, by = alternative, bs = "tp") +
-              s(PSA_meta_survival_74, by = alternative, bs = "tp") +
-              s(PSA_meta_survival_99, by = alternative, bs = "tp") +
-              s(PSA_beta_1, by = alternative, bs = "tp") +
-              s(PSA_beta_2, by = alternative, bs = "tp") +
-              s(PSA_VDG1_sen, by = alternative, bs = "tp") +
-              s(PSA_VDG2_sen, by = alternative, bs = "tp") +
-              s(PSA_VDG3_sen, by = alternative, bs = "tp") +
-              s(PSA_VDG4_sen, by = alternative, bs = "tp") +
-              s(PSA_MRI_cdr, by = alternative, bs = "tp") +
-              s(PSA_US_cdr, by = alternative, bs = "tp") +
-              s(PSA_log_norm_mean, by = alternative, bs = "tp") +
-              s(PSA_log_norm_sd, by = alternative, bs = "tp") +
-              s(PSA_util_1to3, by = alternative, bs = "tp") +
-              s(PSA_util_4, by = alternative, bs = "tp") +
+              s(PSA_meta_survival_54, by = alternative, bs = "cr") +
+              s(PSA_meta_survival_74, by = alternative, bs = "cr") +
+              s(PSA_meta_survival_99, by = alternative, bs = "cr") +
+              s(PSA_beta_1, by = alternative, bs = "cr") +
+              s(PSA_beta_2, by = alternative, bs = "cr") +
+              s(PSA_VDG1_sen, by = alternative, bs = "cr") +
+              s(PSA_VDG2_sen, by = alternative, bs = "cr") +
+              s(PSA_VDG3_sen, by = alternative, bs = "cr") +
+              s(PSA_VDG4_sen, by = alternative, bs = "cr") +
+              s(PSA_MRI_cdr, by = alternative, bs = "cr") +
+              s(PSA_US_cdr, by = alternative, bs = "cr") +
+              s(PSA_log_norm_mean, by = alternative, bs = "cr") +
+              s(PSA_log_norm_sd, by = alternative, bs = "cr") +
               alternative)
 summary(modQ)
-summarise(psaresults[,24])
 
+save(modQ,file="QALYmodel.Rdata")
 
+modC <- bam(data = psaresults,
+            formula = Cost ~ 
+              s(PSA_cost_strat, by = alternative, bs = "cr") +
+              s(PSA_costvar, by = alternative, bs = "cr") +
+              s(PSA_gamma_survival_1, by = alternative, bs = "cr") +
+              s(PSA_gamma_survival_2, by = alternative, bs = "cr") +
+              s(PSA_gamma_survival_3, by = alternative, bs = "cr") +
+              s(PSA_meta_survival_54, by = alternative, bs = "cr") +
+              s(PSA_meta_survival_74, by = alternative, bs = "cr") +
+              s(PSA_meta_survival_99, by = alternative, bs = "cr") +
+              s(PSA_beta_1, by = alternative, bs = "cr") +
+              s(PSA_beta_2, by = alternative, bs = "cr") +
+              s(PSA_VDG1_sen, by = alternative, bs = "cr") +
+              s(PSA_VDG2_sen, by = alternative, bs = "cr") +
+              s(PSA_VDG3_sen, by = alternative, bs = "cr") +
+              s(PSA_VDG4_sen, by = alternative, bs = "cr") +
+              s(PSA_MRI_cdr, by = alternative, bs = "cr") +
+              s(PSA_US_cdr, by = alternative, bs = "cr") +
+              s(PSA_log_norm_mean, by = alternative, bs = "cr") +
+              s(PSA_log_norm_sd, by = alternative, bs = "cr") +
+              alternative)
+summary(modC)

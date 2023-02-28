@@ -751,19 +751,20 @@ for (ii in 1:chunks) {
     } #end j loop
     
     #c(LY_counter, QALY_counter, costs, screen_counter, (screen_detected_ca+interval_ca), cancer_diagnostic, c(risk_data[15:34]), screen_strategy)
-    c(QALY_counter, costs, screen_counter, c(risk_data[15:34]), screen_strategy)
+    c(QALY_counter, costs, screen_counter,cancer_diagnostic[8], c(risk_data[15:34]), screen_strategy)
   }
   results <- data.frame(results)
   names(results)[1] <- 'QALY'
   names(results)[2] <- 'Cost'
   names(results)[3] <- 'Screens'
-  names(results)[4:23]<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_survival_3",
+  names(results)[4] <- "Cancer Diagnosed"
+  names(results)[5:24]<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_survival_3",
                          "PSA_meta_survival_54","PSA_meta_survival_74","PSA_meta_survival_99",
                          "PSA_beta_1","PSA_beta_2",'PSA_VDG1_sen','PSA_VDG2_sen',
                          'PSA_VDG3_sen', 'PSA_VDG4_sen',"PSA_MRI_cdr","PSA_US_cdr",
                          "PSA_log_norm_mean","PSA_log_norm_sd","PSA_cost_strat","PSA_costvar",
                          "PSA_util_1to3","PSA_util_4")
- names(results)[24]<-"Strategy"
+ names(results)[25]<-"Strategy"
   
   #directory to save inum/10 sets of case histories and name of files
   save(results,file = paste("PSA/PSA_",screen_strategy,"_",ii,".Rdata",sep = "")) 
