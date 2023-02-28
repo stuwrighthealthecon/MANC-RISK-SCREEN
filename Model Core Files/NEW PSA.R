@@ -698,7 +698,7 @@ for (ii in 1:chunks) {
           
           if(stage_cat<3){iStage<-"Early"} else {iStage<-"Late"}
           if(age<65){iAge<-"18.64"} else {iAge<-"65plus"}
-          if(stage_cat <5){costs<-costs+as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),50)))*current_discount)}
+          if(stage_cat <5){costs<-costs+((1+risk_data[32])*as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),50)))*current_discount))}
           cancer_diagnostic[9] <- c(Mort_age)
           cancer_diagnostic[2] <- c(stage_cat) 
           
@@ -777,7 +777,8 @@ for (ii in 1:chunks) {
 merged_result <- matrix(0,nrow = chunks,ncol = 5)
 for (i in 1:chunks){
   #name of saved files needed
-  load(paste("PSA/PSA_",screen_strategy,"_",1,".Rdata",sep = ""))
+  load(paste("PSA/PSA_",screen_strategy,"_",i,".Rdata",sep = ""))
+  results<-results %>% filter(results[,4]>50 | results[,4]==0)
   merged_result[i,1] <- mean(results[,2])
   merged_result[i,2] <- mean(results[,3])
   merged_result[i,3] <- mean(results[,4]) 
