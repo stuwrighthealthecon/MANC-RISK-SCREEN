@@ -3,7 +3,8 @@ install.packages("MASS")
 library("MASS")
 
 #Define number of draws
-mcruns<-1000
+mcruns<-100
+inum<-100
 
 #Set distributions for breast cancer survival by stage
 survmvn<-data.frame(c(-5.46208,-5.2077,-5.8016),c(-3.8163,-3.75901,-3.8811),c(-2.72264,-2.66053,-2.78617))
