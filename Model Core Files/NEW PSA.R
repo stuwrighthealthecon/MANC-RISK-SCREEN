@@ -171,11 +171,11 @@ ca_size_cut <- c(0.025, 5, 10, 15, 20, 30, 128) #category cut-points from Kolias
 
 cost_strat<-8.45
 cost_screen_base <- 60.56
-cost_follow_up <- 106
-cost_biop <- 290
+cost_follow_up_base <- 106
+cost_biop_base <- 290
 cost_DCIS_base <- 9840
-cost_US <- 52
-cost_MRI <-114
+cost_US_base <- 52
+cost_MRI_base <-114
 
 # read in and refactor data from Laudicella et al. (2016) https://doi.org/10.1038/bjc.2016.77
 tbl <- tribble(~Yr, ~Early_18.64, ~Late_18.64, ~Diff1, ~Early_65plus, ~Late_65plus, ~Diff2,
@@ -332,6 +332,10 @@ if(gensample==1){
   PSA_cost_strat<-rlnorm(mcruns,2.13387381,0.06349671)
   PSA_costvar<-rnorm(mcruns,0,0.1020408)
   PSA_costscreen<-rnorm(mcruns,0,0.1020408)
+  PSA_cost_follow_up<-rnorm(mcruns,0,0.1020408)
+  PSA_cost_biop<-rnorm(mcruns,0,0.1020408)
+  PSA_cost_US<-rnorm(mcruns,0,0.1020408)
+  PSA_cost_MRI<-rnorm(mcruns,0,0.1020408)
   
   #Generate utility draws
   utilmat<-data.frame(c(1-0.82,1-0.81,1-0.83),c(1-0.75,1-0.73,1-0.77))
@@ -342,21 +346,23 @@ if(gensample==1){
   
   PSA_all_p<-cbind(PSA_gamma_survival,PSA_meta_survival,PSA_beta1,PSA_beta2,
                    PSA_Sen_VDG,PSA_MRI_cdr,PSA_US_cdr,PSA_log_norm_mean,
-                   PSA_log_norm_sd,PSA_cost_strat,PSA_costvar,PSA_util,PSA_costscreen)
+                   PSA_log_norm_sd,PSA_cost_strat,PSA_costvar,PSA_util,PSA_costscreen,
+                   PSA_cost_follow_up,PSA_cost_biop,PSA_cost_US,PSA_cost_MRI)
   PSA_all_p<-as.data.frame(PSA_all_p)
   colnames(PSA_all_p)<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_survival_3",
                          "PSA_meta_survival_54","PSA_meta_survival_74","PSA_meta_survival_99",
                          "PSA_beta_1","PSA_beta_2",'PSA_VDG1_sen','PSA_VDG2_sen',
                          'PSA_VDG3_sen', 'PSA_VDG4_sen',"PSA_MRI_cdr","PSA_US_cdr",
                          "PSA_log_norm_mean","PSA_log_norm_sd","PSA_cost_strat","PSA_costvar",
-                         "PSA_util_1to3","PSA_util_4","PSA_costscreen")
+                         "PSA_util_1to3","PSA_util_4","PSA_costscreen","PSA_cost_follow_up",
+                         "PSA_cost_biop","PSA_cost_US","PSA_cost_MRI")
   
 masterframe<-data.frame(matrix(nrow=inum*mcruns,ncol=length(risksample[1,])+length(PSA_all_p[1,])))
 masterframe[,1:14]<-risksample
-masterframe[,15:35]<-PSA_all_p
-masterframe[,36]<-(rep(1:chunks,times=round(length(masterframe[,1])/chunks)))
+masterframe[,15:39]<-PSA_all_p
+masterframe[,40]<-(rep(1:chunks,times=round(length(masterframe[,1])/chunks)))
 masterframe<-masterframe %>% filter(masterframe[,11]>=50)
-risksplit<-split(masterframe,masterframe[,36])
+risksplit<-split(masterframe,masterframe[,40])
 rm(masterframe,risksample,PSA_all_p,risk_mat)
 
 #Save risk sample in chunks
@@ -461,6 +467,10 @@ for (ii in 1:chunks) {
     cost_strat<-risk_data[31]
     cost_DCIS<-cost_DCIS_base*(1+risk_data[32])
     cost_screen<-cost_screen_base*(1+risk_data[35])
+    cost_follow_up <- cost_follow_up_base*(1+risk_data[36])
+    cost_biop <- cost_biop_base*(1+risk_data[37])
+    cost_US <- cost_US_base*(1+risk_data[38])
+    cost_MRI <-cost_MRI_base*(1+risk_data[39])
     
     ###############Screen times###############################
     
@@ -753,20 +763,21 @@ for (ii in 1:chunks) {
     } #end j loop
     
     #c(LY_counter, QALY_counter, costs, screen_counter, (screen_detected_ca+interval_ca), cancer_diagnostic, c(risk_data[15:34]), screen_strategy)
-    c(QALY_counter, costs, screen_counter,cancer_diagnostic[8], c(risk_data[15:35]), screen_strategy)
+    c(QALY_counter, costs, screen_counter,cancer_diagnostic[8], c(risk_data[15:39]), screen_strategy)
   }
   results <- data.frame(results)
   names(results)[1] <- 'QALY'
   names(results)[2] <- 'Cost'
   names(results)[3] <- 'Screens'
   names(results)[4] <- "Cancer Diagnosed"
-  names(results)[5:25]<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_survival_3",
+  names(results)[5:29]<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_survival_3",
                          "PSA_meta_survival_54","PSA_meta_survival_74","PSA_meta_survival_99",
                          "PSA_beta_1","PSA_beta_2",'PSA_VDG1_sen','PSA_VDG2_sen',
                          'PSA_VDG3_sen', 'PSA_VDG4_sen',"PSA_MRI_cdr","PSA_US_cdr",
                          "PSA_log_norm_mean","PSA_log_norm_sd","PSA_cost_strat","PSA_costvar",
-                         "PSA_util_1to3","PSA_util_4","PSA_costscreen")
- names(results)[26]<-"Strategy"
+                         "PSA_util_1to3","PSA_util_4","PSA_costscreen","PSA_cost_follow_up",
+                         "PSA_cost_biop","PSA_cost_US","PSA_cost_MRI")
+ names(results)[30]<-"Strategy"
   
   #directory to save inum/10 sets of case histories and name of files
   save(results,file = paste("PSA/PSA_",screen_strategy,"_",ii,".Rdata",sep = "")) 
