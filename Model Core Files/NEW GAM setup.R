@@ -3,12 +3,13 @@ library("parallel")
 screen_strategies<-c(0,1,2,3,4,9)
 screen_strategy<-0
 load(paste("PSA/PSA_",screen_strategy,"_",1,".Rdata",sep = ""))
+psaresults<-results
 for (i in 2:10){
   #name of saved files needed
   load(paste("PSA/PSA_",screen_strategy,"_",i,".Rdata",sep = ""))
   psaresults<-rbind(psaresults,results)
 }
-psaresults<-results
+
 
 for (j in 2:6){
 screen_strategy<-screen_strategies[j]
