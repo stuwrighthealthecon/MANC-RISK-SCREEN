@@ -1,15 +1,20 @@
 library("parallel")
+library("mgcv")
 
 screen_strategies<-c(0,1,2,3,4,9)
 screen_strategy<-0
 load(paste("PSA/PSA_",screen_strategy,"_",1,".Rdata",sep = ""))
+results<-results %>% filter(results[,4]>50 | results[,4]==0)
+results<-results[-c(3:4)]
 psaresults<-results
+
 for (i in 2:10){
   #name of saved files needed
   load(paste("PSA/PSA_",screen_strategy,"_",i,".Rdata",sep = ""))
+  results<-results %>% filter(results[,4]>50 | results[,4]==0)
+  results<-results[-c(3:4)]
   psaresults<-rbind(psaresults,results)
 }
-
 
 for (j in 2:6){
 screen_strategy<-screen_strategies[j]
@@ -17,30 +22,23 @@ screen_strategy<-screen_strategies[j]
 for (i in 1:10){
   #name of saved files needed
   load(paste("PSA/PSA_",screen_strategy,"_",i,".Rdata",sep = ""))
+  results<-results %>% filter(results[,4]>50 | results[,4]==0)
+  results<-results[-c(3:4)]
  psaresults<-rbind(psaresults,results)
 }
 }
 
-names(psaresults)[1] <- 'QALY'
-names(psaresults)[2] <- 'Cost'
-names(psaresults)[3] <- 'Screens'
-names(psaresults)[4:23]<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_survival_3",
-                        "PSA_meta_survival_54","PSA_meta_survival_74","PSA_meta_survival_99",
-                        "PSA_beta_1","PSA_beta_2",'PSA_VDG1_sen','PSA_VDG2_sen',
-                        'PSA_VDG3_sen', 'PSA_VDG4_sen',"PSA_MRI_cdr","PSA_US_cdr",
-                        "PSA_log_norm_mean","PSA_log_norm_sd","PSA_cost_strat","PSA_costvar",
-                        "PSA_util_1to3","PSA_util_4")
-names(psaresults)[24]<-"alternative"
+psaresults[,29][psaresults[,29]==0]<-"noscreening"
+psaresults[,29][psaresults[,29]==1]<-"procas"
+psaresults[,29][psaresults[,29]==2]<-"tertiles"
+psaresults[,29][psaresults[,29]==3]<-"3yr"
+psaresults[,29][psaresults[,29]==4]<-"2yr"
+psaresults[,29][psaresults[,29]==9]<-"fullstrat"
 
-alternatives<-c("noscreening","procas","tertiles","3yr","2yr","fullstrat")
-psaresults[,25]<-c(1:length(psaresults[,1]))
-names(psaresults)[25]<-"id"
-
-
-psaresults[,24][psaresults[,24]==9]<-"fullstrat"
-psaresults[,24]<-as.factor(psaresults[,24])
+psaresults[,29]<-as.factor(psaresults[,29])
 
 save(psaresults,file = paste("PSA/PSA_","psaresults",".Rdata",sep = "")) 
+psaresults<-psaresults[-c(20)]
 
 modQ <- bam(data = psaresults,
             formula = QALY ~
@@ -58,8 +56,6 @@ modQ <- bam(data = psaresults,
               s(PSA_VDG2_sen, by = alternative, bs = "cr") +
               s(PSA_VDG3_sen, by = alternative, bs = "cr") +
               s(PSA_VDG4_sen, by = alternative, bs = "cr") +
-              s(PSA_MRI_cdr, by = alternative, bs = "cr") +
-              s(PSA_US_cdr, by = alternative, bs = "cr") +
               s(PSA_log_norm_mean, by = alternative, bs = "cr") +
               s(PSA_log_norm_sd, by = alternative, bs = "cr") +
               alternative)
@@ -83,9 +79,11 @@ modC <- bam(data = psaresults,
               s(PSA_VDG2_sen, by = alternative, bs = "cr") +
               s(PSA_VDG3_sen, by = alternative, bs = "cr") +
               s(PSA_VDG4_sen, by = alternative, bs = "cr") +
-              s(PSA_MRI_cdr, by = alternative, bs = "cr") +
-              s(PSA_US_cdr, by = alternative, bs = "cr") +
               s(PSA_log_norm_mean, by = alternative, bs = "cr") +
               s(PSA_log_norm_sd, by = alternative, bs = "cr") +
+              s(PSA_cost_follow_up, by = alternative, bs = "cr") +
+              s(PSA_cost_biop, by = alternative, bs = "cr") +
               alternative)
 summary(modC)
+
+save(modC,file="Costmodel.Rdata")

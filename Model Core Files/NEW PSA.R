@@ -40,7 +40,7 @@ source(file="MANC_RISK_SCREEN_functions Version 1.R")
 #model
 inum<-1000
 jnum<-1
-mcruns<-2000
+mcruns<-1000
 chunks<-10
 
 #####Choose screening programme and related parameters##########
@@ -51,7 +51,7 @@ chunks<-10
 #7=Low risk (5 yearly), 8=Low risk (6 yearly),
 #9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-1
+screen_strategy<-0
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
@@ -765,7 +765,7 @@ for (ii in 1:chunks) {
     } #end j loop
     
     #c(LY_counter, QALY_counter, costs, screen_counter, (screen_detected_ca+interval_ca), cancer_diagnostic, c(risk_data[15:34]), screen_strategy)
-    c(QALY_counter, costs, screen_counter,cancer_diagnostic[8], c(risk_data[15:40]), screen_strategy)
+    c(QALY_counter, costs, screen_counter,cancer_diagnostic[8], c(risk_data[15:41]), screen_strategy)
   }
   results <- data.frame(results)
   names(results)[1] <- 'QALY'
@@ -779,7 +779,7 @@ for (ii in 1:chunks) {
                          "PSA_log_norm_mean","PSA_log_norm_sd","PSA_cost_strat","PSA_costvar",
                          "PSA_util_1to3","PSA_util_4","PSA_costscreen","PSA_cost_follow_up",
                          "PSA_cost_biop","PSA_cost_US","PSA_cost_MRI","mcid")
- names(results)[31]<-"Strategy"
+ names(results)[31]<-"alternative"
   
   #directory to save inum/10 sets of case histories and name of files
   save(results,file = paste("PSA/PSA_",screen_strategy,"_",ii,".Rdata",sep = "")) 
