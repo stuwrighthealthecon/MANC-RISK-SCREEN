@@ -2,7 +2,7 @@ library("mgcv")
 
 #Load the predictive model
 #This is quite large at the moment (1.8GB)
-load("QALYmodel.Rdata")
+modQ<-readRDS("QALYmodelslim.RDS")
 
 #Input some values, these would be the values that decision makers can change
 #For some we'd change it to a more logical value and then convert it to the data we need
@@ -42,4 +42,4 @@ names(input_vector_strategies)<-c(names(input_vector),"alternative")
 #Predict the QALYs for each strategy
 #This is not giving sensible values at the moment so I need to fix
 #Should be ok for now
-predict.bam(modQ,input_vector_strategies,type="response")
+predict.bam(modQ,input_vector_strategies)
