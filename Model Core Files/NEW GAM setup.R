@@ -28,6 +28,7 @@ for (i in 1:10){
 }
 }
 
+
 psaresults[,29][psaresults[,29]==0]<-"noscreening"
 psaresults[,29][psaresults[,29]==1]<-"procas"
 psaresults[,29][psaresults[,29]==2]<-"tertiles"
@@ -62,7 +63,7 @@ modQ <- bam(data = psaresults,
 summary(modQ)
 
 modQ[2:43]<-NULL
-saveRDS(modQ,file="QALYmodelslim.RDS")
+saveRDS(modQ,file="QALYmodelslim2.RDS")
 
 modC <- bam(data = psaresults,
             formula = Cost ~ 
@@ -88,4 +89,5 @@ modC <- bam(data = psaresults,
               alternative)
 summary(modC)
 
-save(modC,file="Costmodel.Rdata")
+modC[2:43]<-NULL
+save(modC,file="Costmodel.RDS")

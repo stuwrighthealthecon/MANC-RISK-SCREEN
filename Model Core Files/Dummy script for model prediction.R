@@ -2,7 +2,8 @@ library("mgcv")
 
 #Load the predictive model
 #This is quite large at the moment (1.8GB)
-modQ<-readRDS("QALYmodelslim.RDS")
+modQ<-readRDS("QALYmodelslim2.RDS")
+modC<-readRDS("Costmodel.RDS")
 
 #Input some values, these would be the values that decision makers can change
 #For some we'd change it to a more logical value and then convert it to the data we need
@@ -24,11 +25,16 @@ input_vector<-c("PSA_util_1to3"= 0.82,
                 "PSA_MRI_cdr"= 0.0049849249,
                 "PSA_US_cdr"= 0.0030001112,
                 "PSA_log_norm_mean"= 1.07,
-                "PSA_log_norm_sd"= 1.31)
+                "PSA_log_norm_sd"= 1.31,
+                "PSA_cost_strat"= 8.12,
+                "PSA_costvar" = 0,
+                "PSA_cost_follow_up" = 0,
+                "PSA_cost_biop"= 0,
+                "PSA_costscreen" = 0)
 
 #Make a row for each alternative (screening strategy)
 #I'm sure there's a better way to do this!
-input_vector_strategies<-data.frame(matrix(nrow=6,ncol=18))
+input_vector_strategies<-data.frame(matrix(nrow=6,ncol=23))
 input_vector_strategies[1,]<-input_vector
 input_vector_strategies[2,]<-input_vector
 input_vector_strategies[3,]<-input_vector
@@ -36,10 +42,13 @@ input_vector_strategies[4,]<-input_vector
 input_vector_strategies[5,]<-input_vector
 input_vector_strategies[6,]<-input_vector
 
-input_vector_strategies[,19]<-as.factor(c("noscreening","2","2yr","3yr","procas","fullstrat"))
+input_vector_strategies[,24]<-as.factor(c("noscreening","tertiles","2yr","3yr","procas","fullstrat"))
 names(input_vector_strategies)<-c(names(input_vector),"alternative")
 
 #Predict the QALYs for each strategy
 #This is not giving sensible values at the moment so I need to fix
 #Should be ok for now
 predict.bam(modQ,input_vector_strategies)
+predict.bam(modC,input_vector_strategies)
+
+

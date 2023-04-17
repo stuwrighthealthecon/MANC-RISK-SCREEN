@@ -38,7 +38,7 @@ source(file="MANC_RISK_SCREEN_functions Version 1.R")
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-1000
+inum<-100
 jnum<-1
 mcruns<-1000
 chunks<-10
@@ -51,7 +51,7 @@ chunks<-10
 #7=Low risk (5 yearly), 8=Low risk (6 yearly),
 #9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-0
+screen_strategy<-9
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
@@ -765,7 +765,7 @@ for (ii in 1:chunks) {
     } #end j loop
     
     #c(LY_counter, QALY_counter, costs, screen_counter, (screen_detected_ca+interval_ca), cancer_diagnostic, c(risk_data[15:34]), screen_strategy)
-    c(QALY_counter, costs, screen_counter,cancer_diagnostic[8], c(risk_data[15:41]), screen_strategy)
+    c(QALY_counter, costs, screen_counter,cancer_diagnostic[8], c(risk_data[15:40]), screen_strategy)
   }
   results <- data.frame(results)
   names(results)[1] <- 'QALY'
