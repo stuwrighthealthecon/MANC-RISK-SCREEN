@@ -301,17 +301,21 @@ if(gensample==1){
   #Set growth rate for tumours
   names(risksample)[4:14]<-paste(c("Risk Group","VDG","MRI Screening","US Screening","Risk Predicted","Feedback","Interval Change","Life Expectancy","Cancer","Clinical Detection Size","Growth Rate"))
   
-  survmvn<-data.frame(c(-5.46208,-5.2077,-5.8016),c(-3.8163,-3.75901,-3.8811),c(-2.72264,-2.66053,-2.78617))
-  survcovmat<-cov(survmvn)
-  survmeans<-c(survmvn[1,1],survmvn[1,2],survmvn[1,3])
-  PSA_gamma_survival<-mvrnorm(mcruns,survmeans,survcovmat)
+  #survmvn<-data.frame(c(-5.46208,-5.2077,-5.8016),c(-3.8163,-3.75901,-3.8811),c(-2.72264,-2.66053,-2.78617))
+  #survcovmat<-cov(survmvn)
+  #survmeans<-c(survmvn[1,1],survmvn[1,2],survmvn[1,3])
+  #PSA_gamma_survival<-mvrnorm(mcruns,survmeans,survcovmat)
+  
+  PSA_gamma_survival<-c(rnorm(1,-5.46208,0.137),rnorm(1,-3.8163,0.0305),rnorm(1,-2.66053,0.0302))
   
   #Metatstatic survival parameters
-  metmvn<-data.frame(c(-1.78723,-1.67922,-1.89434),c(-1.38762,-1.33512,-1.49956),c(-1.01051,-0.93338,-1.08304))
-  metmat<-cov(metmvn)
-  metmeans<-c(metmvn[1,1],metmvn[1,2],metmvn[1,3])
-  PSA_meta_survival<-mvrnorm(mcruns,metmeans,metmat)
-  
+ # metmvn<-data.frame(c(-1.78723,-1.67922,-1.89434),c(-1.38762,-1.33512,-1.49956),c(-1.01051,-0.93338,-1.08304))
+  #metmat<-cov(metmvn)
+  #metmeans<-c(metmvn[1,1],metmvn[1,2],metmvn[1,3])
+  #PSA_meta_survival<-mvrnorm(mcruns,metmeans,metmat)
+
+  PSA_meta_survival<-c(rnorm(1,-1.78723,0.0549),rnorm(1,-1.38762,0.0268),rnorm(1,-1.01051,0.0380))
+    
   #Mammography with sensitivity conditional on tumour diameter parameters W-F
   PSA_beta1 <- rnorm(mcruns,1.47,0.1)
   PSA_beta2 <- rnorm(mcruns,6.51,0.5)
@@ -338,11 +342,13 @@ if(gensample==1){
   PSA_cost_MRI<-rnorm(mcruns,0,0.1020408)
   
   #Generate utility draws
-  utilmat<-data.frame(c(1-0.82,1-0.81,1-0.83),c(1-0.75,1-0.73,1-0.77))
-  lnutilmat<-log(utilmat)
-  covutil<-cov(lnutilmat)
-  utilmeans<-c(log(1-0.82),log(1-0.75))
-  PSA_util<-1-exp(mvrnorm(mcruns,utilmeans,covutil))
+ # utilmat<-data.frame(c(1-0.82,1-0.81,1-0.83),c(1-0.75,1-0.73,1-0.77))
+  #lnutilmat<-log(utilmat)
+  #covutil<-cov(lnutilmat)
+  #utilmeans<-c(log(1-0.82),log(1-0.75))
+  #PSA_util<-1-exp(mvrnorm(mcruns,utilmeans,covutil))
+  
+  PSA_util<-c(rnorm(1,0.82,0.00510),rnorm(1,0.75,0.0102))
   
   mcid<-c(1:mcruns)
   

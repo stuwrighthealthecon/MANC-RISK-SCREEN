@@ -1,5 +1,6 @@
 library("parallel")
 library("mgcv")
+library("tidyverse")
 
 screen_strategies<-c(0,1,2,3,4,9)
 screen_strategy<-0
@@ -63,7 +64,7 @@ modQ <- bam(data = psaresults,
 summary(modQ)
 
 modQ[2:43]<-NULL
-saveRDS(modQ,file="QALYmodelslim2.RDS")
+saveRDS(modQ,file="QALYmodelslim.RDS")
 
 modC <- bam(data = psaresults,
             formula = Cost ~ 
@@ -90,4 +91,4 @@ modC <- bam(data = psaresults,
 summary(modC)
 
 modC[2:43]<-NULL
-save(modC,file="Costmodel.RDS")
+saveRDS(modC,file="costmodelslim.RDS")
