@@ -1,4 +1,5 @@
 library("mgcv")
+library("dampack")
 
 #Load the predictive model
 #This is quite large at the moment (1.8GB)
@@ -35,21 +36,34 @@ input_vector<-c("PSA_gamma_survival_1"= -5.462,
 
 #Make a row for each alternative (screening strategy)
 #I'm sure there's a better way to do this!
-input_vector_strategies<-data.frame(matrix(nrow=6,ncol=23))
-input_vector_strategies[1,]<-as.numeric(input_vector)
-input_vector_strategies[2,]<-as.numeric(input_vector)
-input_vector_strategies[3,]<-as.numeric(input_vector)
-input_vector_strategies[4,]<-as.numeric(input_vector)
-input_vector_strategies[5,]<-as.numeric(input_vector)
-input_vector_strategies[6,]<-as.numeric(input_vector)
+input_df<-data.frame(matrix(nrow=6,ncol=23))
+input_df[1,]<-as.numeric(input_vector)
+input_df[2,]<-as.numeric(input_vector)
+input_df[3,]<-as.numeric(input_vector)
+input_df[4,]<-as.numeric(input_vector)
+input_df[5,]<-as.numeric(input_vector)
+input_df[6,]<-as.numeric(input_vector)
 
-input_vector_strategies[,24]<-as.factor(c("noscreening","tertiles","2yr","3yr","procas","fullstrat"))
-names(input_vector_strategies)<-c(names(input_vector),"alternative")
+strategies <- as.factor(levels(modQ$var.summary$alternative))
+input_df[,24] <- data.frame(alternative = strategies)
+names(input_df)<-c(names(input_vector),"alternative")
 
 #Predict the QALYs and costs for each strategy
 #This is not giving sensible values at the moment so I need to fix
 #Should be ok for now
-predict.bam(modQ,input_vector_strategies)
-predict.bam(modC,input_vector_strategies)
+#Predict the QALYs and costs for each strategy
+qaly <- mgcv::predict.bam(modQ,input_df)
+cost <- mgcv::predict.bam(modC,input_df)
 
+output_df <- data.frame(qualy = qaly, cost = cost)
+rownames(output_df) <- strategies
+output_df[,"incQALYS"]<-c(output_df$qualy-output_df$qualy[4])
+output_df[,"incCost"]<-c(output_df$cost-output_df$cost[4])
+output_df[,"ICER"]<-c(output_df$incCost/output_df$incQALYS)
+output_df[,"NB20k"]<-c((output_df$incQALYS*20000)-output_df$incCost)
+output_df[,"NB30k"]<-c((output_df$incQALYS*30000)-output_df$incCost)
 
+icer_strat<-calculate_icers(cost=output_df$cost,
+                            effect=output_df$qualy,
+                            strategies = c(row.names(output_df)))
+plot(icer_strat,currency="£",label="all")
