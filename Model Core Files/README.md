@@ -1,6 +1,6 @@
 # Manchester-Breast-Cancer-Model
 
-This model was developed by Ewan Gray, Anna Donten, and Katherine Payne and validated by Stuart Wright, Gabriel Rogers, Katherine Payne, and Rob Hainsworth at the Manchester Centre for Health Economics. The model is currently maintained by Stuart Wright (stuart.j.wright@manchester.ac.uk)
+This model was developed by Ewan Gray, Anna Donten, and Katherine Payne and validated by Stuart Wright, Gabriel Rogers, Katherine Payne, and Rob Hainsworth at the Manchester Centre for Health Economics. The model is currently maintained by Stuart Wright 
 
 This discrete event simulation model estimates the QALYs, costs, and clinical outcomes of women attending breast cancer screening delivered using one of 6 strategies or for#no screening. The available screening programmes are 
    1) risk stratified screening using the Tyrer-Cuzick V8 questionnaire and Volpara breast density scan using risk cut-offs defined in the PROCAS project.
