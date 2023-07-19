@@ -29,7 +29,6 @@ for (i in 1:10){
 }
 }
 
-
 psaresults[,29][psaresults[,29]==0]<-"noscreening"
 psaresults[,29][psaresults[,29]==1]<-"procas"
 psaresults[,29][psaresults[,29]==2]<-"tertiles"
