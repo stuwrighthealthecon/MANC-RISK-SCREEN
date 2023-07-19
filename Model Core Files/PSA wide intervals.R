@@ -25,22 +25,22 @@ gensample<-1
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Register number of cores for foreach loop
-numcores<-7
+numcores<-8
 registerDoParallel(cores=numcores)
 
 #Set timer to record duration of simulation
 ptm <- proc.time()
 
 #Load file containing required functions for the model
-source(file="MANC_RISK_SCREEN_functions Version 1.R")
+source(file="MANC_RISK_SCREEN_functions Version 1.1.R")
 
 #Set loop numbers
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-100
+inum<-1
 jnum<-1
-mcruns<-1000
+mcruns<-2000000
 chunks<-10
 
 #####Choose screening programme and related parameters##########
@@ -51,7 +51,7 @@ chunks<-10
 #7=Low risk (5 yearly), 8=Low risk (6 yearly),
 #9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-9
+screen_strategy<-0
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
