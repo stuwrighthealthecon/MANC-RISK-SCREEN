@@ -1,10 +1,10 @@
 #########  MANC-RISK-SCREEN #########
 
 #This model was developed by Ewan Gray and Katherine Payne
-#and validated by Stuart Wright, Gabriel Rogers, Katherine
-#Payne, and Rob Hainsworth at the Manchester Centre for 
+#and validated by Stuart Wright, Gabriel Rogers, Katherine Payne
+#and Rob Hainsworth at the Manchester Centre for 
 #Health Economics. The model is currently maintained by
-#Stuart Wright (stuart.j.wright@manchester.ac.uk)
+#Stuart Wright
 
 #This discrete event simulation model estimates the QALYs,
 #costs, and clinical outcomes of women attending breast 
