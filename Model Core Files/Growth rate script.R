@@ -1,6 +1,6 @@
 #Set tumour growth rate parameters
 log_norm_mean <- 1.07
-log_norm_sd <- 1.31
+log_norm_sd <- 1.47
 max_size <- 128 #mm diameter
 start_size <- 0.25 #starting size of tumours, diameter in mm
 Vc = (4/3)*pi*(start_size/2)^3 #Volume at start
