@@ -299,6 +299,7 @@ if(gensample==1){
   risksample[,13]<-risksample[,12]*(dqrnorm(n = length(risksample[,12]),mean = clin_detection_m,sd = clin_detection_sd))
   
   #Set growth rate for tumours
+  risksample[,14]<-risksample[,12]*qlnorm(dqrunif(length(risksample[,12]),0,1),meanlog=log_norm_mean,sdlog=sqrt(log_norm_sd))
   names(risksample)[4:14]<-paste(c("Risk Group","VDG","MRI Screening","US Screening","Risk Predicted","Feedback","Interval Change","Life Expectancy","Cancer","Clinical Detection Size","Growth Rate"))
   
   #survmvn<-data.frame(c(-5.46208,-5.2077,-5.8016),c(-3.8163,-3.75901,-3.8811),c(-2.72264,-2.66053,-2.78617))
