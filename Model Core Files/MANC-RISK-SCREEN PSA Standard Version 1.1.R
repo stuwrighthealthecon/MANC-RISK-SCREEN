@@ -29,7 +29,7 @@ numcores<-7
 registerDoParallel(cores=numcores)
 
 #Load file containing required functions for the model
-source(file="MANC_RISK_SCREEN_functions Version 1.R")
+source(file="MANC_RISK_SCREEN_functions Version 1.1.R")
 
 #Set loop numbers
 #To attain stable results it is recommended that inum is set
