@@ -1,16 +1,8 @@
-PSA=1
-intervals=1
-inum=100
-mcruns=100
-chunks=10
-
-create_sample(PSA,intervals,seed=1)
-
 create_sample<-function(PSA=0,intervals=0,seed=1){
 
   #Import synthetic dataset derived from PROCAS2 study
   risk_mat<-read.csv("synthetic_risk_data.csv")[,2:4]
-  colnames(risk_mat)<-c("VBD","10yrrisk","liferisk")
+  colnames(risk_mat)<-c("VBD","tenyrrisk","liferisk")
   
   #Creat column for risk group to be entered
   risk_mat$risk_group<-numeric(length(risk_mat$VBD))
