@@ -19,7 +19,7 @@ Incidence_function <- function(){
   if (incidence_time <= screen_endage & incidence_time >= screen_startage & dqrunif(1,0,1)<prop_screen_detected){detect_mode <- 0} #screen detected
   
   #size at detection - as number of tumour doublings in diameter from a 0.25mm diameter
-  clin_detect_size_g <- risk_data[13]
+  clin_detect_size_g <- risk_data$clinical_detect_size
   clin_detect_size_g <- start_size*2^clin_detect_size_g
   ca_size_incidence <- clin_detect_size_g
   if(detect_mode == 0){
