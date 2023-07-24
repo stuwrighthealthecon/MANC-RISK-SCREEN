@@ -29,19 +29,19 @@ supplemental_screening<-0
 gensample<-1
 
 #Deterministic (0) or Probabilistic Analysis (1)
-PSA=1
+PSA=0
 
 #Standard (0) or wide (1) distributions for PSA
 #Wide intervals recommended for generating data to predict GAM model
-intervals=1
+intervals=0
 
 #Set working directory
-#setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Set loop numbers
-inum<-100
+inum<-10000
 jnum<-1
-mcruns<-100
+mcruns<-1
 chunks<-10
 seed<-set.seed(1)
 
@@ -380,6 +380,7 @@ for (ii in 1:chunks) {
     cost_biop <- cost_biop_base*(1+risk_data$PSA_cost_biop)
     cost_US <- cost_US_base*(1+risk_data$PSA_cost_US)
     cost_MRI <-cost_MRI_base*(1+risk_data$PSA_cost_MRI)
+    
     }
     
     ###############Screen times###############################
@@ -620,7 +621,13 @@ for (ii in 1:chunks) {
           
           if(stage_cat<3){iStage<-"Early"} else {iStage<-"Late"}
           if(age<65){iAge<-"18.64"} else {iAge<-"65plus"}
-          if(stage_cat <5){costs<-costs+((1+risk_data$PSA_costvar)*as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),50)))*current_discount))}
+          
+if(PSA==0){
+  if(stage_cat <5){costs<-costs+(as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),50)))*current_discount))}
+} else {
+  if(stage_cat <5){costs<-costs+((1+risk_data$PSA_costvar)*as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),50)))*current_discount))}
+}         
+          
           cancer_diagnostic[9] <- c(Mort_age)
           cancer_diagnostic[2] <- c(stage_cat) 
           
@@ -719,7 +726,8 @@ for (i in 1:chunks){
   merged_result[i,4] <- mean(results[,5])
   merged_result[i,5] <- mean(results[,6])
   merged_result[i,6] <- mean(results[,7])
-}}else{
+}
+  write.csv(merged_result,file = paste("Detresults_strat_",screen_strategy,".csv"))}else{
   for (i in 1:chunks){
     #name of saved files needed
     load(paste("PSA results/PSA_",screen_strategy,"_",i,".Rdata",sep = ""))
@@ -731,9 +739,10 @@ for (i in 1:chunks){
     merged_result[i,5] <- mean(results[,6])
     merged_result[i,6] <- mean(results[,7])
   } 
+  write.csv(merged_result,file = paste("PSAresults_strat_",screen_strategy,".csv"))
 }
 
-write.csv(merged_result,file = "PSAresults.csv")
+
 
 
 
