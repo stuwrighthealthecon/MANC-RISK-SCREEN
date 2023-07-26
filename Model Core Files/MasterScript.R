@@ -39,14 +39,14 @@ intervals=0
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Set loop numbers
-inum<-10000
+inum<-2000000
 jnum<-1
 mcruns<-1
 chunks<-10
 seed<-set.seed(1)
 
 #Register number of cores for foreach loop
-numcores<-8
+numcores<-16
 registerDoParallel(cores=numcores)
 
 #Load file containing required functions for the model
@@ -681,8 +681,8 @@ if(PSA==0){
     
     #c(LY_counter, QALY_counter, costs, screen_counter, (screen_detected_ca+interval_ca), cancer_diagnostic, c(risk_data[15:34]), screen_strategy)
     if(PSA==0){
-      c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca, screen_strategy)}else{
-    as.numeric(c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca,screen_strategy, c(risk_data[15:40])))
+      c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca, screen_strategy,risk_data$growth_rate,cancer_diagnostic)}else{
+    as.numeric(c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca,screen_strategy,risk_data$growth_rate, c(risk_data[15:40])))
       }
     }
   results <- data.frame(results)
@@ -693,9 +693,10 @@ if(PSA==0){
   names(results)[5] <- "Cancer"
   names(results)[6] <- "screen detected"
   names(results)[7] <-"alternative"
+  names(results)[8] <- "Growth rate"
   
   if(PSA==1){
-  names(results)[8:33]<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_survival_3",
+  names(results)[9:34]<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_survival_3",
                           "PSA_meta_survival_54","PSA_meta_survival_74","PSA_meta_survival_99",
                           "PSA_beta_1","PSA_beta_2",'PSA_VDG1_sen','PSA_VDG2_sen',
                           'PSA_VDG3_sen', 'PSA_VDG4_sen',"PSA_MRI_cdr","PSA_US_cdr",
