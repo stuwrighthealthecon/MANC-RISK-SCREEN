@@ -99,10 +99,6 @@ discount_cost<-0.035
 #Set proportion of cancers in screening age range detected by screen
 prop_screen_detected<-0.431
 
-#Set the mean and standard deviation of the doubling rate for tumours
-screen_detection_m<-4.12
-screen_detection_sd<-3.93
-
 #Set parameters of a Weibull survival curve to represent all cause mortality
 acmmortality_wb_a<-7.937
 acmmortality_wb_b<-86.788
@@ -123,7 +119,7 @@ metastatic_prob <- data.frame(c(25,35,45,55,65,75,85),
 #Create matrix of Nottingham Prognostic Indicator by cancer size
 stage_by_size_mat<-data.frame("v1"=c(0.383,0.567,0.611,0.557,0,0),
                             "v2"=c(0.033,0.111,0.180,0.208,0.723,0.563),
-                            "v3"=c(0.058,0.057,0.208,0.147,0.206,0.351),
+                            "v3"=c(0.058,0.057,0.089,0.147,0.206,0.351),
                             "v5"=c(0.525,0.265,0.120,0.088,0.071,0.086))
 
 #Set mean and sd of tumour doublings at clinical detection
@@ -178,7 +174,7 @@ risk_cutoffs_tert <- c(1.946527,2.942792) #tertiles of risk
 low_risk_cut<-1.5 #cut off in low risk only strategies
 
 #Cancer size cut-points
-ca_size_cut <- c(0.025, 5, 10, 15, 20, 30, 128) #category cut-points from Kolias 1999
+ca_size_cut <- c(0.25, 5, 10, 15, 20, 30, 128) #category cut-points from Kolias 1999
 
 #######################Cost Data#########################################
 
