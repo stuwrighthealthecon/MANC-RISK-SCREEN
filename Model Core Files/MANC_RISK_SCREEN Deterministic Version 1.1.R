@@ -53,7 +53,7 @@ source(file="MANC_RISK_SCREEN_functions Version 1.1.R")
 #To attain stable results it is recommended that inum is set
 #to 10,000,000. However, this will significantly slow the 
 #model
-inum<-10000
+inum<-2000000
 jnum<-1
 
 #####Choose screening programme and related parameters##########
