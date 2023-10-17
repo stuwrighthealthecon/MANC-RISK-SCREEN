@@ -39,7 +39,7 @@ intervals=0
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Set loop numbers
-inum<-2000000
+inum<-100000
 jnum<-1
 mcruns<-1
 chunks<-10
@@ -616,7 +616,7 @@ for (ii in 1:chunks) {
           costs = costs + (cost_DCIS*current_discount)}
           
           #Generate a cancer specific survival time, accounting for competing risks
-          Ca_mort_age <- cmp_ca_survival_time(stage_cat,Mort_age,age,CD_age)
+          Ca_mort_age <- cmp_ca_survival_time(stage_cat,Mort_age,age,ca_incidence_age)
           if(Ca_mort_age<Mort_age){Mort_age<-Ca_mort_age}
           
           if(stage_cat<3){iStage<-"Early"} else {iStage<-"Late"}
@@ -681,8 +681,8 @@ if(PSA==0){
     
     #c(LY_counter, QALY_counter, costs, screen_counter, (screen_detected_ca+interval_ca), cancer_diagnostic, c(risk_data[15:34]), screen_strategy)
     if(PSA==0){
-      c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca, screen_strategy,risk_data$growth_rate,cancer_diagnostic)}else{
-    as.numeric(c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca,screen_strategy,risk_data$growth_rate, c(risk_data[15:40])))
+      c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca, screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age),cancer_diagnostic)}else{
+    as.numeric(c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca,screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age), c(risk_data[15:40])))
       }
     }
   results <- data.frame(results)
@@ -694,9 +694,10 @@ if(PSA==0){
   names(results)[6] <- "screen detected"
   names(results)[7] <-"alternative"
   names(results)[8] <- "Growth rate"
+  names(results)[9] <- "Life Years"
   
   if(PSA==1){
-  names(results)[9:34]<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_survival_3",
+  names(results)[10:35]<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_survival_3",
                           "PSA_meta_survival_54","PSA_meta_survival_74","PSA_meta_survival_99",
                           "PSA_beta_1","PSA_beta_2",'PSA_VDG1_sen','PSA_VDG2_sen',
                           'PSA_VDG3_sen', 'PSA_VDG4_sen',"PSA_MRI_cdr","PSA_US_cdr",
@@ -715,7 +716,7 @@ if(PSA==0){
 #results #see result if parellel version
 #save results
 #see results
-merged_result <- matrix(0,nrow = chunks,ncol = 6)
+merged_result <- matrix(0,nrow = chunks,ncol = 7)
 if(PSA==0){
 for (i in 1:chunks){
   #name of saved files needed
@@ -727,6 +728,7 @@ for (i in 1:chunks){
   merged_result[i,4] <- mean(results[,5])
   merged_result[i,5] <- mean(results[,6])
   merged_result[i,6] <- mean(results[,7])
+  merged_result[i,7] <- mean(results[,9])
 }
   write.csv(merged_result,file = paste("Detresults_strat_",screen_strategy,".csv"))}else{
   for (i in 1:chunks){
@@ -739,6 +741,7 @@ for (i in 1:chunks){
     merged_result[i,4] <- mean(results[,5])
     merged_result[i,5] <- mean(results[,6])
     merged_result[i,6] <- mean(results[,7])
+    merged_result[i,7] <- mean(results[,9])
   } 
   write.csv(merged_result,file = paste("PSAresults_strat_",screen_strategy,".csv"))
 }
