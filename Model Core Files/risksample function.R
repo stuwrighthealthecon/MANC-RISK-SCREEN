@@ -80,7 +80,7 @@ create_sample<-function(PSA=0,intervals=0,seed=1){
   PSA_log_norm_sd <- rnorm(mcruns,1.31,0.11)
   
   #Draw costs
-  PSA_cost_strat<-rlnorm(mcruns,2.13387381,0.06349671)
+  PSA_cost_strat<-(rlnorm(mcruns,2.13387381,0.06349671)*1.0272)
   PSA_costvar<-rnorm(mcruns,0,0.1020408)
   PSA_costscreen<-rnorm(mcruns,0,0.1020408)
   PSA_cost_follow_up<-rnorm(mcruns,0,0.1020408)

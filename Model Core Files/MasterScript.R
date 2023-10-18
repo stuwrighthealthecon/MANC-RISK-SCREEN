@@ -20,13 +20,13 @@ library("iterators")
 #5=5 yearly, 6=2 rounds at 50 and 60 (10 yearly), 7=Low risk (5 yearly),
 #8=Low risk (6 yearly),#9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-3
+screen_strategy<-9
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
 
 #Generate new sample? 1=YES, any other number NO
-gensample<-1
+gensample<-0
 
 #Deterministic (0) or Probabilistic Analysis (1)
 PSA=0
@@ -39,7 +39,7 @@ intervals=0
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Set loop numbers
-inum<-100000
+inum<-2000000
 jnum<-1
 mcruns<-1
 chunks<-10
@@ -79,10 +79,6 @@ discount_cost<-0.035
 
 #Set proportion of cancers in screening age range detected by screen
 prop_screen_detected<-0.431
-
-#Set the mean and standard deviation of the doubling rate for tumours
-screen_detection_m<-4.12
-screen_detection_sd<-3.93
 
 #Set parameters of a Weibull survival curve to represent all cause mortality
 acmmortality_wb_a<-7.937
@@ -163,13 +159,13 @@ ca_size_cut <- c(0.025, 5, 10, 15, 20, 30, 128) #category cut-points from Kolias
 
 #######################Cost Data#########################################
 
-cost_strat<-8.45
-cost_screen_base <- 60.56
-cost_follow_up_base <- 106
-cost_biop_base <- 290
-cost_DCIS_base <- 9840
-cost_US_base <- 52
-cost_MRI_base <-114
+cost_strat<-8.69
+cost_screen_base <- 62.21
+cost_follow_up_base <- 109.4
+cost_biop_base <- 297.98
+cost_DCIS_base <- 10107.80
+cost_US_base <- 53.41
+cost_MRI_base <-117.10
 
 if(PSA==0){
   cost_DCIS<-cost_DCIS_base
@@ -199,7 +195,7 @@ tbl <- tribble(~Yr, ~Early_18.64, ~Late_18.64, ~Diff1, ~Early_65plus, ~Late_65pl
                values_to = "Cost") %>%
   group_by(Stage, Age) %>%
   mutate(DCost      = Cost - first(Cost),
-         DCost.i    = DCost * 1.219312579, # NHSCII inflator for 2010/11-->2020/21
+         DCost.i    = DCost * 1.2524778811488, # NHSCII inflator for 2010/11-->2021/2022
          disc       = 1/1.035^(Yr-0.5),
          DCost.i.d  = DCost.i * disc,
          CDCost.i.d = cumsum(DCost.i.d),
@@ -745,7 +741,6 @@ for (i in 1:chunks){
   } 
   write.csv(merged_result,file = paste("PSAresults_strat_",screen_strategy,".csv"))
 }
-
 
 
 
