@@ -61,12 +61,12 @@ uptakeotherscreen<-0.852 #Uptake if woman has attended >=1 screen
 uptakenoscreen<-0.191 #Uptake if woman has not previously attended screening
 
 #Uptake for risk stratification
-risk_uptake<-1
-risk_feedback<-1
-screen_change<-1
+risk_uptake<-1 #Uptake for risk prediction
+risk_feedback<-1 #Uptake for attending risk feedback consultation
+screen_change<-1 #Uptake for changing screening intervals based on risk
 
 #Age of an individual at start of simulation
-start_age<-38
+start_age<-38 #Default is 38 to give time for tumours to develop pre-screening
 
 #Set time horizon
 time_horizon<-100
@@ -85,19 +85,20 @@ acmmortality_wb_a<-7.937
 acmmortality_wb_b<-86.788
 
 #Set parameters for all cause mortality following breast cancer
-gamma_survival_1<-exp(-5.462) #exponential distribution scale parameter stage 1
-gamma_survival_2<-exp(-3.814) #exponential distribution scale parameter stage 2
-gamma_survival_3<-exp(-2.723) #exponential distribution scale parameter stage 3
+gamma_survival_1<-exp(-5.462) #Exponential distribution scale parameter stage 1
+gamma_survival_2<-exp(-3.814) #Exponential distribution scale parameter stage 2
+gamma_survival_3<-exp(-2.723) #Exponential distribution scale parameter stage 3
 gamma_stage <- c(gamma_survival_1,gamma_survival_2,gamma_survival_3)
 
-#Set incidence disribution
+#Read in distribution of cancer incidence by age
 Incidence_Mortality<-read.csv("Incidence_Mortality_ONS2.csv")
 
 #Set metastatic cancer probabilities by age
 metastatic_prob <- data.frame(c(25,35,45,55,65,75,85),
-                              c(0.046218154,0.086659039,0.109768116,0.127099924,0.142505975,0.159837783,1.73E-01))
+                              c(0.046218154,0.086659039,0.109768116,0.127099924,
+                                0.142505975,0.159837783,1.73E-01))
 
-#Create matrix of Nottingham Prognostic Indicator by cancer size
+#Create matrix of probability of cancer stage by cancer size
 stage_by_size_mat<-data.frame("v1"=c(0.383,0.567,0.611,0.557,0,0),
                               "v2"=c(0.033,0.111,0.180,0.208,0.723,0.563),
                               "v3"=c(0.058,0.057,0.089,0.147,0.206,0.351),
@@ -111,62 +112,63 @@ clin_detection_sd <- 0.535
 screen_detection_m <- 6.12 
 screen_detection_sd <- 0.96 
 
-#Mammography with sensitivity conditional on tumour diameter parameters W-F
+#Mammography with sensitivity conditional on tumour diameter parameters
 beta1 <- 1.47 
 beta2 <- 6.51
 
-#Mammography sensitivity by volpara density grade from PREVENTICON
+#Mammography sensitivity by volpara density grade
 VDG_interval<-c(4.5,7.5,15.5)
 Sen_VDG <- c(0.85,0.776,0.695,0.61)
 Sen_VDG_av <- 0.757
 
-#Supplemental screening sensitivity parameters from CEPAC
-Mammo_cdr <- 4.2 #Cancer detection rate per 1000 high dense screens Mammo CEPAC
-MRI_cdr <- 5 #CDR for MRI in Mammo negative women (incremental)
-US_cdr <- 3 #CDR for US in Mammo negative women (incremental)
+#Supplemental screening sensitivity parameters
+Mammo_cdr <- 4.2 #Cancer detection rate per 1000 high dense screens
+MRI_cdr <- 5 #CDR for MRI in Mammogram negative women (incremental)
+US_cdr <- 3 #CDR for US in Mammogram negative women (incremental)
 
 #Set tumour growth rate parameters
 log_norm_mean <- 1.07
 log_norm_sd <- 1.31
-max_size <- 128 #mm diameter
-start_size <- 0.25 #starting size of tumours, diameter in mm
+max_size <- 128 #Maximum size of tumours, mm diameter
+start_size <- 0.25 #Starting size of tumours, diameter in mm
 Vc = (4/3)*pi*(start_size/2)^3 #Volume at start
 Vm = (4/3)*pi*(max_size/2)^3 #Max volume
 
 #Metatstatic survival parameters
-meta_survival_54 <- exp(-1.787) #age <= 54
-meta_survival_74 <- exp(-1.388) #age 55-74
-meta_survival_99 <- exp(-1.011) # 75+
+meta_survival_54 <- exp(-1.787) #Age <= 54
+meta_survival_74 <- exp(-1.388) #Age 55-74
+meta_survival_99 <- exp(-1.011) #Age 75+
 metastatic_survival <- c(meta_survival_54, meta_survival_74, meta_survival_99)
 
 #Set screening ages
-screen_startage <- 50
-screen_endage <- 70
-high_risk_screentimes <- seq(screen_startage,screen_endage,1) #Yearly
-med_risk_screentimes <- seq(screen_startage,screen_endage,2) #Two yearly
-low_risk_screentimes <- seq(screen_startage,screen_endage,3) #Three yearly
+screen_startage <- 50 #Starting age
+screen_endage <- 70 #Ending age
+high_risk_screentimes <- seq(screen_startage,screen_endage,1) #Yearly screening
+med_risk_screentimes <- seq(screen_startage,screen_endage,2) #Two yearly screening
+low_risk_screentimes <- seq(screen_startage,screen_endage,3) #Three yearly screening
 
 #Set maximum screening sensitivity
 sensitivity_max <- 0.95
 
 #Risk cut-offs for different screening approaches
-risk_cutoffs_procas <- c(1.5,3.5,5,8,100) #procas plan
-risk_cutoffs_tert <- c(1.946527,2.942792) #tertiles of risk
-low_risk_cut<-1.5 #cut off in low risk only strategies
+risk_cutoffs_procas <- c(1.5,3.5,5,8,100) #PROCAS and PROCAS Full
+risk_cutoffs_tert <- c(1.946527,2.942792) #Tertiles of risk
+low_risk_cut<-1.5 #Cut off in low risk only strategies
 
 #Cancer size cut-points
-ca_size_cut <- c(0.025, 5, 10, 15, 20, 30, 128) #category cut-points from Kolias 1999
+ca_size_cut <- c(0.025, 5, 10, 15, 20, 30, 128) #Size cut-points for deciding stage
 
 #######################Cost Data#########################################
 
-cost_strat<-8.69
-cost_screen_base <- 62.21
-cost_follow_up_base <- 109.4
-cost_biop_base <- 297.98
-cost_DCIS_base <- 10107.80
-cost_US_base <- 53.41
-cost_MRI_base <-117.10
+cost_strat<-8.69 #Cost of risk prediction
+cost_screen_base <- 62.21 #Cost of Mammography
+cost_follow_up_base <- 109.4 #Cost of follow-up
+cost_biop_base <- 297.98 #Cost of biopsyy
+cost_DCIS_base <- 10107.80 #Cost of treating DCIS
+cost_US_base <- 53.41 #Cost of ultrasound
+cost_MRI_base <-117.10 #Cost of MRI
 
+#If deterministic analysis then set costs as base costs
 if(PSA==0){
   cost_DCIS<-cost_DCIS_base
   cost_screen<-cost_screen_base
@@ -176,7 +178,7 @@ if(PSA==0){
   cost_MRI <-cost_MRI_base
 }
 
-# read in and refactor data from Laudicella et al. (2016) https://doi.org/10.1038/bjc.2016.77
+#Set up look-up table for treatment costs
 tbl <- tribble(~Yr, ~Early_18.64, ~Late_18.64, ~Diff1, ~Early_65plus, ~Late_65plus, ~Diff2,
                0, 464, 607, 143, 1086, 1324, 238,
                1, 10746, 13315, 2569, 7597, 8804, 1207,
@@ -205,22 +207,22 @@ tbl <- tribble(~Yr, ~Early_18.64, ~Late_18.64, ~Diff1, ~Early_65plus, ~Late_65pl
   filter(Yr > 0) %>%
   arrange(Stage, Age, Yr)
 
-# log-linear model
+#Create predictive model of cost by age of diagnosis, stage, life expectancy
 mod <- lm(data = tbl,
           formula = log(DCost) ~ (Yr1 + Yr2 + Yr3 + Yr) * Stage * Age)
 
-# prediction matrix
+#Prediction matrix
 tblNewDat <- crossing(Yr=1:50, Stage=c("Early", "Late"), Age=c("18.64", "65plus")) %>%
   mutate(Yr1 = as.factor(Yr==1),
          Yr2 = as.factor(Yr==2),
          Yr3 = as.factor(Yr==3))
 
-# generate predictions
+#Generate cost predictions
 tblNewDat %>%
   bind_cols(pred = mod %>% predict(newdata = tblNewDat)) %>%
   mutate(DCost.p = exp(pred)) -> tblPred
 
-# make lookup table
+#Make lookup table for costs
 tblLookup <- tblPred %>%
   filter(Yr==1) %>%
   mutate(across(c(Yr, pred, DCost.p), ~0)) %>%
@@ -236,8 +238,8 @@ tblLookup <- tblPred %>%
   ungroup()
 
 ##########False Positive and Overdiagnosis parameters################
-recall_rate <- 0.0456 #approx UK recall rate
-biopsy_rate <- 0.024 #proporiton of referrals without cancer that have biopsy - Madan
+recall_rate <- 0.0456 #UK recall rate
+biopsy_rate <- 0.024 #Proporiton of referrals without cancer that have biopsy
 
 #######################Utility Weights#########################################
 
@@ -246,34 +248,35 @@ utility_ages<-data.frame(c(30,35,40,45,50,55,60,65,70,75,80,85,90,95,100),
                          c(0.9383,0.9145,0.9069,0.8824,0.8639,0.8344,0.8222,0.8072,0.8041,0.779,0.7533,0.6985,0.6497,0.6497,0.6497))
 
 #Set time independent utility decrements
-#Metastatic cancer 
+#Utility of DCIS
 utility_DCIS <- 1 #assumes no effect
 
-#Set first year utilities: 
+#Set first year cancer utilities: 
 utility_stage_cat_y1 <- c("stage1"=0.82/0.822, 
                           "stage2"=0.82/0.822,
                           "stage3"=0.75/0.822,
                           "Metastatic"=0.75/0.822,
                           "DCIS"=utility_DCIS)
 
-#Set following year utilities:
+#Set following year cancer utilities:
 utility_stage_cat_follow <- c("stage1"=0.82/0.822,
                               "stage2"=0.82/0.822,
                               "stage3"=0.75/0.822,
                               "Metastatic"=0.75/0.822,
                               "DCIS"=utility_DCIS)
 
-#########################CREATE SAMPLE OF WOMEN FOR MODEL#######
+#########################CREATE SAMPLE OF WOMEN FOR MODEL###################
 if(gensample==1){create_sample(PSA,intervals,seed)}
 
 ################Outer Individual sampling loop##############################
 
-#Set loop to divide i loop into 10 sub-loops in case of simulation break
+#Set loop to divide i loop into a number of sub-loops in case of simulation break
 for (ii in 1:chunks) {
   load(paste("Risksample/risksample_",ii,".Rdata",sep = ""))
   prefix<-paste("^","X",ii,".",sep="")
   names(splitsample)<-sub(prefix,"",names(splitsample))
-  
+
+#Assign women to risk groups based on 10yr risk if using risk-stratified approach  
   if(screen_strategy==1 | screen_strategy==9) {
     splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk,risk_cutoffs_procas)
   } else
@@ -283,12 +286,15 @@ for (ii in 1:chunks) {
       if(screen_strategy==7 | screen_strategy==8) {
         splitsample$risk_group<-ifelse(splitsample$tenyrrisk<low_risk_cut,1,2)
       }  
-  
+
+#Assign women to supplemental screening if switched on and criteria met 
   if(supplemental_screening==1){
     for (i in 1:length(splitsample$MRI_screen)) {
       if(splitsample[i,"VDG"]>=density_cutoff & splitsample[i,"tenyearrisk"]>=8){splitsample[i,"MRI_screen"]<1}else
         if(splitsample[i,"VDG"]>=density_cutoff & splitsample[i,"tenyearrisk"]<8){splitsample[i,"US_screen"]<-1}}}
-  
+
+#If risk-stratified screening used then determine if each woman chooses to have
+#risk predicted, attends risk consultation, and changes interval
   if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strategy<10)){
     splitsample$risk_predicted<-ifelse(dqrunif(
       length(splitsample$risk_predicted),0,1)<
@@ -300,10 +306,11 @@ for (ii in 1:chunks) {
                                           dqrunif(length(splitsample$interval_change),0,1)<
                                           c(rep(screen_change)),1,0)
   }
-  
+
+#Create iterator for the data.frame of women to pass to parallel processors  
   itx<-iter(splitsample,by="row")
   
-  #Set counters for individual sampling loop
+#Set counters for individual sampling loop
   total_screens <- 0
   total_cancers_detected <- 0
   total_costs <- 0
@@ -315,32 +322,32 @@ for (ii in 1:chunks) {
   total_QALYs <- 0
   total_costs_follow_up <- 0
   
-  #Open loop
+#Open i loop: Simulating individual women through the strategy
   results <- foreach(i=itx,.combine = 'rbind',.packages = c('MASS','dqrng','tidyverse')) %dopar% {
     
     #Set up record of age, size, mode of detection of each detected cancer
     cancer_diagnostic <- rep(0,10)
     
-    #Draw a breast density, 10 year, and lifetime risk of cancer for the individual
+    #Select an individual woman from the data.frame
     risk_data<-as.data.frame(i)
-  
     
+    #If PSA switched on, replace base case parameter values with Monte Carlo draws
     if(PSA==1){
-    #Clinical data
+    
     beta1<-risk_data$PSA_beta_1
     beta2<-risk_data$PSA_beta_2
     
     log_norm_mean<-risk_data$PSA_log_norm_mean
     log_norm_sd<-risk_data$PSA_log_norm_sd
     
-    gamma_survival_1<-exp(risk_data$PSA_gamma_survival_1) #exponential distribution scale parameter stage 1
-    gamma_survival_2<-exp(risk_data$PSA_gamma_survival_2) #exponential distribution scale parameter stage 2
-    gamma_survival_3<-exp(risk_data$PSA_gamma_survival_3) #exponential distribution scale parameter stage 3
+    gamma_survival_1<-exp(risk_data$PSA_gamma_survival_1) 
+    gamma_survival_2<-exp(risk_data$PSA_gamma_survival_2) 
+    gamma_survival_3<-exp(risk_data$PSA_gamma_survival_3) 
     gamma_stage <- c(gamma_survival_1,gamma_survival_2,gamma_survival_3)
     
-    meta_survival_54 <- exp(risk_data$PSA_meta_survival_54) #age <= 54
-    meta_survival_74 <- exp(risk_data$PSA_meta_survival_74) #age 55-74
-    meta_survival_99 <- exp(risk_data$PSA_meta_survival_99) # 75+
+    meta_survival_54 <- exp(risk_data$PSA_meta_survival_54) 
+    meta_survival_74 <- exp(risk_data$PSA_meta_survival_74) 
+    meta_survival_99 <- exp(risk_data$PSA_meta_survival_99) 
     metastatic_survival <- c(meta_survival_54, meta_survival_74, meta_survival_99)
     
     Sen_VDG<-c(risk_data$PSA_VDG1_sen,risk_data$PSA_VDG2_sen,
@@ -354,22 +361,18 @@ for (ii in 1:chunks) {
                                                    meanlog=log_norm_mean,
                                                    sdlog=sqrt(log_norm_sd))
     
-    #Utilities
-    #Set first year utilities: 
     utility_stage_cat_y1 <- c("stage1"=risk_data$PSA_util_1to3/0.822, 
                               "stage2"=risk_data$PSA_util_1to3/0.822,
                               "stage3"=risk_data$PSA_util_1to3/0.822,
                               "Metastatic"=risk_data$PSA_util_4/0.822,
                               "DCIS"=utility_DCIS)
-    
-    #Set following year utilities:
+
     utility_stage_cat_follow <- c("stage1"=risk_data$PSA_util_1to3/0.822, 
                                   "stage2"=risk_data$PSA_util_1to3/0.822,
                                   "stage3"=risk_data$PSA_util_1to3/0.822,
                                   "Metastatic"=risk_data$PSA_util_4/0.822,
                                   "DCIS"=utility_DCIS)
     
-    #Cost data
     cost_strat<-risk_data$PSA_cost_strat
     cost_DCIS<-cost_DCIS_base*(1+risk_data$PSA_costvar)
     cost_screen<-cost_screen_base*(1+risk_data$PSA_costscreen)
@@ -377,11 +380,11 @@ for (ii in 1:chunks) {
     cost_biop <- cost_biop_base*(1+risk_data$PSA_cost_biop)
     cost_US <- cost_US_base*(1+risk_data$PSA_cost_US)
     cost_MRI <-cost_MRI_base*(1+risk_data$PSA_cost_MRI)
-    
     }
     
-    ###############Screen times###############################
-    
+############################## Set Screen times###############################
+
+#Assign screening intervals based on strategy and risk group    
     screen_times <- c(999)
     if (screen_strategy==1 & risk_data$interval_change==1) {
       if (risk_data$risk_group<4) {screen_times<-low_risk_screentimes} else
@@ -420,49 +423,50 @@ for (ii in 1:chunks) {
             if (risk_data$risk_group==5) {screen_times<-high_risk_screentimes}
     } else if(screen_strategy==9 & risk_data$interval_change==0) {screen_times<-low_risk_screentimes}
     
-    ##########Counters i loop level######################
-    #screen-detected cancer counts
-    screen_detected_count <- 0
-    sdfirst_counter <- 0
-    sdlast_counter <-0
-    #count of screens
-    screen_counter <- 0
-    lastscreen_counter <-0
-    US_counter <- 0
-    MRI_counter <- 0
-    #recall count
-    recall_counter <- 0
-    #total cost
-    cost_counter <- 0
-    #total life years
-    LY_counter <- 0
-    #total QALYs
-    QALY_counter <- 0
-    #Cancer stage counters
-    stage1_counter <- 0
-    stage2_counter <- 0
-    stage3_counter <- 0
-    stage4_counter <- 0
-    DCIS_counter <- 0
+##########################Set counters at i loop level#########################
     
-    #######J loop for individual experience of breast cancer screening)
+    #screen-detected cancer counts
+    screen_detected_count <- 0 #Cancer detected by screening
+    sdfirst_counter <- 0 #Cancer found at first screen
+    sdlast_counter <-0 #Cancer found at last screen
+    #Count of screens
+    screen_counter <- 0 #Number of Screens
+    lastscreen_counter <-0 #Last screen attended
+    US_counter <- 0 #Number of ultrasounds
+    MRI_counter <- 0 #Number of MRIs
+    #Recall count
+    recall_counter <- 0 #Number of recalls
+    #Total cost
+    cost_counter <- 0 #Total costs
+    #Total life years
+    LY_counter <- 0 #Total life years
+    #Total QALYs
+    QALY_counter <- 0 #Total QALYs
+    #Cancer stage counters
+    stage1_counter <- 0 #Stage 1 cancer found
+    stage2_counter <- 0 #Stage 2 cancer found
+    stage3_counter <- 0 #Stage 3 cancer found
+    stage4_counter <- 0 #Stage 4 cancer found
+    DCIS_counter <- 0 #DCIS found
+    
+    #######J loop for individual experience of breast cancer screening##########
     for (j in jnum){
       
       #Set J level counters
-      screen_count <- 0
-      missed_screen<- 0
-      recall_count <- 0
-      sdlast_cancer <-0
-      lastscreen_count <- 0
-      sdfirst_cancer <- 0
-      stage_cat <- 0
-      MRI_count <- 0
-      US_count <- 0
-      incidence_age_record <- 0
-      costs <- 0
-      US_costs <- 0
-      MRI_costs <- 0
-      costs_follow_up <- 0
+      screen_count <- 0 #Screens attended
+      missed_screen<- 0 #Screens missed
+      recall_count <- 0 #Number of recalls
+      sdlast_cancer <-0 #Cancer detected as last screen
+      lastscreen_count <- 0 #Attended last screen
+      sdfirst_cancer <- 0 #Cancer detected at first screen
+      stage_cat <- 0 #Stage of diagnosed cancer
+      MRI_count <- 0 #Number of MRIS
+      US_count <- 0 #Number of Ultrasounds
+      incidence_age_record <- 0 #Age of cancer incidence
+      costs <- 0 #Total costs
+      US_costs <- 0 #Ultrasound costs
+      MRI_costs <- 0 #MRI costs
+      costs_follow_up <- 0 #Follow up costs
       
       #Lifetime cancer incidence
       #Determines if a cancer occurs and at what age
@@ -472,11 +476,11 @@ for (ii in 1:chunks) {
         #Determine cancer growth rate
         grow_rate_i<-risk_data$growth_rate
         
-        #Incidence age (under current programme)
+        #Determine when the cancer would be clinically diagnosed
         ca_incidence_i <- cmp_incidence_function()
         ca_incidence_age <- ca_incidence_i[1]
         
-        #Clinical detection age
+        #Determine size at clinical detection age
         CD_size <- ca_incidence_i[4]#tumour diameter at CD
         
         #The detection age is either the age at clinical detection 
@@ -492,49 +496,58 @@ for (ii in 1:chunks) {
         gen_age <- CD_age - t_gen
       } else {
         ca_case <- 0
-        ca_incidence_age <- 999 #redundent but ensures after end of simulation if called
-        CD_age <- 999 #redundent but ensures after end of simulation if called
+        ca_incidence_age <- 999 #Redundant but ensures after end of simulation if called
+        CD_age <- 999 #Redundant but ensures after end of simulation if called
       }
       
-      #All cause moratlity
-      #Get a mortality age and make sure this is greater than start age and cancer incidence age
+      #Get an all-cause mortality age and make sure this is greater than start
+      #age and cancer incidence age
       Mort_age <- risk_data$life_expectancy
       
-      #Ca incidence ('original' incidence time) trumps mortality
-      #because it is probability conditional on survival
-      if(ca_case == 1 & Mort_age <= ca_incidence_age){Mort_age <-qweibull(p = dqrunif(n = 1,min = pweibull(q = CD_age,shape = acmmortality_wb_a,scale = acmmortality_wb_b), max = 1),shape = acmmortality_wb_a, scale = acmmortality_wb_b)}
+      #If cancer occurs after age of death, re-draw age of death
+      if(ca_case == 1 & Mort_age <= ca_incidence_age){Mort_age <-qweibull(
+        p = dqrunif(n = 1,min = pweibull(
+          q = CD_age,shape = acmmortality_wb_a,scale = acmmortality_wb_b),max = 1),
+        shape = acmmortality_wb_a, scale = acmmortality_wb_b)}
       if(Mort_age >= time_horizon){Mort_age <- 99.99}
       cancer_diagnostic[7] <- c(Mort_age)
       
       #Other individual variables
       age <- start_age
-      interval_ca <- 0
-      screen_detected_ca <- 0
+      interval_ca <- 0 #Cancer clinically detected
+      screen_detected_ca <- 0 #Cancer screen detected
       
-      #####################DES COMPONENT #######################
+##############################DES COMPONENT ###################################
       
-      Time_to_screen <- screen_times[1] - age #select the current next screen age and subtract age
-      Time_to_death <- Mort_age - age #time to death from current age
+      Time_to_screen <- screen_times[1] - age #Select the current next screen age and subtract age
+      Time_to_death <- Mort_age - age #Time to death from current age
       Time_to_CD <- CD_age - age  #Time to clinical detection
       
-      #triple While loop condition check if abosrbing death, 
-      #screen_detected or interval ca event has occured
-      #update age at the end of each iteration
+      #Triple While loop condition check if absorbing death, screen_detected or
+      #interval ca event has occurred. Update age at the end of each iteration
       
       while ((age < Mort_age) && (interval_ca == 0) && (screen_detected_ca == 0)){
         
-        #events pre-diagnosis
+        #Events pre-diagnosis
         Event_list <- c(Time_to_screen,Time_to_death,Time_to_CD)
-        Event_place <- which.min(Event_list) # pick the nearest event in time
-        Next_event_time <- Event_list[Event_place] # the time to nearest event
+        Event_place <- which.min(Event_list) #Pick the nearest event in time
+        Next_event_time <- Event_list[Event_place] #The time to nearest event
+        
+        #Calculate current discount rate
         current_discount<-(1/((1+discount_cost)^(Next_event_time+age-screen_startage)))
         
         #Open screening event
         if(Event_place == 1){
+          
+          #Check if woman attends screen
           if (screen_count==0 & missed_screen==0 & dqrunif(1,0,1)>uptakefirstscreen |
               screen_count==0 & missed_screen>0 & dqrunif(1,0,1)>uptakenoscreen|
               screen_count>0 & dqrunif(1,0,1)>uptakeotherscreen) {missed_screen<-missed_screen+1}else{
+                
+          #Woman attends screen    
                 screen_count<-screen_count+1
+                
+          #Add cost of a mammography and risk prediction if first screen for relevant strategies
                 costs<-costs+(cost_screen*current_discount)
                 if(screen_count==1 & screen_strategy<3 & risk_data$risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
                 if(screen_count==1 & screen_strategy==7 & risk_data$risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
