@@ -3,12 +3,33 @@ library(gt)
 library(tidyverse)
 library(magrittr)
 
-output_df <- data.frame(matrix(nrow=6,ncol=2))
-strategies<-c("noscreening","PROCAS","Tertiles","3 year","2 year","PROCAS full")
+output_df <- data.frame(matrix(nrow=6,ncol=4))
+screen_strategies<-c(0,1,2,3,4,9)
+
+for (j in 1:6){
+  screen_strategy<-screen_strategies[j]
+load(paste("Deterministic results/Determ_",screen_strategy,"_",1,".Rdata",sep = ""))
+results<-results %>% filter(results[,4]>50 | results[,4]==0)
+results<-results[-c(4:8)]
+results<-results[-c(5:14)]
+detresults<-results
+
+for (i in 2:10){
+  #name of saved files needed
+  load(paste("Deterministic results/Determ_",screen_strategy,"_",i,".Rdata",sep = ""))
+  results<-results %>% filter(results[,4]>50 | results[,4]==0)
+  results<-results[-c(4:8)]
+  results<-results[-c(5:14)]
+  detresults<-rbind(detresults,results)
+}
+output_df[j,]<-c(mean(detresults[,1]),mean(detresults[,2]),mean(detresults[,3]),mean(detresults[,4]))
+}
+
+
+strategies<-c("No Screening","Risk-1","Risk-2","3 Yearly","2 Yearly","Risk-3")
 rownames(output_df) <- strategies
-colnames(output_df)<-c("qaly","cost")
-output_df$qaly<-c(14.872,14.904,14.917,14.900,14.912,14.902)
-output_df$cost<-c(1200.355,1566.479,1792.041,1529.768,1702.856,1552.524)
+colnames(output_df)<-c("qaly","cost","screens","life years")
+
 output_df[,"incQALYS"]<-c(output_df$qaly-output_df$qaly[1])
 output_df[,"incCost"]<-c(output_df$cost-output_df$cost[1])
 output_df[,"ICER"]<-c(output_df$incCost/output_df$incQALYS)
@@ -18,10 +39,7 @@ output_df[,"NB30k"]<-c((output_df$incQALYS*30000)-output_df$incCost)
 icer_strat<-calculate_icers(cost=output_df$cost,
                             effect=output_df$qaly,
                             strategies = c(row.names(output_df)))
-plot(icer_strat,currency="£",label="all")
-
-rownames(output_df)<-c("2 Yearly", "3 Yearly", "PROCAS 2", "No Screening", "PROCAS 1", "PROCAS 3")
-
+plot(icer_strat,currency="£", label="all")
 
 fnIncCU <- function(Names, Costs, QALYs , blnNHB=TRUE, WTP=c(20000,30000), blnCUP=TRUE, costDP = 2, qalyDP = 5, icerDP = 2) {
   nn <- NROW(Names)

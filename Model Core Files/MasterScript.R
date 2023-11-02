@@ -20,7 +20,7 @@ library("iterators")
 #5=5 yearly, 6=2 rounds at 50 and 60 (10 yearly), 7=Low risk (5 yearly),
 #8=Low risk (6 yearly),#9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-9
+screen_strategy<-0
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
@@ -39,11 +39,11 @@ intervals=0
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Set loop numbers
-inum<-2000000
-jnum<-1
-mcruns<-1
-chunks<-10
-seed<-set.seed(1)
+inum<-3000000 #Individual women to be sampled
+jnum<-1 #Lifetimes to be simulated per woman
+mcruns<-1 #Monte Carlo runs used if PSA switched on
+chunks<-10 #Number of chunks to split inum into for faster running time
+seed<-set.seed(1) #Set seed for random draws
 
 #Register number of cores for foreach loop
 numcores<-16
@@ -56,9 +56,9 @@ source(file="risksample function.R")
 #################################Define baseline parameters####################
 
 #Screening uptake
-uptakefirstscreen<-0.605
-uptakeotherscreen<-0.852
-uptakenoscreen<-0.191
+uptakefirstscreen<-0.605 #Uptake for the first screen
+uptakeotherscreen<-0.852 #Uptake if woman has attended >=1 screen
+uptakenoscreen<-0.191 #Uptake if woman has not previously attended screening
 
 #Uptake for risk stratification
 risk_uptake<-1
@@ -323,6 +323,7 @@ for (ii in 1:chunks) {
     
     #Draw a breast density, 10 year, and lifetime risk of cancer for the individual
     risk_data<-as.data.frame(i)
+  
     
     if(PSA==1){
     #Clinical data
@@ -741,7 +742,5 @@ for (i in 1:chunks){
   } 
   write.csv(merged_result,file = paste("PSAresults_strat_",screen_strategy,".csv"))
 }
-
-
 
 
