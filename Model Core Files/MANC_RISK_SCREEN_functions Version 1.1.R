@@ -41,13 +41,7 @@ Incidence_function <- function(){
     }
   }
   
-  #Generate (non-cancer) mortality time conditional on surviving to time t(period) covered by BC survival function)
-  if (incidence_time<90){
-    mort_time <- sample(x = Incidence_Mortality[,1][incidence_time_1:101],
-                        size = 1,prob = Incidence_Mortality[,3][incidence_time_1:101])
-  }else{mort_time <- 101} # if get cancer at >90 then all time in simulation is covered 
-  
-  result<-c(incidence_time,detect_mode,ca_size_incidence, clin_detect_size_g,mort_time)
+  result<-c(incidence_time,detect_mode,ca_size_incidence, clin_detect_size_g)
   return(result)
 }
 cmp_incidence_function<-cmpfun(Incidence_function)
