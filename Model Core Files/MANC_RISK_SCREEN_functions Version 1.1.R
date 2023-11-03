@@ -1,4 +1,5 @@
-#Lookup function for costs
+#########################Lookup function for treatment costs############################
+
 fnLookupBase <- function(iStage, iAge, iLE) {
   as.numeric(tblLookup$CDCost.p.i.d[tblLookup$Stage==iStage & tblLookup$Age==iAge & tblLookup$Yr==iLE])
 }

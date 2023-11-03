@@ -275,8 +275,8 @@ for (ii in 1:chunks) {
   load(paste("Risksample/risksample_",ii,".Rdata",sep = ""))
   prefix<-paste("^","X",ii,".",sep="")
   names(splitsample)<-sub(prefix,"",names(splitsample))
-
-#Assign women to risk groups based on 10yr risk if using risk-stratified approach  
+  
+  #Assign women to risk groups based on 10yr risk if using risk-stratified approach  
   if(screen_strategy==1 | screen_strategy==9) {
     splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk,risk_cutoffs_procas)
   } else
@@ -286,15 +286,15 @@ for (ii in 1:chunks) {
       if(screen_strategy==7 | screen_strategy==8) {
         splitsample$risk_group<-ifelse(splitsample$tenyrrisk<low_risk_cut,1,2)
       }  
-
-#Assign women to supplemental screening if switched on and criteria met 
+  
+  #Assign women to supplemental screening if switched on and criteria met 
   if(supplemental_screening==1){
     for (i in 1:length(splitsample$MRI_screen)) {
       if(splitsample[i,"VDG"]>=density_cutoff & splitsample[i,"tenyearrisk"]>=8){splitsample[i,"MRI_screen"]<1}else
         if(splitsample[i,"VDG"]>=density_cutoff & splitsample[i,"tenyearrisk"]<8){splitsample[i,"US_screen"]<-1}}}
-
-#If risk-stratified screening used then determine if each woman chooses to have
-#risk predicted, attends risk consultation, and changes interval
+  
+  #If risk-stratified screening used then determine if each woman chooses to have
+  #risk predicted, attends risk consultation, and changes interval
   if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strategy<10)){
     splitsample$risk_predicted<-ifelse(dqrunif(
       length(splitsample$risk_predicted),0,1)<
@@ -306,11 +306,11 @@ for (ii in 1:chunks) {
                                           dqrunif(length(splitsample$interval_change),0,1)<
                                           c(rep(screen_change)),1,0)
   }
-
-#Create iterator for the data.frame of women to pass to parallel processors  
+  
+  #Create iterator for the data.frame of women to pass to parallel processors  
   itx<-iter(splitsample,by="row")
   
-#Set counters for individual sampling loop
+  #Set counters for individual sampling loop
   total_screens <- 0
   total_cancers_detected <- 0
   total_costs <- 0
@@ -322,7 +322,7 @@ for (ii in 1:chunks) {
   total_QALYs <- 0
   total_costs_follow_up <- 0
   
-#Open i loop: Simulating individual women through the strategy
+  #Open i loop: Simulating individual women through the strategy
   results <- foreach(i=itx,.combine = 'rbind',.packages = c('MASS','dqrng','tidyverse')) %dopar% {
     
     #Set up record of age, size, mode of detection of each detected cancer
@@ -333,58 +333,58 @@ for (ii in 1:chunks) {
     
     #If PSA switched on, replace base case parameter values with Monte Carlo draws
     if(PSA==1){
-    
-    beta1<-risk_data$PSA_beta_1
-    beta2<-risk_data$PSA_beta_2
-    
-    log_norm_mean<-risk_data$PSA_log_norm_mean
-    log_norm_sd<-risk_data$PSA_log_norm_sd
-    
-    gamma_survival_1<-exp(risk_data$PSA_gamma_survival_1) 
-    gamma_survival_2<-exp(risk_data$PSA_gamma_survival_2) 
-    gamma_survival_3<-exp(risk_data$PSA_gamma_survival_3) 
-    gamma_stage <- c(gamma_survival_1,gamma_survival_2,gamma_survival_3)
-    
-    meta_survival_54 <- exp(risk_data$PSA_meta_survival_54) 
-    meta_survival_74 <- exp(risk_data$PSA_meta_survival_74) 
-    meta_survival_99 <- exp(risk_data$PSA_meta_survival_99) 
-    metastatic_survival <- c(meta_survival_54, meta_survival_74, meta_survival_99)
-    
-    Sen_VDG<-c(risk_data$PSA_VDG1_sen,risk_data$PSA_VDG2_sen,
-               risk_data$PSA_VDG3_sen,risk_data$PSA_VDG4_sen)
-    Sen_VDG_av<-mean(Sen_VDG)
-    
-    MRI_cdr<-risk_data$PSA_MRI_cdr
-    US_cdr<-risk_data$PSA_US_cdr
-    
-    risk_data$growth_rate<-risk_data$cancer*qlnorm(dqrunif(1,0,1),
-                                                   meanlog=log_norm_mean,
-                                                   sdlog=sqrt(log_norm_sd))
-    
-    utility_stage_cat_y1 <- c("stage1"=risk_data$PSA_util_1to3/0.822, 
-                              "stage2"=risk_data$PSA_util_1to3/0.822,
-                              "stage3"=risk_data$PSA_util_1to3/0.822,
-                              "Metastatic"=risk_data$PSA_util_4/0.822,
-                              "DCIS"=utility_DCIS)
-
-    utility_stage_cat_follow <- c("stage1"=risk_data$PSA_util_1to3/0.822, 
-                                  "stage2"=risk_data$PSA_util_1to3/0.822,
-                                  "stage3"=risk_data$PSA_util_1to3/0.822,
-                                  "Metastatic"=risk_data$PSA_util_4/0.822,
-                                  "DCIS"=utility_DCIS)
-    
-    cost_strat<-risk_data$PSA_cost_strat
-    cost_DCIS<-cost_DCIS_base*(1+risk_data$PSA_costvar)
-    cost_screen<-cost_screen_base*(1+risk_data$PSA_costscreen)
-    cost_follow_up <- cost_follow_up_base*(1+risk_data$PSA_cost_follow_up)
-    cost_biop <- cost_biop_base*(1+risk_data$PSA_cost_biop)
-    cost_US <- cost_US_base*(1+risk_data$PSA_cost_US)
-    cost_MRI <-cost_MRI_base*(1+risk_data$PSA_cost_MRI)
+      
+      beta1<-risk_data$PSA_beta_1
+      beta2<-risk_data$PSA_beta_2
+      
+      log_norm_mean<-risk_data$PSA_log_norm_mean
+      log_norm_sd<-risk_data$PSA_log_norm_sd
+      
+      gamma_survival_1<-exp(risk_data$PSA_gamma_survival_1) 
+      gamma_survival_2<-exp(risk_data$PSA_gamma_survival_2) 
+      gamma_survival_3<-exp(risk_data$PSA_gamma_survival_3) 
+      gamma_stage <- c(gamma_survival_1,gamma_survival_2,gamma_survival_3)
+      
+      meta_survival_54 <- exp(risk_data$PSA_meta_survival_54) 
+      meta_survival_74 <- exp(risk_data$PSA_meta_survival_74) 
+      meta_survival_99 <- exp(risk_data$PSA_meta_survival_99) 
+      metastatic_survival <- c(meta_survival_54, meta_survival_74, meta_survival_99)
+      
+      Sen_VDG<-c(risk_data$PSA_VDG1_sen,risk_data$PSA_VDG2_sen,
+                 risk_data$PSA_VDG3_sen,risk_data$PSA_VDG4_sen)
+      Sen_VDG_av<-mean(Sen_VDG)
+      
+      MRI_cdr<-risk_data$PSA_MRI_cdr
+      US_cdr<-risk_data$PSA_US_cdr
+      
+      risk_data$growth_rate<-risk_data$cancer*qlnorm(dqrunif(1,0,1),
+                                                     meanlog=log_norm_mean,
+                                                     sdlog=sqrt(log_norm_sd))
+      
+      utility_stage_cat_y1 <- c("stage1"=risk_data$PSA_util_1to3/0.822, 
+                                "stage2"=risk_data$PSA_util_1to3/0.822,
+                                "stage3"=risk_data$PSA_util_1to3/0.822,
+                                "Metastatic"=risk_data$PSA_util_4/0.822,
+                                "DCIS"=utility_DCIS)
+      
+      utility_stage_cat_follow <- c("stage1"=risk_data$PSA_util_1to3/0.822, 
+                                    "stage2"=risk_data$PSA_util_1to3/0.822,
+                                    "stage3"=risk_data$PSA_util_1to3/0.822,
+                                    "Metastatic"=risk_data$PSA_util_4/0.822,
+                                    "DCIS"=utility_DCIS)
+      
+      cost_strat<-risk_data$PSA_cost_strat
+      cost_DCIS<-cost_DCIS_base*(1+risk_data$PSA_costvar)
+      cost_screen<-cost_screen_base*(1+risk_data$PSA_costscreen)
+      cost_follow_up <- cost_follow_up_base*(1+risk_data$PSA_cost_follow_up)
+      cost_biop <- cost_biop_base*(1+risk_data$PSA_cost_biop)
+      cost_US <- cost_US_base*(1+risk_data$PSA_cost_US)
+      cost_MRI <-cost_MRI_base*(1+risk_data$PSA_cost_MRI)
     }
     
-############################## Set Screen times###############################
-
-#Assign screening intervals based on strategy and risk group    
+    ############################## Set Screen times###############################
+    
+    #Assign screening intervals based on strategy and risk group    
     screen_times <- c(999)
     if (screen_strategy==1 & risk_data$interval_change==1) {
       if (risk_data$risk_group<4) {screen_times<-low_risk_screentimes} else
@@ -423,7 +423,7 @@ for (ii in 1:chunks) {
             if (risk_data$risk_group==5) {screen_times<-high_risk_screentimes}
     } else if(screen_strategy==9 & risk_data$interval_change==0) {screen_times<-low_risk_screentimes}
     
-##########################Set counters at i loop level#########################
+    ##########################Set counters at i loop level#########################
     
     #screen-detected cancer counts
     screen_detected_count <- 0 #Cancer detected by screening
@@ -487,7 +487,8 @@ for (ii in 1:chunks) {
         #or a formula is applied to determine the age at screen 
         #detection
         if(ca_incidence_i[2] ==1){CD_age <- ca_incidence_i[1]} else
-          CD_age <- ca_incidence_i[1] + ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(ca_incidence_i[4]/2)^3))^0.25-1))/(0.25*grow_rate_i)) - 
+          CD_age <- ca_incidence_i[1] + ((log((Vm/Vc)^0.25-1)-
+          log((Vm/((4/3)*pi*(ca_incidence_i[4]/2)^3))^0.25-1))/(0.25*grow_rate_i)) - 
           ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(ca_incidence_i[3]/2)^3))^0.25-1))/(0.25*grow_rate_i))
         cancer_diagnostic[8] <- c(CD_age)
         
@@ -517,7 +518,7 @@ for (ii in 1:chunks) {
       interval_ca <- 0 #Cancer clinically detected
       screen_detected_ca <- 0 #Cancer screen detected
       
-##############################DES COMPONENT ###################################
+      ##############################DES COMPONENT ###################################
       
       Time_to_screen <- screen_times[1] - age #Select the current next screen age and subtract age
       Time_to_death <- Mort_age - age #Time to death from current age
@@ -544,16 +545,18 @@ for (ii in 1:chunks) {
               screen_count==0 & missed_screen>0 & dqrunif(1,0,1)>uptakenoscreen|
               screen_count>0 & dqrunif(1,0,1)>uptakeotherscreen) {missed_screen<-missed_screen+1}else{
                 
-          #Woman attends screen    
+                #Woman attends screen    
                 screen_count<-screen_count+1
                 
-          #Add cost of a mammography and risk prediction if first screen for relevant strategies
+                #Add cost of a mammography and risk prediction if first screen for relevant strategies
                 costs<-costs+(cost_screen*current_discount)
                 if(screen_count==1 & screen_strategy<3 & risk_data$risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
                 if(screen_count==1 & screen_strategy==7 & risk_data$risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
                 if(screen_count==1 & screen_strategy==8 & risk_data$risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
                 if(screen_count==1 & screen_strategy==9 & risk_data$risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
                 if(screen_count == length(screen_times)){lastscreen_count <- 1}
+                
+                #Add costs of supplemental screening if relevant
                 if(risk_data$US_screen == 1){US_count <- US_count + 1
                 costs <- costs + (cost_US*current_discount)
                 US_costs<-US_costs+(cost_US*current_discount)}
@@ -561,10 +564,10 @@ for (ii in 1:chunks) {
                 costs <- costs + (cost_MRI*current_discount)
                 MRI_costs <- MRI_costs + (cost_MRI*current_discount)}
                 
-                #If the next event is a screen:
+                #If the next event is a screen and a cancer is present:
                 if (Event_place == 1 && ca_case ==1){
                   
-                  #Determine if tumour is present
+                  #Determine if tumour is present at screen
                   t <- (age+Next_event_time) - gen_age
                   if (t>0){
                     
@@ -576,7 +579,6 @@ for (ii in 1:chunks) {
                     screen_result <- cmp_screening_result(Ca_size,VDG=risk_data$VDG,MRI_screening = risk_data$MRI_screen,US_screening=risk_data$US_screen)
                     
                     #If a cancer is detected add a cancer and details to the counters
-                    
                     if(screen_result[1] == 1){
                       screen_detected_ca <-1
                       cancer_diagnostic[1] <- c((age+Time_to_screen))
@@ -586,6 +588,8 @@ for (ii in 1:chunks) {
                       cancer_diagnostic[6] <- c(screen_result[3])
                       cancer_diagnostic[10] <- c(screen_count)
                       incidence_age_record = age+Time_to_screen
+                      
+                      #Add cost of diagnostic follow up
                       costs = costs + (cost_follow_up*current_discount) 
                       costs_follow_up = costs_follow_up + (cost_follow_up*current_discount)
                     }
@@ -594,9 +598,11 @@ for (ii in 1:chunks) {
                   } else{screen_detected_ca <- 0} 
                 } else{screen_detected_ca <- 0} 
                 
-                #Does a false-positive occur?
+                #If a cancer is not found does a false-positive occur?
                 if(Event_place == 1 && screen_detected_ca == 0 && dqrunif(1,0,1)<recall_rate){
                   recall_count <- recall_count+1
+                  
+                  #Add costs of false-positive recall
                   costs=costs+(cost_follow_up*current_discount)+(biopsy_rate*cost_biop*current_discount)
                   costs_follow_up=costs_follow_up+(costs_follow_up*current_discount)+(biopsy_rate*cost_biop*current_discount)}
               }} #End screening event
@@ -605,76 +611,104 @@ for (ii in 1:chunks) {
         if(Event_place == 3){
           interval_ca <-1
           incidence_age_record = age+Time_to_CD
+          
+          #Add costs of diagnosis for clinical diagnosis
           costs <- costs + (cost_follow_up*current_discount)
           
           cancer_diagnostic[1] <- c((age+Time_to_CD))
           cancer_diagnostic[3] <- c(CD_size)
         } 
         
-        #Cancer detected clinically or by screening
+        #If a cancer detected clinically or by screening
         if(screen_detected_ca == 1 || interval_ca == 1){
           age <- age + Next_event_time
           if(interval_ca == 1){Ca_size <- CD_size}
           
-          #Assign a Stage based on tumour size
+          #Assign a stage based on tumour size
           stage_cat <- cmp_stage_by_size(Ca_size)
+          
+          #Record the stage
           if(stage_cat == 1){stage1_counter = stage1_counter+1}
           if(stage_cat == 2){stage2_counter = stage2_counter+1}
           if(stage_cat == 3){stage3_counter = stage3_counter+1}
           if(stage_cat == 4){stage4_counter = stage4_counter+1}
           if(stage_cat == 5){DCIS_counter = DCIS_counter+1
+          
+          #Add the cost of DCIS
           costs = costs + (cost_DCIS*current_discount)}
           
           #Generate a cancer specific survival time, accounting for competing risks
           Ca_mort_age <- cmp_ca_survival_time(stage_cat,Mort_age,age,ca_incidence_age)
+          
+          #Reduce age of death if cancer causes woman to die earlier
           if(Ca_mort_age<Mort_age){Mort_age<-Ca_mort_age}
           
+          #Set up variables to look up treatment costs
           if(stage_cat<3){iStage<-"Early"} else {iStage<-"Late"}
           if(age<65){iAge<-"18.64"} else {iAge<-"65plus"}
           
-if(PSA==0){
-  if(stage_cat <5){costs<-costs+(as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),50)))*current_discount))}
-} else {
-  if(stage_cat <5){costs<-costs+((1+risk_data$PSA_costvar)*as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),50)))*current_discount))}
-}         
+          #If deterministic analysis then look up a treatment cost for the cancer
+          if(PSA==0){
+            if(stage_cat <5){costs<-costs+(as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),50)))*current_discount))}
+          } else {
+            #If PSA analysis then look up treatment cost and apply cost variation
+            if(stage_cat <5){costs<-costs+((1+risk_data$PSA_costvar)*as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),50)))*current_discount))}
+          }         
           
+          #Record age of death and stage of cancer
           cancer_diagnostic[9] <- c(Mort_age)
           cancer_diagnostic[2] <- c(stage_cat) 
           
-        }else{age <- age + Next_event_time #update age if no cancer
+        }else{age <- age + Next_event_time #Update age if no cancer
         }
-        #update times for next event
+        
+        #Update times for next event
         if(screen_count+missed_screen < length(screen_times)){Time_to_screen <- screen_times[screen_count+1] - age}else{Time_to_screen <- 101} #when screen times runs out set time to age 101
         Time_to_death <- Mort_age - age 
         Time_to_CD <- CD_age - age
         
-      } #while1 end
-      if((screen_detected_ca+interval_ca) == 0){cancer_diagnostic[1] <- Mort_age} # recorded age is age of death or cancer incidence
+      } #End first while loop
+      if((screen_detected_ca+interval_ca) == 0){cancer_diagnostic[1] <- Mort_age} # Recorded age is age of death or cancer incidence
       
-      #all ca/screen counters
+      #Update all ca/screen counters
       screen_detected_count <- screen_detected_count + screen_detected_ca
       screen_counter <- screen_counter + screen_count
       US_counter <- US_counter + US_count
       MRI_counter <- MRI_counter + MRI_count
-      #FP recalls
+      
+      #Update false-positive recalls
       recall_counter <- recall_counter + recall_count
-      #first screen detected ca counter
+      
+      #Update first screen detected ca counter
       sdfirst_counter <- sdfirst_counter + sdfirst_cancer
-      #last ca/screen counters
+      
+      #Update last ca/screen counters
       sdlast_counter <- sdlast_counter + sdlast_cancer
       lastscreen_counter <- lastscreen_counter + lastscreen_count
-      #Life-year counter
+      
+      #Update Life-year counter
       LY_counter <- LY_counter + (Mort_age-start_age)
       
       #QALY counter
+      #Set up a QALY vector of length equal to life years
       QALY_length <- ceiling(Mort_age)-(screen_startage-1)
+      
+      #If less than 1 life year lived, set length to 1
       if(QALY_length<1){QALY_length <-1}
+      
+      #Ensure people don't live past end of time horizon 
       if(QALY_length>time_horizon-screen_startage){QALY_length <-time_horizon-screen_startage}
+      
+      #Fill QALY vector with 0's
       QALY_vect <- rep(0,QALY_length)
+      
+      #Fill QALY vector with discounted age related utility values
       for (y in 1:length(QALY_vect)){
         QALY_vect[y] <- (utility_ages[match((ceiling(((screen_startage-1)+y)/5)*5),utility_ages[,1]),2])*(1/(1+discount_health)^y)
         QALY_vect[QALY_length]<-QALY_vect[QALY_length]*(1-(ceiling(Mort_age)-Mort_age))
       }
+      #If cancer occurs then fill QALY vector with discounted cancer utilities from incidence age
+      #NB this code accounts for partial years spent in different health states
       if (incidence_age_record > 0){
         QALY_vect[floor(incidence_age_record)-screen_startage] <- utility_stage_cat_y1[stage_cat]*QALY_vect[floor(incidence_age_record)-screen_startage]*(1-(incidence_age_record-floor(incidence_age_record)))}
       if(incidence_age_record>0 & Mort_age-incidence_age_record>1){
@@ -686,15 +720,19 @@ if(PSA==0){
         }
       }
       
+      #Record total QALYs for J loop
       QALY_counter <- QALY_counter + sum(QALY_vect,na.rm = TRUE)
     } #end j loop
     
-    #c(LY_counter, QALY_counter, costs, screen_counter, (screen_detected_ca+interval_ca), cancer_diagnostic, c(risk_data[15:34]), screen_strategy)
+    #If deterministic analysis then record outputs
     if(PSA==0){
       c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca, screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age),cancer_diagnostic)}else{
-    as.numeric(c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca,screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age), c(risk_data[15:40])))
+        #If PSA then record outputs + monte carlo draws
+        as.numeric(c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca,screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age), c(risk_data[15:40])))
       }
-    }
+  }
+  
+  #Create a results data.frame
   results <- data.frame(results)
   names(results)[1] <- 'QALY'
   names(results)[2] <- 'Cost'
@@ -706,44 +744,33 @@ if(PSA==0){
   names(results)[8] <- "Growth rate"
   names(results)[9] <- "Life Years"
   
+  #If PSA add additional columns for Monte Carlo draws
   if(PSA==1){
-  names(results)[10:35]<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_survival_3",
-                          "PSA_meta_survival_54","PSA_meta_survival_74","PSA_meta_survival_99",
-                          "PSA_beta_1","PSA_beta_2",'PSA_VDG1_sen','PSA_VDG2_sen',
-                          'PSA_VDG3_sen', 'PSA_VDG4_sen',"PSA_MRI_cdr","PSA_US_cdr",
-                          "PSA_log_norm_mean","PSA_log_norm_sd","PSA_cost_strat","PSA_costvar",
-                          "PSA_util_1to3","PSA_util_4","PSA_costscreen","PSA_cost_follow_up",
-                          "PSA_cost_biop","PSA_cost_US","PSA_cost_MRI","mcid")
+    names(results)[10:35]<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_survival_3",
+                             "PSA_meta_survival_54","PSA_meta_survival_74","PSA_meta_survival_99",
+                             "PSA_beta_1","PSA_beta_2",'PSA_VDG1_sen','PSA_VDG2_sen',
+                             'PSA_VDG3_sen', 'PSA_VDG4_sen',"PSA_MRI_cdr","PSA_US_cdr",
+                             "PSA_log_norm_mean","PSA_log_norm_sd","PSA_cost_strat","PSA_costvar",
+                             "PSA_util_1to3","PSA_util_4","PSA_costscreen","PSA_cost_follow_up",
+                             "PSA_cost_biop","PSA_cost_US","PSA_cost_MRI","mcid")
   }
   
-  #directory to save inum/10 sets of case histories and name of files
- if(PSA==0){
-   save(results,file = paste("Deterministic results/Determ_",screen_strategy,"_",ii,".Rdata",sep = ""))}else{
-   save(results,file = paste("PSA results/PSA_",screen_strategy,"_",ii,".Rdata",sep = "")) 
-   }
+  #Save results from this chunk as an Rdata file
+  if(PSA==0){
+    save(results,file = paste("Deterministic results/Determ_",screen_strategy,"_",ii,".Rdata",sep = ""))}else{
+      save(results,file = paste("PSA results/PSA_",screen_strategy,"_",ii,".Rdata",sep = "")) 
+    }
+  
+  #Print simulation progress
   print(paste(ii*10,"%"))
-} #End 1 million simulation loop
-#results #see result if parellel version
-#save results
-#see results
+} #End i loop
+
+#Create summarised results
 merged_result <- matrix(0,nrow = chunks,ncol = 7)
 if(PSA==0){
-for (i in 1:chunks){
-  #name of saved files needed
-  load(paste("Deterministic results/Determ_",screen_strategy,"_",i,".Rdata",sep = ""))
-  results<-results %>% filter(results[,4]>50 | results[,4]==0)
-  merged_result[i,1] <- mean(results[,1])
-  merged_result[i,2] <- mean(results[,2])
-  merged_result[i,3] <- mean(results[,3]) 
-  merged_result[i,4] <- mean(results[,5])
-  merged_result[i,5] <- mean(results[,6])
-  merged_result[i,6] <- mean(results[,7])
-  merged_result[i,7] <- mean(results[,9])
-}
-  write.csv(merged_result,file = paste("Detresults_strat_",screen_strategy,".csv"))}else{
   for (i in 1:chunks){
-    #name of saved files needed
-    load(paste("PSA results/PSA_",screen_strategy,"_",i,".Rdata",sep = ""))
+    #Record average outputs for each chunk and save in an excel file
+    load(paste("Deterministic results/Determ_",screen_strategy,"_",i,".Rdata",sep = ""))
     results<-results %>% filter(results[,4]>50 | results[,4]==0)
     merged_result[i,1] <- mean(results[,1])
     merged_result[i,2] <- mean(results[,2])
@@ -752,8 +779,21 @@ for (i in 1:chunks){
     merged_result[i,5] <- mean(results[,6])
     merged_result[i,6] <- mean(results[,7])
     merged_result[i,7] <- mean(results[,9])
-  } 
-  write.csv(merged_result,file = paste("PSAresults_strat_",screen_strategy,".csv"))
-}
+  }
+  write.csv(merged_result,file = paste("Detresults_strat_",screen_strategy,".csv"))}else{
+    for (i in 1:chunks){
+      #Record average outputs for each chunk and save in an excel file
+      load(paste("PSA results/PSA_",screen_strategy,"_",i,".Rdata",sep = ""))
+      results<-results %>% filter(results[,4]>50 | results[,4]==0)
+      merged_result[i,1] <- mean(results[,1])
+      merged_result[i,2] <- mean(results[,2])
+      merged_result[i,3] <- mean(results[,3]) 
+      merged_result[i,4] <- mean(results[,5])
+      merged_result[i,5] <- mean(results[,6])
+      merged_result[i,6] <- mean(results[,7])
+      merged_result[i,7] <- mean(results[,9])
+    } 
+    write.csv(merged_result,file = paste("PSAresults_strat_",screen_strategy,".csv"))
+  }
 
 
