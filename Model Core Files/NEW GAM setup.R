@@ -4,14 +4,14 @@ library("tidyverse")
 
 screen_strategies<-c(0,1,2,3,4,9)
 screen_strategy<-0
-load(paste("PSA/PSA_",screen_strategy,"_",1,".Rdata",sep = ""))
+load(paste("PSA results/PSA_",screen_strategy,"_",1,".Rdata",sep = ""))
 results<-results %>% filter(results[,4]>50 | results[,4]==0)
 results<-results[-c(3:4)]
 psaresults<-results
 
 for (i in 2:10){
   #name of saved files needed
-  load(paste("PSA/PSA_",screen_strategy,"_",i,".Rdata",sep = ""))
+  load(paste("PSA results/PSA_",screen_strategy,"_",i,".Rdata",sep = ""))
   results<-results %>% filter(results[,4]>50 | results[,4]==0)
   results<-results[-c(3:4)]
   psaresults<-rbind(psaresults,results)
@@ -22,24 +22,33 @@ screen_strategy<-screen_strategies[j]
 
 for (i in 1:10){
   #name of saved files needed
-  load(paste("PSA/PSA_",screen_strategy,"_",i,".Rdata",sep = ""))
+  load(paste("PSA results/PSA_",screen_strategy,"_",i,".Rdata",sep = ""))
   results<-results %>% filter(results[,4]>50 | results[,4]==0)
   results<-results[-c(3:4)]
  psaresults<-rbind(psaresults,results)
 }
 }
 
-psaresults[,29][psaresults[,29]==0]<-"noscreening"
-psaresults[,29][psaresults[,29]==1]<-"procas"
-psaresults[,29][psaresults[,29]==2]<-"tertiles"
-psaresults[,29][psaresults[,29]==3]<-"3yr"
-psaresults[,29][psaresults[,29]==4]<-"2yr"
-psaresults[,29][psaresults[,29]==9]<-"fullstrat"
+psaresults$alternative[psaresults$alternative==0]<-"No Screening"
+psaresults$alternative[psaresults$alternative==1]<-"Risk-1"
+psaresults$alternative[psaresults$alternative==2]<-"Risk-2"
+psaresults$alternative[psaresults$alternative==3]<-"3 yearly"
+psaresults$alternative[psaresults$alternative==4]<-"2 yearly"
+psaresults$alternative[psaresults$alternative==9]<-"Risk-3"
 
-psaresults[,29]<-as.factor(psaresults[,29])
+psaresults$alternative<-as.factor(psaresults$alternative)
 
-save(psaresults,file = paste("PSA/PSA_","psaresults",".Rdata",sep = "")) 
-psaresults<-psaresults[-c(15,16)]
+psaresults<-psaresults[-c(3:4)]
+psaresults<-psaresults[-c(4:5)]
+psaresults<-psaresults[-c(16:17)]
+rm(results)
+gc()
+
+save(psaresults,file = paste("PSA results/PSA_","psaresults",".Rdata",sep = "")) 
+
+psaresults<-psaresults[-c(22:26)]
+psaresults<-psaresults[-c(18:19)]
+gc()
 
 modQ <- bam(data = psaresults,
             formula = QALY ~
@@ -64,6 +73,10 @@ summary(modQ)
 
 modQ[2:43]<-NULL
 saveRDS(modQ,file="QALYmodelslim.RDS")
+
+load(paste("PSA results/PSA_psaresults",".Rdata",sep = ""))
+psaresults<-psaresults[-c(20:21)]
+gc()
 
 modC <- bam(data = psaresults,
             formula = Cost ~ 
