@@ -5,7 +5,7 @@ library(tidyverse)
 library(magrittr)
 library("MASS")
 
-mcruns<-2000000
+mcruns<-100000
 alternative<-c(0,1,2,3,4,9)
 wtp<-seq(from=0,to=100000,by=5000)
 
@@ -104,7 +104,7 @@ psa_sum
 icers <- calculate_icers(cost = psa_sum$meanCost, 
                          effect = psa_sum$meanEffect, 
                          strategies = psa_sum$Strategy)
-plot(icers)
+plot(icers,labels="all")
 
 #With feasible strategies
 feasqalys<-output_qalys[-c(3,5)]
