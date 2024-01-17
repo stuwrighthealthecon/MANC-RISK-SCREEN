@@ -2,6 +2,7 @@ library("parallel")
 library("mgcv")
 library("tidyverse")
 
+#Load PSA results for each strategy
 screen_strategies<-c(0,1,2,3,4,9)
 screen_strategy<-0
 load(paste("PSA results/PSA_",screen_strategy,"_",1,".Rdata",sep = ""))
@@ -29,6 +30,7 @@ for (i in 1:10){
 }
 }
 
+#Replace alternative name with string
 psaresults$alternative[psaresults$alternative==0]<-"No Screening"
 psaresults$alternative[psaresults$alternative==1]<-"Risk-1"
 psaresults$alternative[psaresults$alternative==2]<-"Risk-2"
@@ -38,18 +40,22 @@ psaresults$alternative[psaresults$alternative==9]<-"Risk-3"
 
 psaresults$alternative<-as.factor(psaresults$alternative)
 
+#Slim down psaresults and garbage clean to save space
 psaresults<-psaresults[-c(3:4)]
 psaresults<-psaresults[-c(4:5)]
 psaresults<-psaresults[-c(16:17)]
 rm(results)
 gc()
 
+#Save combined psaresults as backup
 save(psaresults,file = paste("PSA results/PSA_","psaresults",".Rdata",sep = "")) 
 
+#Remove cost variables for QALY GAM
 psaresults<-psaresults[-c(22:26)]
 psaresults<-psaresults[-c(18:19)]
 gc()
 
+#Estimate QALY GAM
 modQ <- bam(data = psaresults,
             formula = QALY ~
               s(PSA_util_1to3, by = alternative, bs = "cr") +
@@ -71,13 +77,18 @@ modQ <- bam(data = psaresults,
               alternative)
 summary(modQ)
 
+#Slim down QALY GAM and save
 modQ[2:43]<-NULL
 saveRDS(modQ,file="QALYmodelslim.RDS")
 
+#Re-load full PSA results
 load(paste("PSA results/PSA_psaresults",".Rdata",sep = ""))
+
+#Remove QoL data from psaresults
 psaresults<-psaresults[-c(20:21)]
 gc()
 
+#Estimate cost GAM
 modC <- bam(data = psaresults,
             formula = Cost ~ 
               s(PSA_cost_strat, by = alternative, bs = "cr") +
@@ -102,5 +113,6 @@ modC <- bam(data = psaresults,
               alternative)
 summary(modC)
 
+#Slim down cost GAM and save
 modC[2:43]<-NULL
 saveRDS(modC,file="costmodelslim.RDS")
