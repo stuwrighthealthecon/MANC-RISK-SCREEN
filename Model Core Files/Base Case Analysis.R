@@ -258,3 +258,4 @@ fnAxisScale <- function(dMin, dMax) {
 
 IncCU <- fnIncCU(Names=rownames(output_df), Costs=output_df$cost, QALYs=output_df$qaly)
 IncCU$prettyIncCU
+

@@ -5,9 +5,9 @@ library(tidyverse)
 library(magrittr)
 library("MASS")
 
-mcruns<-100000
+mcruns<-1000000
 alternative<-c(0,1,2,3,4,9)
-wtp<-seq(from=0,to=100000,by=5000)
+wtp<-seq(from=0,to=100000,by=1000)
 
 modQ<-readRDS("QALYmodelslim.RDS")
 modC<-readRDS("costmodelslim.RDS")
@@ -87,6 +87,9 @@ output_qalys[,i]<-predict.bam(modQ,PSA_all_p)
 output_costs[,i]<-predict.bam(modC,PSA_all_p)
 }
 
+alt_names<-c("No Screening","Risk-1","Risk-2","Three yearly","Two yearly","Risk-3")
+colnames(output_costs)<-alt_names
+colnames(output_qalys)<-alt_names
 
 #Main analysis
 psa_obj <- make_psa_obj(cost = output_costs,
@@ -96,15 +99,30 @@ psa_obj <- make_psa_obj(cost = output_costs,
                         currency = "£")
 
 ceac_obj<- ceac(wtp,psa_obj)
-plot(ceac_obj)
+summary(ceac_obj)
+plot(ceac_obj,frontier="FALSE",points="FALSE",xlab="Willingness to Pay (Thousand £ / QALY")
 
 psa_sum <- summary(psa_obj, 
                    calc_sds = TRUE)
 psa_sum
+
+
+write.csv(psa_sum,file="psa results summary.csv")
 icers <- calculate_icers(cost = psa_sum$meanCost, 
                          effect = psa_sum$meanEffect, 
                          strategies = psa_sum$Strategy)
 plot(icers,labels="all")
+
+sacost<-owsa(psa_obj,outcome="cost")
+owsa_tornado(sacost,return="plot")
+
+saeff<-owsa(psa_obj,outcome="eff")
+owsa_tornado(saeff,return="plot")
+
+sanb<-owsa(psa_obj,outcome="nmb",wtp=20000)
+owsa_tornado(sanb,return="plot")
+
+owsa_opt_strat(sanb,return="plot",col="full",plot_const=FALSE)
 
 #With feasible strategies
 feasqalys<-output_qalys[-c(3,5)]
@@ -115,4 +133,4 @@ feas_psa_obj <- make_psa_obj(cost = feascosts,
                         strategies = alt_names[-c(3,5)],
                         currency = "£")
 feas_ceac_obj<- ceac(wtp,feas_psa_obj)
-plot(feas_ceac_obj)
+plot(feas_ceac_obj,frontier="FALSE",points="FALSE",xlab="Willingness to Pay (Thousand £ / QALY")
