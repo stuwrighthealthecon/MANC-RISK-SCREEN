@@ -50,7 +50,7 @@ numcores<-16
 registerDoParallel(cores=numcores)
 
 #Load file containing required functions for the model
-source(file="MANC_RISK_SCREEN_functions Version 1.1.R")
+source(file="MANC_RISK_SCREEN_functions")
 source(file="risksample function.R")
 
 #################################Define baseline parameters####################
