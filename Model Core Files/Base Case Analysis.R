@@ -3,25 +3,59 @@ library(gt)
 library(tidyverse)
 library(magrittr)
 
-output_df <- data.frame(matrix(nrow=6,ncol=2))
+#Create Output data.frame
+output_df <- data.frame(matrix(nrow=6,ncol=4))
+
+#Define vector of strategies to evaluate
+#These must align with the values used in the screen strategy parameter in the main script
+#Data must have been generated for each strategy used
+screen_strategies<-c(0,1,2,3,4,9)
+
+#Import data, dropping uneccessary columns to save space
+for (j in 1:length(screen_strategies)){
+  screen_strategy<-screen_strategies[j]
+load(paste("Deterministic results/Determ_",screen_strategy,"_",1,".Rdata",sep = ""))
+
+#Remove women with cancer diagnosed before age 50
+results<-results %>% filter(results[,4]>50 | results[,4]==0)
+results<-results[-c(4:8)]
+results<-results[-c(5:14)]
+detresults<-results
+
+for (i in 2:10){
+  #name of saved files needed
+  load(paste("Deterministic results/Determ_",screen_strategy,"_",i,".Rdata",sep = ""))
+  
+  #Remove women with cancer diagnosed before age 50
+  results<-results %>% filter(results[,4]>50 | results[,4]==0)
+  results<-results[-c(4:8)]
+  results<-results[-c(5:14)]
+  detresults<-rbind(detresults,results)
+}
+#Produce average output values for each strategy
+output_df[j,]<-c(mean(detresults[,1]),mean(detresults[,2]),mean(detresults[,3]),mean(detresults[,4]))
+}
+
+#Assign names to strategies
+#Note-currently fixed to 6 strategies considered in final paper
+strategies<-c("No Screening","Risk-1","Risk-2","3 Yearly","2 Yearly","Risk-3")
 rownames(output_df) <- strategies
-colnames(output_df)<-c("qaly","cost")
-output_df$qaly<-c(14.90812,14.89791,14.90115,14.86838,14.90104,14.91418)
-output_df$cost<-c(1712.135,1545.353,1564.525,1224.959,1578.994,1805.591)
-output_df[,"incQALYS"]<-c(output_df$qaly-output_df$qaly[4])
-output_df[,"incCost"]<-c(output_df$cost-output_df$cost[4])
+colnames(output_df)<-c("qaly","cost","screens","life years")
+
+#Calculate Incremental Results
+output_df[,"incQALYS"]<-c(output_df$qaly-output_df$qaly[1])
+output_df[,"incCost"]<-c(output_df$cost-output_df$cost[1])
 output_df[,"ICER"]<-c(output_df$incCost/output_df$incQALYS)
 output_df[,"NB20k"]<-c((output_df$incQALYS*20000)-output_df$incCost)
 output_df[,"NB30k"]<-c((output_df$incQALYS*30000)-output_df$incCost)
 
+#Plot CEP for strategies
 icer_strat<-calculate_icers(cost=output_df$cost,
                             effect=output_df$qaly,
                             strategies = c(row.names(output_df)))
-plot(icer_strat,currency="£",label="all")
+plot(icer_strat,currency="£", label="all")
 
-rownames(output_df)<-c("2 Yearly", "3 Yearly", "PROCAS 2", "No Screening", "PROCAS 1", "PROCAS 3")
-
-
+#Create nice output table of results
 fnIncCU <- function(Names, Costs, QALYs , blnNHB=TRUE, WTP=c(20000,30000), blnCUP=TRUE, costDP = 2, qalyDP = 5, icerDP = 2) {
   nn <- NROW(Names)
   IncCU <- tibble(StratName  = Names,
@@ -224,3 +258,4 @@ fnAxisScale <- function(dMin, dMax) {
 
 IncCU <- fnIncCU(Names=rownames(output_df), Costs=output_df$cost, QALYs=output_df$qaly)
 IncCU$prettyIncCU
+
