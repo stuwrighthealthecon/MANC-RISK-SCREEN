@@ -5,10 +5,16 @@ library(tidyverse)
 library(magrittr)
 library("MASS")
 
+#Set number of PSA runs to estimate over
 mcruns<-1000000
+
+#Set alternatives
 alternative<-c(0,1,2,3,4,9)
+
+#Set wtp thresholds to estimate over
 wtp<-seq(from=0,to=100000,by=1000)
 
+#Load GAMs
 modQ<-readRDS("QALYmodelslim.RDS")
 modC<-readRDS("costmodelslim.RDS")
 
@@ -74,11 +80,13 @@ colnames(PSA_all_p)<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_
 
 alt_names<-c("No Screening","Risk-1","Risk-2","3 yearly","2 yearly","Risk-3")
 
+#Create data.frames to estimate costs and QALYs
 output_costs<-data.frame(matrix(nrow=mcruns,ncol=length(alternative)))
 output_qalys<-data.frame(matrix(nrow=mcruns,ncol=length(alternative)))
 colnames(output_costs)<-alt_names
 colnames(output_qalys)<-alt_names
 
+#For each alternative
 for (i in 1:length(alternative)){
   PSA_all_p$alternative<-as.factor(alt_names[i])
 
@@ -87,32 +95,37 @@ output_qalys[,i]<-predict.bam(modQ,PSA_all_p)
 output_costs[,i]<-predict.bam(modC,PSA_all_p)
 }
 
+#Rename columns
 alt_names<-c("No Screening","Risk-1","Risk-2","Three yearly","Two yearly","Risk-3")
 colnames(output_costs)<-alt_names
 colnames(output_qalys)<-alt_names
 
-#Main analysis
+#Produce PSA object
 psa_obj <- make_psa_obj(cost = output_costs,
                         effectiveness = output_qalys,
                         parameters = PSA_all_p,
                         strategies = alt_names,
                         currency = "£")
 
+#Create CEAC object
 ceac_obj<- ceac(wtp,psa_obj)
-summary(ceac_obj)
+
+#Plot CEAC
 plot(ceac_obj,frontier="FALSE",points="FALSE",xlab="Willingness to Pay (Thousand £ / QALY")
 
+#Creat PSA results table and save
 psa_sum <- summary(psa_obj, 
                    calc_sds = TRUE)
 psa_sum
-
-
 write.csv(psa_sum,file="psa results summary.csv")
+
+#Plot cost-effectiveness plane for PSA results
 icers <- calculate_icers(cost = psa_sum$meanCost, 
                          effect = psa_sum$meanEffect, 
                          strategies = psa_sum$Strategy)
 plot(icers,labels="all")
 
+#One-way sensitivity analysis for costs, effectiveness and net benefit
 sacost<-owsa(psa_obj,outcome="cost")
 owsa_tornado(sacost,return="plot")
 
@@ -122,9 +135,10 @@ owsa_tornado(saeff,return="plot")
 sanb<-owsa(psa_obj,outcome="nmb",wtp=20000)
 owsa_tornado(sanb,return="plot")
 
+#Plot chart of impact of changes in parameters on optimal strategy
 owsa_opt_strat(sanb,return="plot",col="full",plot_const=FALSE)
 
-#With feasible strategies
+#Plot ceac omitting infeasible strategies (too high number of scans)
 feasqalys<-output_qalys[-c(3,5)]
 feascosts<-output_costs[-c(3,5)]
 feas_psa_obj <- make_psa_obj(cost = feascosts,
