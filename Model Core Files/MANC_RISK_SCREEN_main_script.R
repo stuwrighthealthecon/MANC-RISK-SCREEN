@@ -26,7 +26,7 @@ screen_strategy<-3
 supplemental_screening<-0
 
 #Generate new sample? 1=YES, any other number NO
-gensample<-0
+gensample<-1
 
 #Deterministic (0) or Probabilistic Analysis (1)
 PSA=1
