@@ -4,6 +4,7 @@ library(gt)
 library(tidyverse)
 library(magrittr)
 library("MASS")
+library("patchwork")
 
 #Set number of PSA runs to estimate over
 mcruns<-1000000
