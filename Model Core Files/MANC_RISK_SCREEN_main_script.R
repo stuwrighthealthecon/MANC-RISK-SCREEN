@@ -266,12 +266,14 @@ utility_stage_cat_follow <- c("stage1"=0.82/0.822,
                               "DCIS"=utility_DCIS)
 
 #########################CREATE SAMPLE OF WOMEN FOR MODEL###################
-if(gensample==1){create_sample(PSA,intervals,seed)}
+if(gensample==1){dir.create("Risksample", showWarnings = FALSE)
+  create_sample(PSA,intervals,seed)}
 
 ################Outer Individual sampling loop##############################
 
 #Set loop to divide i loop into a number of sub-loops in case of simulation break
 for (ii in 1:chunks) {
+  start_time <- Sys.time()
   load(paste("Risksample/risksample_",ii,".Rdata",sep = ""))
   prefix<-paste("^","X",ii,".",sep="")
   names(splitsample)<-sub(prefix,"",names(splitsample))
@@ -477,7 +479,7 @@ for (ii in 1:chunks) {
         grow_rate_i<-risk_data$growth_rate
         
         #Determine when the cancer would be clinically diagnosed
-        ca_incidence_i <- cmp_incidence_function()
+        ca_incidence_i <- cmp_incidence_function(risk_data)
         ca_incidence_age <- ca_incidence_i[1]
         
         #Determine size at clinical detection age
@@ -726,9 +728,9 @@ for (ii in 1:chunks) {
     
     #If deterministic analysis then record outputs
     if(PSA==0){
-      c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca, screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age),cancer_diagnostic)}else{
+      return(c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca, screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age),cancer_diagnostic))}else{
         #If PSA then record outputs + monte carlo draws
-        as.numeric(c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca,screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age), c(risk_data[15:40])))
+        return(as.numeric(c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca,screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age), c(risk_data[15:40]))))
       }
   }
   
@@ -762,7 +764,10 @@ for (ii in 1:chunks) {
     }
   
   #Print simulation progress
-  print(paste(ii*10,"%"))
+  print(paste(100*ii/chunks,"%"))
+  time.now <- Sys.time()
+  elapsed <- as.numeric(difftime(time.now, start_time, units = "secs"))
+  cat("Chunk", ii, "took", elapsed, "seconds.\n")
 } #End i loop
 
 #Create summarised results

@@ -5,7 +5,7 @@ fnLookupBase <- function(iStage, iAge, iLE) {
 }
 
 ############Function for determining when a cancer occurs#######################
-Incidence_function <- function(){
+Incidence_function <- function(risk_data){
   
   #Sample an incidence time (based on vector of probabilities of getting cancer at age t conditional on getting cancer and surviving to age t)
   incidence_time_1 <- sample(x = Incidence_Mortality[,1][start_age:101],size = 1,prob = Incidence_Mortality[,2][start_age:101])
