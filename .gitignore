@@ -1025,3 +1025,5 @@ Model Core Files/PSAresults_strat_ 3 .csv
 Model Core Files/costmodelslim.RDS
 Model Core Files/QALYmodelslim.RDS
 Model Core Files/costmodelslim.RDS
+
+*.DS_Store
