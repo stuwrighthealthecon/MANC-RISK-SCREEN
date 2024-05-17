@@ -181,7 +181,6 @@ create_sample<-function(PSA=0,intervals=0,seed=1){
   }
   }
 
-
 redraw_sample_with_drug<-function(risksample,
                                   uptake,
                                   persistence,
@@ -190,19 +189,19 @@ redraw_sample_with_drug<-function(risksample,
   
   nsample <- nrow(risksample)
   
-  # Use 1, 2 coding for menopause status to match indexing for drug efficacy/uptake
-  risksample$starting_menses_status <- ifelse(dqrunif(nsample, 0, 1)
-                                       <prob_premen, 1, 2)
   risksample$takes_drug <- sapply(risksample$starting_menses_status,
-                                   FUN=function(i){ifelse(dqrunif(1,0,1)
-                                                          <uptake[i], TRUE, FALSE)})
-  # risksample$time_taking_drug <- numeric(nsample)
+                                   FUN=function(idx){ifelse(dqrunif(1,0,1)
+                                                          <uptake[idx], TRUE, FALSE)})
+  
+  risksample$time_taking_drug <- numeric(nsample)
   risksample$time_taking_drug[which(risksample$takes_drug)] <- sapply(risksample$starting_menses_status[which(risksample$takes_drug)],
-                                        FUN=function(i){min(rexp(1, rate = 1/persistence_med[i]), course_length)})
+                                        FUN=function(idx){min(rexp(1, rate = 1/persistence[idx]), course_length)}) %>% unlist()
   
   # Function for reduction in risk from taking drug; for now assume linear in time
   # Note: this *should* work for columns and it definitely seems to, but it might need some inspection!
   reduce_risk_by_time <- function(starting_risk, time_taking, menstat){
+    # cat("rrm=",risk_red[menstat], "\n")
+    # cat("tt=", time_taking, "\n")
     new_risk <- starting_risk * (1 - risk_red[menstat] * time_taking / course_length[menstat])
     return(new_risk)
   }

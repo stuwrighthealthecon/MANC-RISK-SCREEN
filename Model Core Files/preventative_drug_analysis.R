@@ -45,15 +45,15 @@ intervals=0
 #setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Set loop numbers
-inum<-3000000 #Individual women to be sampled
+inum<-10000 #Individual women to be sampled
 jnum<-1 #Lifetimes to be simulated per woman
 mcruns<-1 #Monte Carlo runs used if PSA switched on
 chunks<-10 #Number of chunks to split inum into for faster running time
 seed<-set.seed(1) #Set seed for random draws
 
 #Register number of cores for foreach loop
-numcores<-4
-registerDoParallel(cores=numcores)
+# numcores<-4
+# registerDoParallel(cores=numcores)
 
 #Load file containing required functions for the model
 source(file="MANC_RISK_SCREEN_functions.R")
@@ -319,19 +319,13 @@ for (ii in 1:chunks) {
         splitsample$risk_group<-ifelse(splitsample$tenyrrisk<low_risk_cut,1,2)
       }  
   
-  # Add extra fields for drug:
+  # # Add extra fields for drug:
   nsample <- nrow(splitsample)
-  splitsample$starting_menses_status <- numeric(nsample)
+  # Use 1, 2 coding for menopause status to match indexing for drug efficacy/uptake
+  splitsample$starting_menses_status <- ifelse(dqrunif(nsample, 0, 1)
+                                              <prob_premen, 1, 2)
   splitsample$takes_drug <- logical(nsample)
   splitsample$time_taking_drug <- numeric(nsample)
-  
-  drugsample <- splitsample
-  drugsample[which(drugsample$risk_group==2), ] <- drugsample[which(drugsample$risk_group==2), ] %>% redraw_sample_with_drug(uptake_med,
-                                                                                                                             persistence_med,
-                                                                                                                             risk_red_med)
-  drugsample[which(drugsample$risk_group==3), ] <- drugsample[which(drugsample$risk_group==3), ] %>% redraw_sample_with_drug(uptake_high,
-                                                                                                                             persistence_high,
-                                                                                                                             risk_red_high)
   
   #Assign women to supplemental screening if switched on and criteria met 
   if(supplemental_screening==1){
@@ -369,7 +363,7 @@ for (ii in 1:chunks) {
   total_costs_follow_up <- 0
   
   #Open i loop: Simulating individual women through the strategy
-  results <- foreach(i=itx,.combine = 'rbind',.packages = c('MASS','dqrng','tidyverse')) %dopar% {
+  results <- foreach(i=itx,.combine = 'rbind',.packages = c('MASS','dqrng','tidyverse')) %do% {
     
     #Set up record of age, size, mode of detection of each detected cancer
     cancer_diagnostic <- rep(0,10)
@@ -545,7 +539,82 @@ for (ii in 1:chunks) {
         #Calculate tumour genesis age
         t_gen <- ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(CD_size/2)^3))^0.25-1))/(0.25*grow_rate_i)) #Calculate time to get to clinical detection size
         gen_age <- CD_age - t_gen
-      } else {
+        
+        # If tumour genesis happens after drug is prescribed then redraw to reflect this
+        if (gen_age<age_prescribed){
+          # cat("risk_group=", risk_data$risk_group, "\n")
+          if (risk_data$risk_group==2){
+            risk_data <- risk_data %>% redraw_sample_with_drug(uptake_med,
+                                                               persistence_med,
+                                                               risk_red)
+            if (risk_data$cancer==1){
+              ca_case<-1
+              
+              #Determine cancer growth rate
+              grow_rate_i<-risk_data$growth_rate
+              
+              #Determine when the cancer would be clinically diagnosed
+              ca_incidence_i <- cmp_incidence_function(risk_data)
+              ca_incidence_age <- ca_incidence_i[1]
+              
+              #Determine size at clinical detection age
+              CD_size <- ca_incidence_i[4]#tumour diameter at CD
+              
+              #The detection age is either the age at clinical detection 
+              #or a formula is applied to determine the age at screen 
+              #detection
+              if(ca_incidence_i[2] ==1){CD_age <- ca_incidence_i[1]} else
+                CD_age <- ca_incidence_i[1] + ((log((Vm/Vc)^0.25-1)-
+                                                  log((Vm/((4/3)*pi*(ca_incidence_i[4]/2)^3))^0.25-1))/(0.25*grow_rate_i)) - 
+                ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(ca_incidence_i[3]/2)^3))^0.25-1))/(0.25*grow_rate_i))
+              cancer_diagnostic[8] <- c(CD_age)
+              
+              #Calculate tumour genesis age
+              t_gen <- ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(CD_size/2)^3))^0.25-1))/(0.25*grow_rate_i)) #Calculate time to get to clinical detection size
+              gen_age <- CD_age - t_gen
+            } else {
+              ca_case <- 0
+              ca_incidence_age <- 999 #Redundant but ensures after end of simulation if called
+              CD_age <- 999 #Redundant but ensures after end of simulation if called
+            }
+          }
+          if (risk_data$risk_group==3){
+            risk_data <- risk_data %>% redraw_sample_with_drug(uptake_high,
+                                                               persistence_high,
+                                                               risk_red)
+            if (risk_data$cancer==1){
+              ca_case<-1
+              
+              #Determine cancer growth rate
+              grow_rate_i<-risk_data$growth_rate
+              
+              #Determine when the cancer would be clinically diagnosed
+              ca_incidence_i <- cmp_incidence_function(risk_data)
+              ca_incidence_age <- ca_incidence_i[1]
+              
+              #Determine size at clinical detection age
+              CD_size <- ca_incidence_i[4]#tumour diameter at CD
+              
+              #The detection age is either the age at clinical detection 
+              #or a formula is applied to determine the age at screen 
+              #detection
+              if(ca_incidence_i[2] ==1){CD_age <- ca_incidence_i[1]} else
+                CD_age <- ca_incidence_i[1] + ((log((Vm/Vc)^0.25-1)-
+                                                  log((Vm/((4/3)*pi*(ca_incidence_i[4]/2)^3))^0.25-1))/(0.25*grow_rate_i)) - 
+                ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(ca_incidence_i[3]/2)^3))^0.25-1))/(0.25*grow_rate_i))
+              cancer_diagnostic[8] <- c(CD_age)
+              
+              #Calculate tumour genesis age
+              t_gen <- ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(CD_size/2)^3))^0.25-1))/(0.25*grow_rate_i)) #Calculate time to get to clinical detection size
+              gen_age <- CD_age - t_gen
+            } else {
+              ca_case <- 0
+              ca_incidence_age <- 999 #Redundant but ensures after end of simulation if called
+              CD_age <- 999 #Redundant but ensures after end of simulation if called
+            }
+          }
+      }
+        }else {
         ca_case <- 0
         ca_incidence_age <- 999 #Redundant but ensures after end of simulation if called
         CD_age <- 999 #Redundant but ensures after end of simulation if called
