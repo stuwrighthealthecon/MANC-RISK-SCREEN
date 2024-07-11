@@ -45,15 +45,15 @@ intervals=0
 #setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Set loop numbers
-inum<-10000 #Individual women to be sampled
+inum<-100000 #Individual women to be sampled
 jnum<-1 #Lifetimes to be simulated per woman
 mcruns<-1 #Monte Carlo runs used if PSA switched on
 chunks<-10 #Number of chunks to split inum into for faster running time
 seed<-set.seed(1) #Set seed for random draws
 
 #Register number of cores for foreach loop
-# numcores<-4
-# registerDoParallel(cores=numcores)
+numcores<-4
+registerDoParallel(cores=numcores)
 
 #Load file containing required functions for the model
 source(file="MANC_RISK_SCREEN_functions.R")
@@ -166,24 +166,121 @@ ca_size_cut <- c(0.025, 5, 10, 15, 20, 30, 128) #Size cut-points for deciding st
 
 #### Drug data ####
 
-risk_red <- c(0.5, 0.5)
-risk_red_med <- c(0.5, 0.5) # 1: Tamoxifen for premenopausal women; 2: Anastrozole for postmenopausal women
-risk_red_high <- c(0.5, 0.5)
+# First bring in log hazard ratios from networked analysis
+loghaz_ests <- readRDS("PreventionOutputs.RDS")
+efficacy_ests <- loghaz_ests[1]
+dropout_ests <- loghaz_ests[4]
 
-course_length <- c(5., 5.)
+# Fit a Weibull distribution to data in Incidence_Mortality. Drug acts to change scale parameter.
+weibull_fit <- sample(Incidence_Mortality$age,
+                      size=100000,
+                      prob=Incidence_Mortality$Cond.on.getting.BC..prob.of.getting.cancer.at.age.t,
+                      replace=TRUE) %>%
+               fitdistr("weibull")
+inc_scale <- weibull_fit$estimate["scale"]
+inc_shape <- weibull_fit$estimate["shape"]
 
-uptake <- c(0.75, 0.75)
-uptake_med <- c(0.75, 0.75)
-uptake_high <- c(0.75, 0.75)
+ana_eff <- exp(efficacy_ests$AnyBC$means$Anastrozole)
+tam_eff <- exp(efficacy_ests$AnyBC$means$Tamoxifen)
 
-persistence <- c(2.5/log(2), 2.5/log(2))
-persistence_med <- c(2.5/log(2), 2.5/log(2)) # Mean number of years on drug, assume constant drop-out rate, here 50% give up within 2.5 years
-persistence_high <- c(2.5/log(2), 2.5/log(2))
+full_course_len <- 5
+
+# Assume constant drop out rate with 77% of individuals reaching 5yr mark
+tam_completion_prob <- .77
+
+# Estimate Anastrozole completion probability from Tamoxifen estimate and hazard ratios:
+ana_completion_prob <- exp(dropout_ests$Adherence$means$Anastrozole - dropout_ests$Adherence$means$Tamoxifen) * tam_completion_prob
+
+completion_prob <- c(ana_completion_prob, tam_completion_prob)
+
+# Now estimate per-unit-time dropout rates based on exponential time to dropout:
+tam_dropout_rate <- (1. / full_course_len) * log(1 / (tam_completion_prob))
+ana_dropout_rate <- (1. / full_course_len) * log(1 / (ana_completion_prob))
+
+# Work out mean time taking each drug
+mean_tam_length <- full_course_len * (1 - tam_completion_prob) / log(1 / tam_completion_prob)
+mean_ana_length <- full_course_len * (1 - ana_completion_prob) / log(1 / ana_completion_prob)
+
+# Quick check: quantities below give efficacy of taking full five-year course
+# assuming linear relationship between time taking and hazard ratio. If both of
+# these are less than one then the linear model is safe to use because no one
+# goes past this point.
+tam_full_course_eff <- 1 - (1 - tam_eff) * log(1 / tam_completion_prob) / (1 - tam_completion_prob)
+ana_full_course_eff <- 1 - (1 - ana_eff) * log(1 / ana_completion_prob) / (1 - ana_completion_prob)
+if ((tam_full_course_eff>1)|(ana_full_course_eff>1)){
+  print("Assumption of linear change to hazard ratio with time taking drug will
+        not work for one or both drugs being simulated.")
+}
+
+#Assign women to risk groups based on 10yr risk if using risk-stratified approach  
+if(screen_strategy==1 | screen_strategy==9) {
+  risk_red <- matrix(c(ana_eff, tam_eff,
+                       ana_eff, tam_eff,
+                       ana_eff, tam_eff,
+                       ana_eff, tam_eff,
+                       ana_eff, tam_eff),
+                     nrow = 5,
+                     ncol = 2)
+  
+  course_length <- c(5., 5.)
+  
+  uptake <-rbind(c(0., 0.),
+                 c(0., 0.),
+                 c(0., 0.),
+                 c(.71, .71),
+                 c(.71, .71))
+  
+  persistence <- matrix(c(ana_dropout_rate, tam_dropout_rate,
+                          ana_dropout_rate, tam_dropout_rate,
+                          ana_dropout_rate, tam_dropout_rate,
+                          ana_dropout_rate, tam_dropout_rate,
+                          ana_dropout_rate, tam_dropout_rate),
+                        nrow = 5,
+                        ncol = 2)
+} else
+  if(screen_strategy==2) {
+    risk_red <- matrix(c(ana_eff, tam_eff,
+                         ana_eff, tam_eff,
+                         ana_eff, tam_eff),
+                       nrow = 3,
+                       ncol = 2)
+    
+    course_length <- c(5., 5.)
+    
+    uptake <-rbind(c(0., 0.),
+                   c(0., 0.),
+                   c(.71, .71))
+    
+    persistence <- matrix(c(ana_dropout_rate, tam_dropout_rate,
+                            ana_dropout_rate, tam_dropout_rate,
+                            ana_dropout_rate, tam_dropout_rate),
+                          nrow = 3,
+                          ncol = 2)
+  } else
+    if(screen_strategy==7 | screen_strategy==8) {
+      risk_red <- matrix(c(ana_eff, tam_eff,
+                           ana_eff, tam_eff),
+                         nrow = 2,
+                         ncol = 2)
+      
+      course_length <- c(5., 5.)
+      
+      uptake <-rbind(c(0., 0.),
+                     c(.71, .71))
+      
+      persistence <- matrix(c(ana_dropout_rate, tam_dropout_rate,
+                              ana_dropout_rate, tam_dropout_rate),
+                            nrow = 2,
+                            ncol = 2)
+    }  
+
 
 age_prescribed <- 50
 
 median_age_at_men <- 51
 prob_premen <- exp(- age_prescribed * (log(2) / median_age_at_men)) # Assuming exponential distribution (not correct!)
+
+cost_in_full_courses <- TRUE # If TRUE then each person to be prescribed drug incurs cost of full course, otherwise cost is proportional to time taking
 
 #######################Cost Data#########################################
 
@@ -356,20 +453,24 @@ for (ii in 1:chunks) {
   total_costs <- 0
   total_US_costs <- 0
   total_MRI_costs <- 0
+  total_drug_costs <- 0
   total_life_years <- 0
   total_US <- 0
   total_MRI <- 0
+  total_drug_courses_started <- 0
+  total_proportional_courses <- 0
   total_QALYs <- 0
   total_costs_follow_up <- 0
   
   #Open i loop: Simulating individual women through the strategy
-  results <- foreach(i=itx,.combine = 'rbind',.packages = c('MASS','dqrng','tidyverse')) %do% {
+  results <- foreach(i=itx,.combine = 'rbind',.packages = c('MASS','dqrng','tidyverse')) %dopar% {
     
     #Set up record of age, size, mode of detection of each detected cancer
     cancer_diagnostic <- rep(0,10)
     
     #Select an individual woman from the data.frame
     risk_data<-as.data.frame(i)
+    # risk_data<-splitsample[i,]
     
     #If PSA switched on, replace base case parameter values with Monte Carlo draws
     if(PSA==1){
@@ -489,8 +590,9 @@ for (ii in 1:chunks) {
     stage4_counter <- 0 #Stage 4 cancer found
     DCIS_counter <- 0 #DCIS found
     
-    # Drug courses prescribed
-    drug_counter <- 0
+    # Drug course counters
+    drug_course_start_count <- 0 # Number of courses began
+    drug_proportional_count <- 0 # Total drugs prescribed in units of one course
     
     #######J loop for individual experience of breast cancer screening##########
     for (j in jnum){
@@ -505,12 +607,27 @@ for (ii in 1:chunks) {
       stage_cat <- 0 #Stage of diagnosed cancer
       MRI_count <- 0 #Number of MRIS
       US_count <- 0 #Number of Ultrasounds
+      prop_drug_admin <- 0 # Drug courses taken relative to single course
       incidence_age_record <- 0 #Age of cancer incidence
       costs <- 0 #Total costs
       US_costs <- 0 #Ultrasound costs
       MRI_costs <- 0 #MRI costs
       costs_follow_up <- 0 #Follow up costs
-      prop_drug_admin <- 0 # Proportion of full 5-year drug course administered
+      drug_costs <- 0 # Drug costs
+      
+      drug_outputs <- get_drug_adj_IM(risk_data,
+                                      uptake,
+                                      persistence,
+                                      risk_red)
+      time_taking_drug <- drug_outputs[[1]]
+      drug_IM <- drug_outputs[[2]]
+      if (cost_in_full_courses){
+        prop_drug_admin <- 1
+      }else{
+        prop_drug_admin <- risk_data$time_taking_drug
+      }
+      costs <- costs + prop_drug_admin * cost_drug_base[risk_data$starting_menses_status]
+      drug_costs <- drug_costs + prop_drug_admin * cost_drug_base[risk_data$starting_menses_status]
       
       #Lifetime cancer incidence
       #Determines if a cancer occurs and at what age
@@ -521,7 +638,7 @@ for (ii in 1:chunks) {
         grow_rate_i<-risk_data$growth_rate
         
         #Determine when the cancer would be clinically diagnosed
-        ca_incidence_i <- cmp_incidence_function(risk_data)
+        ca_incidence_i <- cmp_adj_incidence_function(risk_data, drug_IM)
         ca_incidence_age <- ca_incidence_i[1]
         
         #Determine size at clinical detection age
@@ -539,85 +656,10 @@ for (ii in 1:chunks) {
         #Calculate tumour genesis age
         t_gen <- ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(CD_size/2)^3))^0.25-1))/(0.25*grow_rate_i)) #Calculate time to get to clinical detection size
         gen_age <- CD_age - t_gen
-        
-        # If tumour genesis happens after drug is prescribed then redraw to reflect this
-        if (gen_age<age_prescribed){
-          # cat("risk_group=", risk_data$risk_group, "\n")
-          if (risk_data$risk_group==2){
-            risk_data <- risk_data %>% redraw_sample_with_drug(uptake_med,
-                                                               persistence_med,
-                                                               risk_red)
-            if (risk_data$cancer==1){
-              ca_case<-1
-              
-              #Determine cancer growth rate
-              grow_rate_i<-risk_data$growth_rate
-              
-              #Determine when the cancer would be clinically diagnosed
-              ca_incidence_i <- cmp_incidence_function(risk_data)
-              ca_incidence_age <- ca_incidence_i[1]
-              
-              #Determine size at clinical detection age
-              CD_size <- ca_incidence_i[4]#tumour diameter at CD
-              
-              #The detection age is either the age at clinical detection 
-              #or a formula is applied to determine the age at screen 
-              #detection
-              if(ca_incidence_i[2] ==1){CD_age <- ca_incidence_i[1]} else
-                CD_age <- ca_incidence_i[1] + ((log((Vm/Vc)^0.25-1)-
-                                                  log((Vm/((4/3)*pi*(ca_incidence_i[4]/2)^3))^0.25-1))/(0.25*grow_rate_i)) - 
-                ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(ca_incidence_i[3]/2)^3))^0.25-1))/(0.25*grow_rate_i))
-              cancer_diagnostic[8] <- c(CD_age)
-              
-              #Calculate tumour genesis age
-              t_gen <- ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(CD_size/2)^3))^0.25-1))/(0.25*grow_rate_i)) #Calculate time to get to clinical detection size
-              gen_age <- CD_age - t_gen
-            } else {
-              ca_case <- 0
-              ca_incidence_age <- 999 #Redundant but ensures after end of simulation if called
-              CD_age <- 999 #Redundant but ensures after end of simulation if called
-            }
-          }
-          if (risk_data$risk_group==3){
-            risk_data <- risk_data %>% redraw_sample_with_drug(uptake_high,
-                                                               persistence_high,
-                                                               risk_red)
-            if (risk_data$cancer==1){
-              ca_case<-1
-              
-              #Determine cancer growth rate
-              grow_rate_i<-risk_data$growth_rate
-              
-              #Determine when the cancer would be clinically diagnosed
-              ca_incidence_i <- cmp_incidence_function(risk_data)
-              ca_incidence_age <- ca_incidence_i[1]
-              
-              #Determine size at clinical detection age
-              CD_size <- ca_incidence_i[4]#tumour diameter at CD
-              
-              #The detection age is either the age at clinical detection 
-              #or a formula is applied to determine the age at screen 
-              #detection
-              if(ca_incidence_i[2] ==1){CD_age <- ca_incidence_i[1]} else
-                CD_age <- ca_incidence_i[1] + ((log((Vm/Vc)^0.25-1)-
-                                                  log((Vm/((4/3)*pi*(ca_incidence_i[4]/2)^3))^0.25-1))/(0.25*grow_rate_i)) - 
-                ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(ca_incidence_i[3]/2)^3))^0.25-1))/(0.25*grow_rate_i))
-              cancer_diagnostic[8] <- c(CD_age)
-              
-              #Calculate tumour genesis age
-              t_gen <- ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(CD_size/2)^3))^0.25-1))/(0.25*grow_rate_i)) #Calculate time to get to clinical detection size
-              gen_age <- CD_age - t_gen
-            } else {
-              ca_case <- 0
-              ca_incidence_age <- 999 #Redundant but ensures after end of simulation if called
-              CD_age <- 999 #Redundant but ensures after end of simulation if called
-            }
-          }
-      }
-        }else {
-        ca_case <- 0
-        ca_incidence_age <- 999 #Redundant but ensures after end of simulation if called
-        CD_age <- 999 #Redundant but ensures after end of simulation if called
+      } else {
+            ca_case <- 0
+            ca_incidence_age <- 999 #Redundant but ensures after end of simulation if called
+            CD_age <- 999 #Redundant but ensures after end of simulation if called
       }
       
       #Get an all-cause mortality age and make sure this is greater than start
@@ -794,6 +836,8 @@ for (ii in 1:chunks) {
       screen_counter <- screen_counter + screen_count
       US_counter <- US_counter + US_count
       MRI_counter <- MRI_counter + MRI_count
+      drug_proportional_count <- drug_proportional_count + prop_drug_admin
+      drug_course_start_count <- drug_course_start_count + as.numeric(prop_drug_admin>0) # Add one to number of courses began if time taking drug is >0
       
       #Update false-positive recalls
       recall_counter <- recall_counter + recall_count
@@ -845,9 +889,9 @@ for (ii in 1:chunks) {
     
     #If deterministic analysis then record outputs
     if(PSA==0){
-      return(c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca, screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age),cancer_diagnostic))}else{
+      return(c(QALY_counter, costs, screen_counter, drug_course_start_count, drug_proportional_count, cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca, screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age),cancer_diagnostic))}else{
         #If PSA then record outputs + monte carlo draws
-        return(as.numeric(c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca,screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age), c(risk_data[15:40]))))
+        return(as.numeric(c(QALY_counter, costs, screen_counter, drug_course_start_count, drug_proportional_count ,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca,screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age), c(risk_data[15:40]))))
       }
   }
   
@@ -856,12 +900,14 @@ for (ii in 1:chunks) {
   names(results)[1] <- 'QALY'
   names(results)[2] <- 'Cost'
   names(results)[3] <- 'Screens'
-  names(results)[4] <- "Cancer Diagnosed Age"
-  names(results)[5] <- "Cancer"
-  names(results)[6] <- "screen detected"
-  names(results)[7] <-"alternative"
-  names(results)[8] <- "Growth rate"
-  names(results)[9] <- "Life Years"
+  names(results)[4] <- 'Drug courses started'
+  names(results)[5] <- 'Total relative drug courses'
+  names(results)[6] <- "Cancer Diagnosed Age"
+  names(results)[7] <- "Cancer"
+  names(results)[8] <- "screen detected"
+  names(results)[9] <-"alternative"
+  names(results)[10] <- "Growth rate"
+  names(results)[11] <- "Life Years"
   
   #If PSA add additional columns for Monte Carlo draws
   if(PSA==1){
@@ -887,33 +933,39 @@ for (ii in 1:chunks) {
   cat("Chunk", ii, "took", elapsed, "seconds.\n")
 } #End i loop
 
+stopImplicitCluster()
+
 #Create summarised results
-merged_result <- matrix(0,nrow = chunks,ncol = 7)
+merged_result <- matrix(0,nrow = chunks,ncol = 9)
 if(PSA==0){
   for (i in 1:chunks){
     #Record average outputs for each chunk and save in an excel file
     load(paste("Drug_results/Determ_",screen_strategy,"_",i,".Rdata",sep = ""))
-    results<-results %>% filter(results[,4]>50 | results[,4]==0)
+    results<-results %>% filter(results[,6]>50 | results[,6]==0)
     merged_result[i,1] <- mean(results[,1])
     merged_result[i,2] <- mean(results[,2])
     merged_result[i,3] <- mean(results[,3]) 
-    merged_result[i,4] <- mean(results[,5])
-    merged_result[i,5] <- mean(results[,6])
+    merged_result[i,4] <- mean(results[,4])
+    merged_result[i,5] <- mean(results[,5])
     merged_result[i,6] <- mean(results[,7])
-    merged_result[i,7] <- mean(results[,9])
+    merged_result[i,7] <- mean(results[,8])
+    merged_result[i,8] <- mean(results[,9])
+    merged_result[i,9] <- mean(results[,11])
   }
   write.csv(merged_result,file = paste("Det_drug_results_strat_",screen_strategy,".csv"))}else{
     for (i in 1:chunks){
       #Record average outputs for each chunk and save in an excel file
       load(paste("PSA_drug_results/PSA_",screen_strategy,"_",i,".Rdata",sep = ""))
-      results<-results %>% filter(results[,4]>50 | results[,4]==0)
+      results<-results %>% filter(results[,6]>50 | results[,6]==0)
       merged_result[i,1] <- mean(results[,1])
       merged_result[i,2] <- mean(results[,2])
       merged_result[i,3] <- mean(results[,3]) 
-      merged_result[i,4] <- mean(results[,5])
-      merged_result[i,5] <- mean(results[,6])
+      merged_result[i,4] <- mean(results[,4])
+      merged_result[i,5] <- mean(results[,5])
       merged_result[i,6] <- mean(results[,7])
-      merged_result[i,7] <- mean(results[,9])
+      merged_result[i,7] <- mean(results[,8])
+      merged_result[i,8] <- mean(results[,9])
+      merged_result[i,9] <- mean(results[,11])
     } 
     write.csv(merged_result,file = paste("PSA_drug_results_strat_",screen_strategy,".csv"))
   }

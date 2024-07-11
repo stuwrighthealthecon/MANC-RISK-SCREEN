@@ -46,6 +46,90 @@ Incidence_function <- function(risk_data){
 }
 cmp_incidence_function<-cmpfun(Incidence_function)
 
+############Function for determining when a cancer occurs with adjusted incidence rates#######################
+Adjusted_incidence_function <- function(risk_data, adj_IM){
+  
+  #Sample an incidence time (based on vector of probabilities of getting cancer at age t conditional on getting cancer and surviving to age t)
+  incidence_time_1 <- sample(x = adj_IM[,1][start_age:101],size = 1,prob = adj_IM[,2][start_age:101])
+  
+  #Add within year time (i.e. months)
+  incidence_time <- incidence_time_1+ dqrunif(1,0,1)
+  
+  #First determine if screen detected or clinical detected in current data 
+  detect_mode <- 1 #Clinically detected
+  
+  #Assign a proportion of cancers to be clnically detected
+  if (incidence_time <= screen_endage & incidence_time >= screen_startage & dqrunif(1,0,1)<prop_screen_detected){detect_mode <- 0} #screen detected
+  
+  #Determine size at detection - as number of tumour doublings in diameter from a 0.25mm diameter
+  clin_detect_size_g <- risk_data$clinical_detect_size
+  clin_detect_size_g <- start_size*2^clin_detect_size_g
+  ca_size_incidence <- clin_detect_size_g
+  if(detect_mode == 0){
+    screen_detect_size_g <- dqrnorm(n = 1,mean = screen_detection_m,sd = screen_detection_sd)
+    screen_detect_size_g[screen_detect_size_g < 3.5] <- 3.5 # to prevent unrealistic left tail
+    screen_detect_size_g[screen_detect_size_g >= 9] <- 8.99 # to prevent unrealistic right tail
+    screen_doubles <- screen_detect_size_g #size as number of doublings
+    screen_detect_size_g <- start_size*2^screen_detect_size_g 
+    ca_size_incidence <- screen_detect_size_g
+    
+    #Generate a valid potential clinical detection time - i.e. after screen detection
+    if(clin_detect_size_g< screen_detect_size_g){
+      clin_detect_size_g <- qnorm(dqrunif(n = 1,min = pnorm(
+        screen_doubles,clin_detection_m,clin_detection_sd),max = 1),
+        mean = clin_detection_m,sd = clin_detection_sd)
+      clin_detect_size_g[clin_detect_size_g >= 9] <- 8.999 # To prevent unrealistic right tail
+      clin_detect_size_g <- start_size*2^clin_detect_size_g
+    }
+  }
+  
+  result<-c(incidence_time,detect_mode,ca_size_incidence, clin_detect_size_g)
+  return(result)
+}
+cmp_adj_incidence_function<-cmpfun(Adjusted_incidence_function)
+
+############Function for determining when a cancer occurs with drug-adjusted mortality as input#######################
+Drug_adj_incidence_function <- function(risk_data, drug_mortality){
+  
+  #Sample an incidence time (based on vector of probabilities of getting cancer at age t conditional on getting cancer and surviving to age t)
+  incidence_time_1 <- sample(x = drug_mortality[,1][start_age:101],size = 1,prob = drug_mortality[,2][start_age:101])
+  
+  #Add within year time (i.e. months)
+  incidence_time <- incidence_time_1+ dqrunif(1,0,1)
+  
+  #First determine if screen detected or clinical detected in current data 
+  detect_mode <- 1 #Clinically detected
+  
+  #Assign a proportion of cancers to be clnically detected
+  if (incidence_time <= screen_endage & incidence_time >= screen_startage & dqrunif(1,0,1)<prop_screen_detected){detect_mode <- 0} #screen detected
+  
+  #Determine size at detection - as number of tumour doublings in diameter from a 0.25mm diameter
+  clin_detect_size_g <- risk_data$clinical_detect_size
+  clin_detect_size_g <- start_size*2^clin_detect_size_g
+  ca_size_incidence <- clin_detect_size_g
+  if(detect_mode == 0){
+    screen_detect_size_g <- dqrnorm(n = 1,mean = screen_detection_m,sd = screen_detection_sd)
+    screen_detect_size_g[screen_detect_size_g < 3.5] <- 3.5 # to prevent unrealistic left tail
+    screen_detect_size_g[screen_detect_size_g >= 9] <- 8.99 # to prevent unrealistic right tail
+    screen_doubles <- screen_detect_size_g #size as number of doublings
+    screen_detect_size_g <- start_size*2^screen_detect_size_g 
+    ca_size_incidence <- screen_detect_size_g
+    
+    #Generate a valid potential clinical detection time - i.e. after screen detection
+    if(clin_detect_size_g< screen_detect_size_g){
+      clin_detect_size_g <- qnorm(dqrunif(n = 1,min = pnorm(
+        screen_doubles,clin_detection_m,clin_detection_sd),max = 1),
+        mean = clin_detection_m,sd = clin_detection_sd)
+      clin_detect_size_g[clin_detect_size_g >= 9] <- 8.999 # To prevent unrealistic right tail
+      clin_detect_size_g <- start_size*2^clin_detect_size_g
+    }
+  }
+  
+  result<-c(incidence_time,detect_mode,ca_size_incidence, clin_detect_size_g)
+  return(result)
+}
+cmp_drug_adj_incidence_function<-cmpfun(Incidence_function)
+
 ########################stage calculator#######################################
 
 stage_by_size <- function(Ca_size){
