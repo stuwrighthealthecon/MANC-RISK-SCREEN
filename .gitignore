@@ -1027,3 +1027,4 @@ Model Core Files/QALYmodelslim.RDS
 Model Core Files/costmodelslim.RDS
 
 *.DS_Store
+.Rproj.user
