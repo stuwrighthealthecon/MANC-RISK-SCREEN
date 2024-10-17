@@ -607,9 +607,6 @@ for (ii in 1:chunks) {
           #Generate a cancer specific survival time, accounting for competing risks
           Ca_mort_age <- cmp_ca_survival_time(stage_cat,Mort_age,age,ca_incidence_age)
           
-          #Reduce age of death if cancer causes woman to die earlier
-          if(Ca_mort_age<Mort_age){Mort_age<-Ca_mort_age}
-          
           #Set up variables to look up treatment costs
           if(stage_cat<3){iStage<-"Early"} else {iStage<-"Late"}
           if(age<65){iAge<-"18.64"} else {iAge<-"65plus"}

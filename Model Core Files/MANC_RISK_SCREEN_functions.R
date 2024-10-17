@@ -289,6 +289,8 @@ Ca_survival_time <- function(stage_cat, Mort_age,age,ca_incidence_age){
   
   if(ca_incidence_age+survival_time > time_horizon){survival_time <- time_horizon-ca_incidence_age}
   result <- ca_incidence_age+survival_time
+  #Reduce age of death if cancer causes woman to die earlier
+  if(result<Mort_age){Mort_age<-result}
   return(result)
 }
 cmp_ca_survival_time<-cmpfun(Ca_survival_time)
