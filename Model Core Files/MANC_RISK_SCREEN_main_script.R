@@ -13,20 +13,21 @@ library("dqrng")
 library("compiler")
 library("tidyverse")
 library("iterators")
+library("tictoc")
 
 #####Choose screening programme and related parameters##########
-
+tic()
 #Set the screening strategy: 1=PROCAS, 2=Risk tertiles, 3=3 yearly, 4=2 yearly,
 #5=5 yearly, 6=2 rounds at 50 and 60 (10 yearly), 7=Low risk (5 yearly),
 #8=Low risk (6 yearly),#9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-0
+screen_strategy<-9
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
 
 #Generate new sample? 1=YES, any other number NO
-gensample<-0
+gensample<-1
 
 #Deterministic (0) or Probabilistic Analysis (1)
 PSA=0
@@ -39,7 +40,7 @@ intervals=0
 #setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Set loop numbers
-inum<-3000000 #Individual women to be sampled
+inum<-100000 #Individual women to be sampled
 jnum<-1 #Lifetimes to be simulated per woman
 mcruns<-1 #Monte Carlo runs used if PSA switched on
 chunks<-10 #Number of chunks to split inum into for faster running time
@@ -267,7 +268,7 @@ utility_stage_cat_follow <- c("stage1"=0.82/0.822,
 
 #########################CREATE SAMPLE OF WOMEN FOR MODEL###################
 if(gensample==1){dir.create("Risksample", showWarnings = FALSE)
-  create_sample(PSA,intervals,seed)}
+  cmp_create_sample(PSA,intervals,seed)}
 
 ################Outer Individual sampling loop##############################
 
@@ -387,43 +388,7 @@ for (ii in 1:chunks) {
     ############################## Set Screen times###############################
     
     #Assign screening intervals based on strategy and risk group    
-    screen_times <- c(999)
-    if (screen_strategy==1 & risk_data$interval_change==1) {
-      if (risk_data$risk_group<4) {screen_times<-low_risk_screentimes} else
-        if (risk_data$risk_group>3 & risk_data$risk_group<5) {screen_times<-med_risk_screentimes} else
-          if (risk_data$risk_group>4) {screen_times<-high_risk_screentimes}
-    } else if(screen_strategy==1 & risk_data$interval_change==0) {screen_times<-low_risk_screentimes}
-    if(screen_strategy==2 & risk_data$interval_change==1){
-      if(risk_data$risk_group==1){screen_times<-low_risk_screentimes} else
-        if(risk_data$risk_group==2){screen_times<-med_risk_screentimes} else
-          if(risk_data$risk_group==3){screen_times<-high_risk_screentimes}
-    } else if(screen_strategy==1 & risk_data$interval_change==0) {screen_times<-low_risk_screentimes}
-    if(screen_strategy==3){
-      screen_times <- low_risk_screentimes
-    }
-    if(screen_strategy==4){
-      screen_times <- med_risk_screentimes
-    }
-    if(screen_strategy==5){
-      screen_times <- seq(screen_startage, screen_startage+(5*4),5)
-    }
-    if(screen_strategy==6){
-      screen_times <- seq(screen_startage, screen_startage+10,10)
-    }
-    if(screen_strategy==7 & risk_data$interval_change==1){
-      if(risk_data$risk_group==1){screen_times<-seq(screen_startage, screen_startage+(5*4),5)}
-      if(risk_data$risk_group==2){screen_times<-low_risk_screentimes}
-    } else if(screen_strategy==7 & risk_data$interval_change==0) {screen_times<-low_risk_screentimes}
-    if(screen_strategy==8 & risk_data$interval_change==1){
-      if(risk_data$risk_group==1){screen_times<-seq(screen_startage,screen_startage+(6*3),6)}
-      if(risk_data$risk_group==2){screen_times<-low_risk_screentimes}
-    } else if (screen_strategy==8 & risk_data$interval_change==0) {screen_times<-low_risk_screentimes}
-    if(screen_strategy==9 & risk_data$interval_change==1){
-      if (risk_data$risk_group==1) {screen_times<-seq(screen_startage, screen_startage+(5*4),5)} else
-        if (risk_data$risk_group==2 | risk_data$risk_group==3) {screen_times<-low_risk_screentimes} else
-          if (risk_data$risk_group==4) {screen_times<-med_risk_screentimes} else
-            if (risk_data$risk_group==5) {screen_times<-high_risk_screentimes}
-    } else if(screen_strategy==9 & risk_data$interval_change==0) {screen_times<-low_risk_screentimes}
+    screen_times<-cmp_set_screen_times(risk_group=risk_data$risk_group)
     
     ##########################Set counters at i loop level#########################
     
@@ -691,39 +656,8 @@ for (ii in 1:chunks) {
       #Update Life-year counter
       LY_counter <- LY_counter + (Mort_age-start_age)
       
-      #QALY counter
-      #Set up a QALY vector of length equal to life years
-      QALY_length <- ceiling(Mort_age)-(screen_startage-1)
-      
-      #If less than 1 life year lived, set length to 1
-      if(QALY_length<1){QALY_length <-1}
-      
-      #Ensure people don't live past end of time horizon 
-      if(QALY_length>time_horizon-screen_startage){QALY_length <-time_horizon-screen_startage}
-      
-      #Fill QALY vector with 0's
-      QALY_vect <- rep(0,QALY_length)
-      
-      #Fill QALY vector with discounted age related utility values
-      for (y in 1:length(QALY_vect)){
-        QALY_vect[y] <- (utility_ages[match((ceiling(((screen_startage-1)+y)/5)*5),utility_ages[,1]),2])*(1/(1+discount_health)^y)
-        QALY_vect[QALY_length]<-QALY_vect[QALY_length]*(1-(ceiling(Mort_age)-Mort_age))
-      }
-      #If cancer occurs then fill QALY vector with discounted cancer utilities from incidence age
-      #NB this code accounts for partial years spent in different health states
-      if (incidence_age_record > 0){
-        QALY_vect[floor(incidence_age_record)-screen_startage] <- utility_stage_cat_y1[stage_cat]*QALY_vect[floor(incidence_age_record)-screen_startage]*(1-(incidence_age_record-floor(incidence_age_record)))}
-      if(incidence_age_record>0 & Mort_age-incidence_age_record>1){
-        QALY_vect[(floor(incidence_age_record)-screen_startage)+1]<-(utility_stage_cat_y1[stage_cat]*QALY_vect[(floor(incidence_age_record)-screen_startage)+1]*(incidence_age_record-floor(incidence_age_record)))+
-          (utility_stage_cat_follow[stage_cat]*QALY_vect[(floor(incidence_age_record)-screen_startage)+1]*(1-(incidence_age_record-floor(incidence_age_record))))}
-      if(incidence_age_record > 0 && ceiling(if(Mort_age<100){Mort_age}else{100}) > incidence_age_record+2){
-        for (y in (incidence_age_record+2):min((incidence_age_record+8),ceiling(if(Mort_age<100){Mort_age}else{100}))){
-          QALY_vect[y-screen_startage] <- QALY_vect[y-screen_startage]*utility_stage_cat_follow[stage_cat]
-        }
-      }
-      
       #Record total QALYs for J loop
-      QALY_counter <- QALY_counter + sum(QALY_vect,na.rm = TRUE)
+      QALY_counter <- QALY_counter + sum(cmp_QALY_counter(Mort_age,incidence_age_record),na.rm = TRUE)
     } #end j loop
     
     #If deterministic analysis then record outputs
@@ -801,5 +735,6 @@ if(PSA==0){
     write.csv(merged_result,file = paste("PSAresults_strat_",screen_strategy,".csv"))
   }
 
+toc()
 
 

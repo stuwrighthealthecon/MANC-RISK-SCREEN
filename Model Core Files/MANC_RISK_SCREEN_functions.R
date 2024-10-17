@@ -4,6 +4,52 @@ fnLookupBase <- function(iStage, iAge, iLE) {
   as.numeric(tblLookup$CDCost.p.i.d[tblLookup$Stage==iStage & tblLookup$Age==iAge & tblLookup$Yr==iLE])
 }
 
+
+############################Set Screen Times####################################
+set_screen_times<-function(risk_group){
+screen_times <- c(999)
+if (screen_strategy==1 & risk_data$interval_change==1) {
+  if (risk_data$risk_group<4) {screen_times<-low_risk_screentimes} else
+    if (risk_data$risk_group>3 & risk_data$risk_group<5) {screen_times<-med_risk_screentimes} else
+      if (risk_data$risk_group>4) {screen_times<-high_risk_screentimes}
+} else if(screen_strategy==1 & risk_data$interval_change==0) {screen_times<-low_risk_screentimes}
+if(screen_strategy==2 & risk_data$interval_change==1){
+  if(risk_data$risk_group==1){screen_times<-low_risk_screentimes} else
+    if(risk_data$risk_group==2){screen_times<-med_risk_screentimes} else
+      if(risk_data$risk_group==3){screen_times<-high_risk_screentimes}
+} else if(screen_strategy==1 & risk_data$interval_change==0) {screen_times<-low_risk_screentimes}
+if(screen_strategy==3){
+  screen_times <- low_risk_screentimes
+}
+if(screen_strategy==4){
+  screen_times <- med_risk_screentimes
+}
+if(screen_strategy==5){
+  screen_times <- seq(screen_startage, screen_startage+(5*4),5)
+}
+if(screen_strategy==6){
+  screen_times <- seq(screen_startage, screen_startage+10,10)
+}
+if(screen_strategy==7 & risk_data$interval_change==1){
+  if(risk_data$risk_group==1){screen_times<-seq(screen_startage, screen_startage+(5*4),5)}
+  if(risk_data$risk_group==2){screen_times<-low_risk_screentimes}
+} else if(screen_strategy==7 & risk_data$interval_change==0) {screen_times<-low_risk_screentimes}
+if(screen_strategy==8 & risk_data$interval_change==1){
+  if(risk_data$risk_group==1){screen_times<-seq(screen_startage,screen_startage+(6*3),6)}
+  if(risk_data$risk_group==2){screen_times<-low_risk_screentimes}
+} else if (screen_strategy==8 & risk_data$interval_change==0) {screen_times<-low_risk_screentimes}
+if(screen_strategy==9 & risk_data$interval_change==1){
+  if (risk_data$risk_group==1) {screen_times<-seq(screen_startage, screen_startage+(5*4),5)} else
+    if (risk_data$risk_group==2 | risk_data$risk_group==3) {screen_times<-low_risk_screentimes} else
+      if (risk_data$risk_group==4) {screen_times<-med_risk_screentimes} else
+        if (risk_data$risk_group==5) {screen_times<-high_risk_screentimes}
+} else if(screen_strategy==9 & risk_data$interval_change==0) {screen_times<-low_risk_screentimes}
+
+return(screen_times)
+}
+cmp_set_screen_times<-cmpfun(set_screen_times)
+
+
 ############Function for determining when a cancer occurs#######################
 Incidence_function <- function(risk_data){
   
@@ -246,3 +292,40 @@ Ca_survival_time <- function(stage_cat, Mort_age,age,ca_incidence_age){
   return(result)
 }
 cmp_ca_survival_time<-cmpfun(Ca_survival_time)
+
+###################################QALY Counter##########################
+QALY_counter<-function(Mort_age,incidence_age_record){
+  
+  #QALY counter
+  #Set up a QALY vector of length equal to life years
+  QALY_length <- ceiling(Mort_age)-(screen_startage-1)
+  
+  #If less than 1 life year lived, set length to 1
+  if(QALY_length<1){QALY_length <-1}
+  
+  #Ensure people don't live past end of time horizon 
+  if(QALY_length>time_horizon-screen_startage){QALY_length <-time_horizon-screen_startage}
+  
+  #Fill QALY vector with 0's
+  QALY_vect <- rep(0,QALY_length)
+  
+  #Fill QALY vector with discounted age related utility values
+  for (y in 1:length(QALY_vect)){
+    QALY_vect[y] <- (utility_ages[match((ceiling(((screen_startage-1)+y)/5)*5),utility_ages[,1]),2])*(1/(1+discount_health)^y)
+    QALY_vect[QALY_length]<-QALY_vect[QALY_length]*(1-(ceiling(Mort_age)-Mort_age))
+  }
+  #If cancer occurs then fill QALY vector with discounted cancer utilities from incidence age
+  #NB this code accounts for partial years spent in different health states
+  if (incidence_age_record > 0){
+    QALY_vect[floor(incidence_age_record)-screen_startage] <- utility_stage_cat_y1[stage_cat]*QALY_vect[floor(incidence_age_record)-screen_startage]*(1-(incidence_age_record-floor(incidence_age_record)))}
+  if(incidence_age_record>0 & Mort_age-incidence_age_record>1){
+    QALY_vect[(floor(incidence_age_record)-screen_startage)+1]<-(utility_stage_cat_y1[stage_cat]*QALY_vect[(floor(incidence_age_record)-screen_startage)+1]*(incidence_age_record-floor(incidence_age_record)))+
+      (utility_stage_cat_follow[stage_cat]*QALY_vect[(floor(incidence_age_record)-screen_startage)+1]*(1-(incidence_age_record-floor(incidence_age_record))))}
+  if(incidence_age_record > 0 && ceiling(if(Mort_age<100){Mort_age}else{100}) > incidence_age_record+2){
+    for (y in (incidence_age_record+2):min((incidence_age_record+8),ceiling(if(Mort_age<100){Mort_age}else{100}))){
+      QALY_vect[y-screen_startage] <- QALY_vect[y-screen_startage]*utility_stage_cat_follow[stage_cat]
+    }
+  }
+  return(QALY_vect)
+}
+cmp_QALY_counter<-cmpfun(QALY_counter)

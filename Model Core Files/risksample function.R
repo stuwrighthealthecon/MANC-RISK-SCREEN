@@ -208,3 +208,4 @@ get_drug_adj_IM <- function(ind_from_risksample,
   
   return(list(time_taking_drug, drug_IM))
 }
+cmp_create_sample<-cmpfun(create_sample)
