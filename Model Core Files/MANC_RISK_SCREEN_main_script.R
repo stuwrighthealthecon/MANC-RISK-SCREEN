@@ -382,7 +382,6 @@ for (ii in 1:chunks) {
     
     #Count of screens
     screen_counter <- 0 #Number of Screens
-    lastscreen_counter <-0 #Last screen attended
     US_counter <- 0 #Number of ultrasounds
     MRI_counter <- 0 #Number of MRIs
     #Recall count
@@ -625,8 +624,6 @@ for (ii in 1:chunks) {
       
       #Update false-positive recalls
       recall_counter <- recall_counter + recall_count
-      
-      lastscreen_counter <- lastscreen_counter + lastscreen_count
       
       #Update Life-year counter
       LY_counter <- LY_counter + (Mort_age-start_age)
