@@ -659,7 +659,7 @@ for (ii in 1:chunks) {
     
     #If deterministic analysis then record outputs
     if(PSA==0){
-      return(c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca, screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age),cancer_diagnostic))}else{
+      return(c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca, screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age),cancer_diagnostic[2:3],cancer_diagnostic[7],cancer_diagnostic[10]))}else{
         #If PSA then record outputs + monte carlo draws
         return(as.numeric(c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca,screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age), c(risk_data[15:40]))))
       }
@@ -676,6 +676,11 @@ for (ii in 1:chunks) {
   names(results)[7] <-"alternative"
   names(results)[8] <- "Growth rate"
   names(results)[9] <- "Life Years"
+  names(results)[10]<-"Stage"
+  names(results)[11]<-"Cancer Size"
+  names(results)[12]<-"Death Age"
+  names(results)[13]<-"Cancer Screen Number"
+  
   
   #If PSA add additional columns for Monte Carlo draws
   if(PSA==1){
