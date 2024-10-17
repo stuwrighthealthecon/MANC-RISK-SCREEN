@@ -21,7 +21,7 @@ tic()
 #5=5 yearly, 6=2 rounds at 50 and 60 (10 yearly), 7=Low risk (5 yearly),
 #8=Low risk (6 yearly),#9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-9
+screen_strategy<-3
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
@@ -40,7 +40,7 @@ intervals=0
 #setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Set loop numbers
-inum<-100000 #Individual women to be sampled
+inum<-3000000 #Individual women to be sampled
 jnum<-1 #Lifetimes to be simulated per woman
 mcruns<-1 #Monte Carlo runs used if PSA switched on
 chunks<-10 #Number of chunks to split inum into for faster running time
@@ -291,10 +291,10 @@ for (ii in 1:chunks) {
       }  
   
   #Assign women to supplemental screening if switched on and criteria met 
-  if(supplemental_screening==1){
-    for (i in 1:length(splitsample$MRI_screen)) {
-      if(splitsample[i,"VDG"]>=density_cutoff & splitsample[i,"tenyearrisk"]>=8){splitsample[i,"MRI_screen"]<1}else
-        if(splitsample[i,"VDG"]>=density_cutoff & splitsample[i,"tenyearrisk"]<8){splitsample[i,"US_screen"]<-1}}}
+  #if(supplemental_screening==1){
+    #for (i in 1:length(splitsample$MRI_screen)) {
+      #if(splitsample[i,"VDG"]>=density_cutoff & splitsample[i,"tenyearrisk"]>=8){splitsample[i,"MRI_screen"]<1}else
+        #if(splitsample[i,"VDG"]>=density_cutoff & splitsample[i,"tenyearrisk"]<8){splitsample[i,"US_screen"]<-1}}}
   
   #If risk-stratified screening used then determine if each woman chooses to have
   #risk predicted, attends risk consultation, and changes interval
@@ -524,12 +524,12 @@ for (ii in 1:chunks) {
                 if(screen_count == length(screen_times)){lastscreen_count <- 1}
                 
                 #Add costs of supplemental screening if relevant
-                if(risk_data$US_screen == 1){US_count <- US_count + 1
-                costs <- costs + (cost_US*current_discount)
-                US_costs<-US_costs+(cost_US*current_discount)}
-                if(risk_data$MRI_screen == 1){MRI_count <- MRI_count + 1
-                costs <- costs + (cost_MRI*current_discount)
-                MRI_costs <- MRI_costs + (cost_MRI*current_discount)}
+                #if(risk_data$US_screen == 1){US_count <- US_count + 1
+                #costs <- costs + (cost_US*current_discount)
+                #US_costs<-US_costs+(cost_US*current_discount)}
+                #if(risk_data$MRI_screen == 1){MRI_count <- MRI_count + 1
+                #costs <- costs + (cost_MRI*current_discount)
+                #MRI_costs <- MRI_costs + (cost_MRI*current_discount)}
                 
                 #If the next event is a screen and a cancer is present:
                 if (Event_place == 1 && ca_case ==1){
