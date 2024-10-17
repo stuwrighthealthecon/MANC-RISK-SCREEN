@@ -381,7 +381,6 @@ for (ii in 1:chunks) {
     ##########################Set counters at i loop level#########################
     
     #screen-detected cancer counts
-    screen_detected_count <- 0 #Cancer detected by screening
     sdfirst_counter <- 0 #Cancer found at first screen
     sdlast_counter <-0 #Cancer found at last screen
     #Count of screens
@@ -623,7 +622,6 @@ for (ii in 1:chunks) {
       if((screen_detected_ca+interval_ca) == 0){cancer_diagnostic[1] <- Mort_age} # Recorded age is age of death or cancer incidence
       
       #Update all ca/screen counters
-      screen_detected_count <- screen_detected_count + screen_detected_ca
       screen_counter <- screen_counter + screen_count
       US_counter <- US_counter + US_count
       MRI_counter <- MRI_counter + MRI_count
