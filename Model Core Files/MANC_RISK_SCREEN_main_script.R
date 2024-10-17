@@ -667,20 +667,19 @@ for (ii in 1:chunks) {
   
   #Create a results data.frame
   results <- data.frame(results)
-  names(results)[1] <- 'QALY'
-  names(results)[2] <- 'Cost'
-  names(results)[3] <- 'Screens'
-  names(results)[4] <- "Cancer Diagnosed Age"
-  names(results)[5] <- "Cancer"
-  names(results)[6] <- "screen detected"
-  names(results)[7] <-"alternative"
-  names(results)[8] <- "Growth rate"
-  names(results)[9] <- "Life Years"
-  names(results)[10]<-"Stage"
-  names(results)[11]<-"Cancer Size"
-  names(results)[12]<-"Death Age"
-  names(results)[13]<-"Cancer Screen Number"
-  
+  names(results) <- c('QALY',
+                      'Cost',
+                      'Screens',
+                      "Cancer Diagnosed Age",
+                      "Cancer",
+                      "screen detected",
+                      "alternative",
+                      "Growth rate",
+                      "Life Years",
+                      "Stage",
+                      "Cancer Size",
+                      "Death Age",
+                      "Cancer Screen Number")
   
   #If PSA add additional columns for Monte Carlo draws
   if(PSA==1){
