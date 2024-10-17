@@ -40,7 +40,7 @@ intervals=0
 #setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Set loop numbers
-inum<-3000000 #Individual women to be sampled
+inum<-100000 #Individual women to be sampled
 jnum<-1 #Lifetimes to be simulated per woman
 mcruns<-1 #Monte Carlo runs used if PSA switched on
 chunks<-10 #Number of chunks to split inum into for faster running time
@@ -312,18 +312,6 @@ for (ii in 1:chunks) {
   
   #Create iterator for the data.frame of women to pass to parallel processors  
   itx<-iter(splitsample,by="row")
-  
-  #Set counters for individual sampling loop
-  total_screens <- 0
-  total_cancers_detected <- 0
-  total_costs <- 0
-  total_US_costs <- 0
-  total_MRI_costs <- 0
-  total_life_years <- 0
-  total_US <- 0
-  total_MRI <- 0
-  total_QALYs <- 0
-  total_costs_follow_up <- 0
   
   #Open i loop: Simulating individual women through the strategy
   results <- foreach(i=itx,.combine = 'rbind',.packages = c('MASS','dqrng','tidyverse')) %dopar% {
