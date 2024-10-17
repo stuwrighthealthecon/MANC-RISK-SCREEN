@@ -517,10 +517,10 @@ for (ii in 1:chunks) {
                 
                 #Add cost of a mammography and risk prediction if first screen for relevant strategies
                 costs<-costs+(cost_screen*current_discount)
-                if(screen_count==1 & screen_strategy<3 & risk_data$risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
-                if(screen_count==1 & screen_strategy==7 & risk_data$risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
-                if(screen_count==1 & screen_strategy==8 & risk_data$risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
-                if(screen_count==1 & screen_strategy==9 & risk_data$risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
+                if(screen_count==1 & screen_strategy<3 & risk_data$risk_predicted==1 |
+                   screen_count==1 & screen_strategy==7 & risk_data$risk_predicted==1 |
+                   screen_count==1 & screen_strategy==8 & risk_data$risk_predicted==1 |
+                   screen_count==1 & screen_strategy==9 & risk_data$risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
                 if(screen_count == length(screen_times)){lastscreen_count <- 1}
                 
                 #Add costs of supplemental screening if relevant
