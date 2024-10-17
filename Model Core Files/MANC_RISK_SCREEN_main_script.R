@@ -549,10 +549,10 @@ for (ii in 1:chunks) {
                     if(screen_result[1] == 1){
                       screen_detected_ca <-1
                       cancer_diagnostic[1] <- c((age+Time_to_screen))
-                      cancer_diagnostic[3] <- c(Ca_size)
-                      cancer_diagnostic[4] <- c(1)
-                      cancer_diagnostic[5] <- c(screen_result[4])
-                      cancer_diagnostic[6] <- c(screen_result[3])
+                      cancer_diagnostic[3:6] <- c(Ca_size,
+                                                  1,
+                                                  screen_result[4],
+                                                  screen_result[3])
                       cancer_diagnostic[10] <- c(screen_count)
                       incidence_age_record = age+Time_to_screen
                       
