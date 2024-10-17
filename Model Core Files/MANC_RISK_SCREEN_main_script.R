@@ -380,9 +380,6 @@ for (ii in 1:chunks) {
     
     ##########################Set counters at i loop level#########################
     
-    #screen-detected cancer counts
-    sdfirst_counter <- 0 #Cancer found at first screen
-    sdlast_counter <-0 #Cancer found at last screen
     #Count of screens
     screen_counter <- 0 #Number of Screens
     lastscreen_counter <-0 #Last screen attended
@@ -629,11 +626,6 @@ for (ii in 1:chunks) {
       #Update false-positive recalls
       recall_counter <- recall_counter + recall_count
       
-      #Update first screen detected ca counter
-      sdfirst_counter <- sdfirst_counter + sdfirst_cancer
-      
-      #Update last ca/screen counters
-      sdlast_counter <- sdlast_counter + sdlast_cancer
       lastscreen_counter <- lastscreen_counter + lastscreen_count
       
       #Update Life-year counter
