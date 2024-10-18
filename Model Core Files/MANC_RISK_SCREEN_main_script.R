@@ -383,7 +383,6 @@ for (ii in 1:chunks) {
 
     
     #######J loop for individual experience of breast cancer screening##########
-    for (j in jnum){
       
       #Set J level counters
       screen_count <- 0 #Screens attended
@@ -604,7 +603,6 @@ for (ii in 1:chunks) {
       
       #Record total QALYs for J loop
       QALY_counter <- QALY_counter + sum(cmp_QALY_counter(Mort_age,incidence_age_record),na.rm = TRUE)
-    } #end j loop
     
     #If deterministic analysis then record outputs
     if(PSA==0){
