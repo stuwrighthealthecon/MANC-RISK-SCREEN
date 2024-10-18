@@ -382,8 +382,6 @@ for (ii in 1:chunks) {
     
     #Count of screens
     screen_counter <- 0 #Number of Screens
-    #Recall count
-    recall_counter <- 0 #Number of recalls
     #Total cost
     cost_counter <- 0 #Total costs
     #Total life years
@@ -617,9 +615,6 @@ for (ii in 1:chunks) {
       
       #Update all ca/screen counters
       screen_counter <- screen_counter + screen_count
-      
-      #Update false-positive recalls
-      recall_counter <- recall_counter + recall_count
       
       #Update Life-year counter
       LY_counter <- LY_counter + (Mort_age-start_age)
