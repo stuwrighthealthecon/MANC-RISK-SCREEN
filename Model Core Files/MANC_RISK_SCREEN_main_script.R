@@ -380,18 +380,7 @@ for (ii in 1:chunks) {
     
     ##########################Set counters at i loop level#########################
     
-    #Count of screens
-    screen_counter <- 0 #Number of Screens
-    #Total life years
-    LY_counter <- 0 #Total life years
-    #Total QALYs
-    QALY_counter <- 0 #Total QALYs
-    #Cancer stage counters
-    stage1_counter <- 0 #Stage 1 cancer found
-    stage2_counter <- 0 #Stage 2 cancer found
-    stage3_counter <- 0 #Stage 3 cancer found
-    stage4_counter <- 0 #Stage 4 cancer found
-    DCIS_counter <- 0 #DCIS found
+
     
     #######J loop for individual experience of breast cancer screening##########
     for (j in jnum){
@@ -411,6 +400,17 @@ for (ii in 1:chunks) {
       US_costs <- 0 #Ultrasound costs
       MRI_costs <- 0 #MRI costs
       costs_follow_up <- 0 #Follow up costs
+
+      #Total life years
+      LY_counter <- 0 #Total life years
+      #Total QALYs
+      QALY_counter <- 0 #Total QALYs
+      #Cancer stage counters
+      stage1_counter <- 0 #Stage 1 cancer found
+      stage2_counter <- 0 #Stage 2 cancer found
+      stage3_counter <- 0 #Stage 3 cancer found
+      stage4_counter <- 0 #Stage 4 cancer found
+      DCIS_counter <- 0 #DCIS found
       
       #Lifetime cancer incidence
       #Determines if a cancer occurs and at what age
@@ -611,9 +611,6 @@ for (ii in 1:chunks) {
       } #End first while loop
       if((screen_detected_ca+interval_ca) == 0){cancer_diagnostic[1] <- Mort_age} # Recorded age is age of death or cancer incidence
       
-      #Update all ca/screen counters
-      screen_counter <- screen_counter + screen_count
-      
       #Update Life-year counter
       LY_counter <- LY_counter + (Mort_age-start_age)
       
@@ -623,9 +620,9 @@ for (ii in 1:chunks) {
     
     #If deterministic analysis then record outputs
     if(PSA==0){
-      return(c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca, screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age),cancer_diagnostic[2:3],cancer_diagnostic[7],cancer_diagnostic[10]))}else{
+      return(c(QALY_counter, costs, screen_count,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca, screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age),cancer_diagnostic[2:3],cancer_diagnostic[7],cancer_diagnostic[10]))}else{
         #If PSA then record outputs + monte carlo draws
-        return(as.numeric(c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca,screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age), c(risk_data[15:40]))))
+        return(as.numeric(c(QALY_counter, costs, screen_count,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca,screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age), c(risk_data[15:40]))))
       }
   }
   
