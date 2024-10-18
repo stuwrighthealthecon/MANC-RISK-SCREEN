@@ -405,12 +405,6 @@ for (ii in 1:chunks) {
       LY_counter <- 0 #Total life years
       #Total QALYs
       QALY_counter <- 0 #Total QALYs
-      #Cancer stage counters
-      stage1_counter <- 0 #Stage 1 cancer found
-      stage2_counter <- 0 #Stage 2 cancer found
-      stage3_counter <- 0 #Stage 3 cancer found
-      stage4_counter <- 0 #Stage 4 cancer found
-      DCIS_counter <- 0 #DCIS found
       
       #Lifetime cancer incidence
       #Determines if a cancer occurs and at what age
@@ -571,14 +565,8 @@ for (ii in 1:chunks) {
           #Assign a stage based on tumour size
           stage_cat <- cmp_stage_by_size(Ca_size)
           
-          #Record the stage
-          if(stage_cat == 1){stage1_counter = stage1_counter+1}
-          if(stage_cat == 2){stage2_counter = stage2_counter+1}
-          if(stage_cat == 3){stage3_counter = stage3_counter+1}
-          if(stage_cat == 4){stage4_counter = stage4_counter+1}
-          if(stage_cat == 5){DCIS_counter = DCIS_counter+1
-          
           #Add the cost of DCIS
+          if(stage_cat == 5){
           costs = costs + (cost_DCIS*current_discount)}
           
           #Generate a cancer specific survival time, accounting for competing risks
