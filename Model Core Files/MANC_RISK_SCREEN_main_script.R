@@ -382,8 +382,6 @@ for (ii in 1:chunks) {
     
     #Count of screens
     screen_counter <- 0 #Number of Screens
-    #Total cost
-    cost_counter <- 0 #Total costs
     #Total life years
     LY_counter <- 0 #Total life years
     #Total QALYs
