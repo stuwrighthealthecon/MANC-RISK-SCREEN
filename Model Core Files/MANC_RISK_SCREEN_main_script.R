@@ -382,7 +382,6 @@ for (ii in 1:chunks) {
     
     #Count of screens
     screen_counter <- 0 #Number of Screens
-    US_counter <- 0 #Number of ultrasounds
     MRI_counter <- 0 #Number of MRIs
     #Recall count
     recall_counter <- 0 #Number of recalls
@@ -619,7 +618,6 @@ for (ii in 1:chunks) {
       
       #Update all ca/screen counters
       screen_counter <- screen_counter + screen_count
-      US_counter <- US_counter + US_count
       MRI_counter <- MRI_counter + MRI_count
       
       #Update false-positive recalls
