@@ -59,10 +59,10 @@ for (i in 2:length(att_screen_times)){
     rbinom(1,1,uptakenoscreen)}
 }
 
-att_screen_times<-att_screen_times*screen_times
-att_screen_times<-att_screen_times[!att_screen_times==0]
+screen_times<-att_screen_times*screen_times
+screen_times<-screen_times[!att_screen_times==0]
 
-return(att_screen_times)
+return(screen_times)
 }
 cmp_set_screen_times<-cmpfun(set_screen_times)
 

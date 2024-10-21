@@ -21,7 +21,7 @@ tic()
 #5=5 yearly, 6=2 rounds at 50 and 60 (10 yearly), 7=Low risk (5 yearly),
 #8=Low risk (6 yearly),#9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-9
+screen_strategy<-3
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
@@ -46,7 +46,7 @@ chunks<-10 #Number of chunks to split inum into for faster running time
 seed<-set.seed(1) #Set seed for random draws
 
 #Register number of cores for foreach loop
-numcores<-19
+numcores<-1
 registerDoParallel(cores=numcores)
 
 #Load file containing required functions for the model
@@ -424,7 +424,9 @@ for (ii in 1:chunks) {
       interval_ca <- 0 #Cancer clinically detected
       screen_detected_ca <- 0 #Cancer screen detected
       
-      ##############################DES COMPONENT ###################################
+      ##############################DES COMPONENT CANCER ###################################
+      
+      if (ca_case==1){
       
       Time_to_screen <- screen_times[1] - age #Select the current next screen age and subtract age
       Time_to_death <- Mort_age - age #Time to death from current age
@@ -567,7 +569,32 @@ for (ii in 1:chunks) {
       
       #Record total QALYs for J loop
       QALY_counter <- sum(cmp_QALY_counter(Mort_age,incidence_age_record),na.rm = TRUE)
-    
+      }else{
+        #For non-cancer individuals
+        screen_cost_vec<-rep(cost_screen,length(screen_times))
+        follow_up_vec<-rbinom(length(screen_times),1,recall_rate)
+        biop_vec<-follow_up_vec*(rbinom(length(follow_up_vec),1,biopsy_rate))
+        screen_cost_vec<-screen_cost_vec+(follow_up_vec*cost_follow_up)+(biop_vec*cost_biop)
+                                           
+        if (screen_strategy==1 | screen_strategy==2 | screen_strategy==7 |
+            screen_strategy==8 | screen_strategy==9){screen_cost_vec[1]<-screen_cost_vec[1]+cost_strat}
+        discount_vec<-screen_times-rep(screen_startage,length(screen_times))
+        for (i in length(screen_cost_vec)){
+          screen_cost_vec[i]<-screen_cost_vec[i]*(1/((1+discount_cost)^discount_vec[i]))}
+        
+        #Screen counter
+        screen_count<-length(screen_times)
+        
+        #Costs  
+        costs<-max(0,sum(screen_cost_vec),na.rm=TRUE)
+        
+        #Update Life-year counter
+        LY_counter <- Mort_age-start_age
+        
+        #Record total QALYs for J loop
+        QALY_counter <- sum(cmp_QALY_counter(Mort_age,incidence_age_record),na.rm = TRUE)
+      }
+      
     #If deterministic analysis then record outputs
     if(PSA==0){
       return(c(QALY_counter, costs, screen_count,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca, screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age),cancer_diagnostic[2:3],cancer_diagnostic[7],cancer_diagnostic[10]))}else{
