@@ -31,6 +31,20 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
                 "clinical_detect_size",
                 "growth_rate")]<-numeric(length=length(risksample$VBD))
   
+  #If risk-stratified screening used then determine if each woman chooses to have
+  #risk predicted, attends risk consultation, and changes interval
+  if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strategy<10)){
+    risksample$risk_predicted<-ifelse(dqrunif(
+      length(risksample$risk_predicted),0,1)<
+        c(rep(risk_uptake,length(risksample$risk_predicted))),1,0)
+    risksample$feedback<-ifelse(risksample$risk_predicted==1 & 
+                                   dqrunif(length(risksample$feedback),0,1)<
+                                   c(rep(risk_feedback)),1,0)
+    risksample$interval_change<-ifelse(risksample$feedback==1 & 
+                                          dqrunif(length(risksample$interval_change),0,1)<
+                                          c(rep(screen_change)),1,0)
+  }
+  
   ###Preload incidence, mortality and clinical detection times
   risksample$life_expectancy<- rweibull(n = length(risksample$life_expectancy),
                                         shape = acmmortality_wb_a, 

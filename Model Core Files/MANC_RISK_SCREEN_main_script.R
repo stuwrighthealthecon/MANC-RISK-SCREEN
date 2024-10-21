@@ -284,20 +284,6 @@ for (ii in 1:chunks) {
       #if(splitsample[i,"VDG"]>=density_cutoff & splitsample[i,"tenyearrisk"]>=8){splitsample[i,"MRI_screen"]<1}else
         #if(splitsample[i,"VDG"]>=density_cutoff & splitsample[i,"tenyearrisk"]<8){splitsample[i,"US_screen"]<-1}}}
   
-  #If risk-stratified screening used then determine if each woman chooses to have
-  #risk predicted, attends risk consultation, and changes interval
-  if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strategy<10)){
-    splitsample$risk_predicted<-ifelse(dqrunif(
-      length(splitsample$risk_predicted),0,1)<
-        c(rep(risk_uptake,length(splitsample$risk_predicted))),1,0)
-    splitsample$feedback<-ifelse(splitsample$risk_predicted==1 & 
-                                   dqrunif(length(splitsample$feedback),0,1)<
-                                   c(rep(risk_feedback)),1,0)
-    splitsample$interval_change<-ifelse(splitsample$feedback==1 & 
-                                          dqrunif(length(splitsample$interval_change),0,1)<
-                                          c(rep(screen_change)),1,0)
-  }
-  
   #Create iterator for the data.frame of women to pass to parallel processors  
   itx<-iter(splitsample,by="row")
   
