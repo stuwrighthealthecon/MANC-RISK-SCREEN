@@ -40,14 +40,13 @@ intervals=0
 #setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Set loop numbers
-inum<-100000 #Individual women to be sampled
-jnum<-1 #Lifetimes to be simulated per woman
+inum<-1000000 #Individual women to be sampled
 mcruns<-1 #Monte Carlo runs used if PSA switched on
 chunks<-10 #Number of chunks to split inum into for faster running time
 seed<-set.seed(1) #Set seed for random draws
 
 #Register number of cores for foreach loop
-numcores<-16
+numcores<-19
 registerDoParallel(cores=numcores)
 
 #Load file containing required functions for the model
@@ -380,11 +379,6 @@ for (ii in 1:chunks) {
     
     ##########################Set counters at i loop level#########################
     
-
-    
-    #######J loop for individual experience of breast cancer screening##########
-      
-      #Set J level counters
       screen_count <- 0 #Screens attended
       missed_screen<- 0 #Screens missed
       recall_count <- 0 #Number of recalls
@@ -599,7 +593,7 @@ for (ii in 1:chunks) {
       if((screen_detected_ca+interval_ca) == 0){cancer_diagnostic[1] <- Mort_age} # Recorded age is age of death or cancer incidence
       
       #Update Life-year counter
-      LY_counter <- LY_counter + (Mort_age-start_age)
+      LY_counter <- Mort_age-start_age
       
       #Record total QALYs for J loop
       QALY_counter <- QALY_counter + sum(cmp_QALY_counter(Mort_age,incidence_age_record),na.rm = TRUE)
