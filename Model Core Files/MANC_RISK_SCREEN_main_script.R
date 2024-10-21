@@ -350,7 +350,7 @@ for (ii in 1:chunks) {
     ############################## Set Screen times###############################
     
     #Assign screening intervals based on strategy and risk group    
-    screen_times<-cmp_set_screen_times(risk_group=risk_data$risk_group)
+    screen_times<-cmp_set_screen_times(risk_group=risk_data$risk_group,screen_strategy)
     
     ##########################Set counters at i loop level#########################
     
@@ -445,11 +445,6 @@ for (ii in 1:chunks) {
         
         #Open screening event
         if(Event_place == 1){
-          
-          #Check if woman attends screen
-          if (screen_count==0 & missed_screen==0 & dqrunif(1,0,1)>uptakefirstscreen |
-              screen_count==0 & missed_screen>0 & dqrunif(1,0,1)>uptakenoscreen|
-              screen_count>0 & dqrunif(1,0,1)>uptakeotherscreen) {missed_screen<-missed_screen+1}else{
                 
                 #Woman attends screen    
                 screen_count<-screen_count+1
@@ -502,7 +497,7 @@ for (ii in 1:chunks) {
                     if(screen_result[1] == 1 && screen_count == 1){sdfirst_cancer <-1} #ca detected in first screen
                     if(screen_result[1] == 1 && screen_count == length(screen_times)){sdlast_cancer <-1} #ca detected on last screen 
                   } else{screen_detected_ca <- 0} 
-                } else{screen_detected_ca <- 0} 
+                
                 
                 #If a cancer is not found does a false-positive occur?
                 if(Event_place == 1 && screen_detected_ca == 0 && dqrunif(1,0,1)<recall_rate){
@@ -653,5 +648,4 @@ if(PSA==0){
   }
 
 toc()
-
 

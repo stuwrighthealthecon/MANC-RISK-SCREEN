@@ -6,7 +6,7 @@ fnLookupBase <- function(iStage, iAge, iLE) {
 
 
 ############################Set Screen Times####################################
-set_screen_times<-function(risk_group){
+set_screen_times<-function(risk_group,screen_strategy){
 screen_times <- c(999)
 if (screen_strategy==1 & risk_data$interval_change==1) {
   if (risk_data$risk_group<4) {screen_times<-low_risk_screentimes} else
@@ -45,7 +45,24 @@ if(screen_strategy==9 & risk_data$interval_change==1){
         if (risk_data$risk_group==5) {screen_times<-high_risk_screentimes}
 } else if(screen_strategy==9 & risk_data$interval_change==0) {screen_times<-low_risk_screentimes}
 
-return(screen_times)
+att_screen_times<-vector(length=length(screen_times))
+att_screen_times[1]<-rbinom(1,1, uptakefirstscreen)
+for (i in 2:length(att_screen_times)){
+  att_screen_times[i]<-if(sum(att_screen_times[1:i-1])>0){rbinom(1,1,uptakeotherscreen)}else{
+    rbinom(1,1,uptakenoscreen)}
+  }
+
+att_screen_times<-rep(0,length(screen_times))
+att_screen_times[1]<-rbinom(1,1, uptakefirstscreen)
+for (i in 2:length(att_screen_times)){
+  att_screen_times[i]<-if(sum(att_screen_times[1:i-1])>0){rbinom(1,1,uptakeotherscreen)}else{
+    rbinom(1,1,uptakenoscreen)}
+}
+
+att_screen_times<-att_screen_times*screen_times
+att_screen_times<-att_screen_times[!att_screen_times==0]
+
+return(att_screen_times)
 }
 cmp_set_screen_times<-cmpfun(set_screen_times)
 
