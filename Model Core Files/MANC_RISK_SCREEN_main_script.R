@@ -571,7 +571,7 @@ for (ii in 1:chunks) {
       LY_counter <- Mort_age-start_age
       
       #Record total QALYs for J loop
-      QALY_counter <- QALY_counter + sum(cmp_QALY_counter(Mort_age,incidence_age_record),na.rm = TRUE)
+      QALY_counter <- sum(cmp_QALY_counter(Mort_age,incidence_age_record),na.rm = TRUE)
     
     #If deterministic analysis then record outputs
     if(PSA==0){
