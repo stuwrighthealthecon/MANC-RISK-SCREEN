@@ -40,7 +40,7 @@ intervals=0
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Set loop numbers
-inum<-3000000 #Individual women to be sampled
+inum<-100000 #Individual women to be sampled
 mcruns<-1 #Monte Carlo runs used if PSA switched on
 chunks<-10 #Number of chunks to split inum into for faster running time
 seed<-set.seed(1) #Set seed for random draws
@@ -565,6 +565,8 @@ for (ii in 1:chunks) {
       }else{
           ca_case <- 0
         
+          if (Mort_age>100){Mort_age<-100)}
+          
         #For non-cancer individuals
         screen_cost_vec<-rep(cost_screen,length(screen_times))
         follow_up_vec<-rbinom(length(screen_times),1,recall_rate)
