@@ -55,6 +55,7 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
                   min = pweibull(q = start_age,shape = acmmortality_wb_a,scale = acmmortality_wb_b),
                   max = 1),
       shape = acmmortality_wb_a, scale = acmmortality_wb_b)}}
+  risksample$life_expectancy<-ifelse(risksample$life_expectancy>time_horizon,100,risksample$life_expectancy)
   
   #Determine if a cancer will develop
   risksample$cancer<-ifelse(dqrunif(length(risksample$cancer),0,1)

@@ -40,13 +40,13 @@ intervals=0
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Set loop numbers
-inum<-100000 #Individual women to be sampled
+inum<-3000000 #Individual women to be sampled
 mcruns<-1 #Monte Carlo runs used if PSA switched on
 chunks<-10 #Number of chunks to split inum into for faster running time
 seed<-set.seed(1) #Set seed for random draws
 
 #Register number of cores for foreach loop
-numcores<-1
+numcores<-19
 registerDoParallel(cores=numcores)
 
 #Load file containing required functions for the model
@@ -374,50 +374,9 @@ for (ii in 1:chunks) {
       #Total QALYs
       QALY_counter <- 0 #Total QALYs
       
-      #Lifetime cancer incidence
-      #Determines if a cancer occurs and at what age
-      if (risk_data$cancer==1){
-        ca_case<-1
-        
-        #Determine cancer growth rate
-        grow_rate_i<-risk_data$growth_rate
-        
-        #Determine when the cancer would be clinically diagnosed
-        ca_incidence_i <- cmp_incidence_function(risk_data)
-        ca_incidence_age <- ca_incidence_i[1]
-        
-        #Determine size at clinical detection age
-        CD_size <- ca_incidence_i[4]#tumour diameter at CD
-        
-        #The detection age is either the age at clinical detection 
-        #or a formula is applied to determine the age at screen 
-        #detection
-        if(ca_incidence_i[2] ==1){CD_age <- ca_incidence_i[1]} else
-          CD_age <- ca_incidence_i[1] + ((log((Vm/Vc)^0.25-1)-
-          log((Vm/((4/3)*pi*(ca_incidence_i[4]/2)^3))^0.25-1))/(0.25*grow_rate_i)) - 
-          ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(ca_incidence_i[3]/2)^3))^0.25-1))/(0.25*grow_rate_i))
-        cancer_diagnostic[8] <- c(CD_age)
-        
-        #Calculate tumour genesis age
-        t_gen <- ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(CD_size/2)^3))^0.25-1))/(0.25*grow_rate_i)) #Calculate time to get to clinical detection size
-        gen_age <- CD_age - t_gen
-      } else {
-        ca_case <- 0
-        ca_incidence_age <- 999 #Redundant but ensures after end of simulation if called
-        CD_age <- 999 #Redundant but ensures after end of simulation if called
-      }
-      
       #Get an all-cause mortality age and make sure this is greater than start
       #age and cancer incidence age
       Mort_age <- risk_data$life_expectancy
-      
-      #If cancer occurs after age of death, re-draw age of death
-      if(ca_case == 1 & Mort_age <= ca_incidence_age){Mort_age <-qweibull(
-        p = dqrunif(n = 1,min = pweibull(
-          q = CD_age,shape = acmmortality_wb_a,scale = acmmortality_wb_b),max = 1),
-        shape = acmmortality_wb_a, scale = acmmortality_wb_b)}
-      if(Mort_age >= time_horizon){Mort_age <- 99.99}
-      cancer_diagnostic[7] <- c(Mort_age)
       
       #Other individual variables
       age <- start_age
@@ -425,8 +384,42 @@ for (ii in 1:chunks) {
       screen_detected_ca <- 0 #Cancer screen detected
       
       ##############################DES COMPONENT CANCER ###################################
-      
-      if (ca_case==1){
+        
+        #Lifetime cancer incidence
+        #Determines if a cancer occurs and at what age
+        if (risk_data$cancer==1){
+          ca_case<-1
+          
+          #Determine cancer growth rate
+          grow_rate_i<-risk_data$growth_rate
+          
+          #Determine when the cancer would be clinically diagnosed
+          ca_incidence_i <- cmp_incidence_function(risk_data)
+          ca_incidence_age <- ca_incidence_i[1]
+          
+          #Determine size at clinical detection age
+          CD_size <- ca_incidence_i[4]#tumour diameter at CD
+          
+          #The detection age is either the age at clinical detection 
+          #or a formula is applied to determine the age at screen 
+          #detection
+          if(ca_incidence_i[2] ==1){CD_age <- ca_incidence_i[1]} else
+            CD_age <- ca_incidence_i[1] + ((log((Vm/Vc)^0.25-1)-
+                                              log((Vm/((4/3)*pi*(ca_incidence_i[4]/2)^3))^0.25-1))/(0.25*grow_rate_i)) - 
+            ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(ca_incidence_i[3]/2)^3))^0.25-1))/(0.25*grow_rate_i))
+          cancer_diagnostic[8] <- c(CD_age)
+          
+          #Calculate tumour genesis age
+          t_gen <- ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(CD_size/2)^3))^0.25-1))/(0.25*grow_rate_i)) #Calculate time to get to clinical detection size
+          gen_age <- CD_age - t_gen
+          
+          #If cancer occurs after age of death, re-draw age of death
+          if(Mort_age <= ca_incidence_age){Mort_age <-qweibull(
+            p = dqrunif(n = 1,min = pweibull(
+              q = CD_age,shape = acmmortality_wb_a,scale = acmmortality_wb_b),max = 1),
+            shape = acmmortality_wb_a, scale = acmmortality_wb_b)}
+          if(Mort_age >= time_horizon){Mort_age <- 99.99}
+          cancer_diagnostic[7] <- c(Mort_age)
       
       Time_to_screen <- screen_times[1] - age #Select the current next screen age and subtract age
       Time_to_death <- Mort_age - age #Time to death from current age
@@ -570,6 +563,8 @@ for (ii in 1:chunks) {
       #Record total QALYs for J loop
       QALY_counter <- sum(cmp_QALY_counter(Mort_age,incidence_age_record),na.rm = TRUE)
       }else{
+          ca_case <- 0
+        
         #For non-cancer individuals
         screen_cost_vec<-rep(cost_screen,length(screen_times))
         follow_up_vec<-rbinom(length(screen_times),1,recall_rate)
@@ -597,7 +592,7 @@ for (ii in 1:chunks) {
       
     #If deterministic analysis then record outputs
     if(PSA==0){
-      return(c(QALY_counter, costs, screen_count,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca, screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age),cancer_diagnostic[2:3],cancer_diagnostic[7],cancer_diagnostic[10]))}else{
+      return(c(QALY_counter, costs, screen_count,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca, screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age),cancer_diagnostic[2:3],Mort_age,cancer_diagnostic[10]))}else{
         #If PSA then record outputs + monte carlo draws
         return(as.numeric(c(QALY_counter, costs, screen_count,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca,screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age), c(risk_data[15:40]))))
       }
