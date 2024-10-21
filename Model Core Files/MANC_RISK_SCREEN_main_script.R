@@ -21,7 +21,7 @@ tic()
 #5=5 yearly, 6=2 rounds at 50 and 60 (10 yearly), 7=Low risk (5 yearly),
 #8=Low risk (6 yearly),#9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-3
+screen_strategy<-9
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
@@ -37,10 +37,10 @@ PSA=0
 intervals=0
 
 #Set working directory
-#setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Set loop numbers
-inum<-1000000 #Individual women to be sampled
+inum<-100000 #Individual women to be sampled
 mcruns<-1 #Monte Carlo runs used if PSA switched on
 chunks<-10 #Number of chunks to split inum into for faster running time
 seed<-set.seed(1) #Set seed for random draws
@@ -267,7 +267,7 @@ utility_stage_cat_follow <- c("stage1"=0.82/0.822,
 
 #########################CREATE SAMPLE OF WOMEN FOR MODEL###################
 if(gensample==1){dir.create("Risksample", showWarnings = FALSE)
-  cmp_create_sample(PSA,intervals,seed)}
+  cmp_create_sample(PSA,intervals,seed,screen_strategy)}
 
 ################Outer Individual sampling loop##############################
 
@@ -277,17 +277,6 @@ for (ii in 1:chunks) {
   load(paste("Risksample/risksample_",ii,".Rdata",sep = ""))
   prefix<-paste("^","X",ii,".",sep="")
   names(splitsample)<-sub(prefix,"",names(splitsample))
-  
-  #Assign women to risk groups based on 10yr risk if using risk-stratified approach  
-  if(screen_strategy==1 | screen_strategy==9) {
-    splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk,risk_cutoffs_procas)
-  } else
-    if(screen_strategy==2) {
-      splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk,risk_cutoffs_tert)
-    } else
-      if(screen_strategy==7 | screen_strategy==8) {
-        splitsample$risk_group<-ifelse(splitsample$tenyrrisk<low_risk_cut,1,2)
-      }  
   
   #Assign women to supplemental screening if switched on and criteria met 
   #if(supplemental_screening==1){
