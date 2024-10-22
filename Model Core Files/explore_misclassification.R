@@ -208,7 +208,7 @@ for (m in unique(supp_data$Model_age)){
                          par_estim_e$value,
                          par_estim_o$par[1],
                          par_estim_o$par[2],
-                         par_estim_o$par[1] / (par_estim_e$par[1] + par_estim_e$par[2]),
+                         par_estim_o$par[1] / (par_estim_o$par[1] + par_estim_o$par[2]),
                          par_estim_o$value)
 }
 
