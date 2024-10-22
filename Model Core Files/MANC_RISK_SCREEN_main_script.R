@@ -40,7 +40,7 @@ intervals=0
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Set loop numbers
-inum<-100000 #Individual women to be sampled
+inum<-10000 #Individual women to be sampled
 mcruns<-1 #Monte Carlo runs used if PSA switched on
 chunks<-10 #Number of chunks to split inum into for faster running time
 seed<-set.seed(1) #Set seed for random draws
@@ -565,7 +565,7 @@ for (ii in 1:chunks) {
       }else{
           ca_case <- 0
         
-          if (Mort_age>100){Mort_age<-100)}
+          if (Mort_age>time_horizon){Mort_age<-100}
           
         #For non-cancer individuals
         screen_cost_vec<-rep(cost_screen,length(screen_times))
@@ -590,7 +590,7 @@ for (ii in 1:chunks) {
         
         #Record total QALYs for J loop
         QALY_counter <- sum(cmp_QALY_counter(Mort_age,incidence_age_record),na.rm = TRUE)
-      }
+        }
       
     #If deterministic analysis then record outputs
     if(PSA==0){
