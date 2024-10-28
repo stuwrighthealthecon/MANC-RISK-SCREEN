@@ -39,7 +39,7 @@ intervals=0
 #setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Set loop numbers
-inum<-100000 #Individual women to be sampled
+inum<-10000 #Individual women to be sampled
 jnum<-1 #Lifetimes to be simulated per woman
 mcruns<-1 #Monte Carlo runs used if PSA switched on
 chunks<-10 #Number of chunks to split inum into for faster running time
@@ -269,15 +269,15 @@ utility_stage_cat_follow <- c("stage1"=0.82/0.822,
                               "DCIS"=utility_DCIS)
 
 #########################CREATE SAMPLE OF WOMEN FOR MODEL###################
-if(gensample==1){dir.create("Risksample", showWarnings = FALSE)
-  create_sample(PSA,intervals,seed)}
+if(gensample==1){dir.create("Risksamplewithmisclass", showWarnings = FALSE)
+  create_sample_with_misclass(PSA,intervals,seed)}
 
 ################Outer Individual sampling loop##############################
 
 #Set loop to divide i loop into a number of sub-loops in case of simulation break
 for (ii in 1:chunks) {
   start_time <- Sys.time()
-  load(paste("Risksample/risksample_",ii,".Rdata",sep = ""))
+  load(paste("Risksamplewithmisclass/risksample_",ii,".Rdata",sep = ""))
   prefix<-paste("^","X",ii,".",sep="")
   names(splitsample)<-sub(prefix,"",names(splitsample))
   
@@ -285,15 +285,15 @@ for (ii in 1:chunks) {
   # Add some jitter to simulate misclassification and record "correct" risk class
   # separately in case we want it for reference
   if(screen_strategy==1 | screen_strategy==9) {
-    splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk_pred,
+    splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk_est,
                                             risk_cutoffs_procas)
   } else
     if(screen_strategy==2) {
-      splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk_pred,
+      splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk_est,
                                              risk_cutoffs_tert)
     } else
       if(screen_strategy==7 | screen_strategy==8) {
-        splitsample$risk_group<-ifelse(splitsample$tenyrrisk_pred<low_risk_cut,1,2)
+        splitsample$risk_group<-ifelse(splitsample$tenyrrisk_est<low_risk_cut,1,2)
       }  
   
   #Assign women to supplemental screening if switched on and criteria met 
@@ -339,7 +339,7 @@ for (ii in 1:chunks) {
     
     #Select an individual woman from the data.frame
     risk_data<-as.data.frame(i)
-    # risk_data<-splitsample[i,]
+    # risk_data<-splitsample[i,] # Alternative for if we want to look at unparallelised version
     
     #If PSA switched on, replace base case parameter values with Monte Carlo draws
     if(PSA==1){
@@ -767,8 +767,10 @@ for (ii in 1:chunks) {
   
   #Save results from this chunk as an Rdata file
   if(PSA==0){
-    save(results,file = paste("Deterministic results/Determ_",screen_strategy,"_",ii,".Rdata",sep = ""))}else{
-      save(results,file = paste("PSA results/PSA_",screen_strategy,"_",ii,".Rdata",sep = "")) 
+    dir.create("DeterministicResultsWithMisclass", showWarnings = FALSE)
+    save(results,file = paste("DeterministicResultsWithMisclass/Determ_",screen_strategy,"_",ii,".Rdata",sep = ""))}else{
+      dir.create("PSAResultsWithMisclass", showWarnings = FALSE)
+      save(results,file = paste("PSAResultsWithMisclass/PSA_",screen_strategy,"_",ii,".Rdata",sep = "")) 
     }
   
   #Print simulation progress
@@ -783,7 +785,7 @@ merged_result <- matrix(0,nrow = chunks,ncol = 7)
 if(PSA==0){
   for (i in 1:chunks){
     #Record average outputs for each chunk and save in an excel file
-    load(paste("Deterministic results/Determ_",screen_strategy,"_",i,".Rdata",sep = ""))
+    load(paste("DeterministicResultsWithMisclass/Determ_",screen_strategy,"_",i,".Rdata",sep = ""))
     results<-results %>% filter(results[,4]>50 | results[,4]==0)
     merged_result[i,1] <- mean(results[,1])
     merged_result[i,2] <- mean(results[,2])
@@ -793,10 +795,10 @@ if(PSA==0){
     merged_result[i,6] <- mean(results[,7])
     merged_result[i,7] <- mean(results[,9])
   }
-  write.csv(merged_result,file = paste("Detresults_strat_",screen_strategy,".csv"))}else{
+  write.csv(merged_result,file = paste("Detresults_MC_strat_",screen_strategy,".csv"))}else{
     for (i in 1:chunks){
       #Record average outputs for each chunk and save in an excel file
-      load(paste("PSA results/PSA_",screen_strategy,"_",i,".Rdata",sep = ""))
+      load(paste("PSAResultsWithMisclass/PSA_",screen_strategy,"_",i,".Rdata",sep = ""))
       results<-results %>% filter(results[,4]>50 | results[,4]==0)
       merged_result[i,1] <- mean(results[,1])
       merged_result[i,2] <- mean(results[,2])
@@ -806,7 +808,7 @@ if(PSA==0){
       merged_result[i,6] <- mean(results[,7])
       merged_result[i,7] <- mean(results[,9])
     } 
-    write.csv(merged_result,file = paste("PSAresults_strat_",screen_strategy,".csv"))
+    write.csv(merged_result,file = paste("PSAresults_MC_strat_",screen_strategy,".csv"))
   }
 
 
