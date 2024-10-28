@@ -12,6 +12,8 @@
 dir.create("Drug_results", showWarnings = FALSE)
 dir.create("PSA_drug_results", showWarnings = FALSE)
 
+MISCLASS <- FALSE # Flag for whether to include potential misclassification in risk estimates
+
 #Run required packages
 library("doParallel")
 library("MASS")
@@ -405,7 +407,20 @@ for (ii in 1:chunks) {
   prefix<-paste("^","X",ii,".",sep="")
   names(splitsample)<-sub(prefix,"",names(splitsample))
   
-  #Assign women to risk groups based on 10yr risk if using risk-stratified approach  
+  #Assign women to risk groups based on 10yr risk if using risk-stratified approach 
+  if (MISCLASS){
+    if(screen_strategy==1 | screen_strategy==9) {
+      splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk_est,
+                                             risk_cutoffs_procas)
+    } else
+      if(screen_strategy==2) {
+        splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk_est,
+                                               risk_cutoffs_tert)
+      } else
+        if(screen_strategy==7 | screen_strategy==8) {
+          splitsample$risk_group<-ifelse(splitsample$tenyrrisk_est<low_risk_cut,1,2)
+        }
+  }else{
   if(screen_strategy==1 | screen_strategy==9) {
     splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk,risk_cutoffs_procas)
   } else
@@ -415,7 +430,7 @@ for (ii in 1:chunks) {
       if(screen_strategy==7 | screen_strategy==8) {
         splitsample$risk_group<-ifelse(splitsample$tenyrrisk<low_risk_cut,1,2)
       }  
-  
+  }
   # # Add extra fields for drug:
   nsample <- nrow(splitsample)
   # Use 1, 2 coding for menopause status to match indexing for drug efficacy/uptake

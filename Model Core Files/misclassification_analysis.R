@@ -282,8 +282,6 @@ for (ii in 1:chunks) {
   names(splitsample)<-sub(prefix,"",names(splitsample))
   
   #Assign women to risk groups based on 10yr risk if using risk-stratified approach
-  # Add some jitter to simulate misclassification and record "correct" risk class
-  # separately in case we want it for reference
   if(screen_strategy==1 | screen_strategy==9) {
     splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk_est,
                                             risk_cutoffs_procas)
