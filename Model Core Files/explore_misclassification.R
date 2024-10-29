@@ -1,5 +1,7 @@
 # In this script we show how to get beta distributed risk distributions for
-# "true" risk based on comp[aring observed and estimated risk from Tyrer-Cuzick
+# "true" risk based on comparing observed and estimated risk from Tyrer-Cuzick
+
+EXPLORE_BETA <- FALSE # Set to true to do more in-depth "narrative" construction of beta mapping
 
 EXPLORE_GPS <- FALSE # Set to true to look at a few alternative targets for fitting in the Gaussian process section
 
@@ -58,80 +60,82 @@ supp_data <- supp_data[-c(model_idxs), ]
 
 supp_data[, c("N", "E", "O", "O_E")] <- supp_data[, c("N", "E", "O", "O_E")] %>% sapply(as.numeric)
 
-# Calculate parameters for an empirical distribution based on numbers positive and negative:
-alpha_vals <- supp_data$O[which(supp_data$Risk_class=="Total")] / supp_data$N[which(supp_data$Risk_class=="Total")]
-beta_vals <- 1 - alpha_vals
+if (EXPLORE_BETA){
 
-# Now look at how well this fits...
-
-# Get cdf of risk from data, compare to cdf from beta fit
-supp_data_tc50 <- supp_data[which(supp_data$Model_age=="Tyrer-Cuzick (<50y)"), ]
-data_quantiles <- cumsum(supp_data_tc50$N[2:6])/ supp_data_tc50$N[1]
-heights <- supp_data_tc50$O[2:6] / supp_data_tc50$N[2:6]
-heights[5] <- 1
-beta_cdf <- pbeta(heights, alpha_vals[1], beta_vals[1])
-cdf_df <- data.frame("data_quantiles"=data_quantiles,
-                          "heights"=heights,
-                          "beta_cdf"=beta_cdf)
-h <- ggplot(cdf_df, aes(x=heights, y=data_quantiles)) +
-  geom_point() +
-  geom_line(aes(x=heights, y=beta_cdf), colour="red") +
-  scale_x_continuous(transform = "log10")
-
-# Should see from plot that fit is fairly poor!
-print(h)
-
-# Try finding optimal parameters using least squares:
-get_beta_rmse <- function(pars){
-  alpha <- pars[1]
-  beta <- pars[2]
-  cdf <- pbeta(heights, alpha, beta)
-  rmse <- (1/length(data_quantiles)) * (data_quantiles - cdf)^2 %>% sum() %>% sqrt()
-  return(rmse)
+  # Calculate parameters for an empirical distribution based on numbers positive and negative:
+  alpha_vals <- supp_data$O[which(supp_data$Risk_class=="Total")] / supp_data$N[which(supp_data$Risk_class=="Total")]
+  beta_vals <- 1 - alpha_vals
+  
+  # Now look at how well this fits...
+  
+  # Get cdf of risk from data, compare to cdf from beta fit
+  supp_data_tc50 <- supp_data[which(supp_data$Model_age=="Tyrer-Cuzick (<50y)"), ]
+  data_quantiles <- cumsum(supp_data_tc50$N[2:6])/ supp_data_tc50$N[1]
+  tenyr_risk <- supp_data_tc50$O[2:6] / supp_data_tc50$N[2:6]
+  tenyr_risk[5] <- 1
+  beta_cdf <- pbeta(tenyr_risk, alpha_vals[1], beta_vals[1])
+  cdf_df <- data.frame("data_quantiles"=data_quantiles,
+                            "tenyr_risk"=tenyr_risk,
+                            "beta_cdf"=beta_cdf)
+  h <- ggplot(cdf_df, aes(x=tenyr_risk, y=data_quantiles)) +
+    geom_point() +
+    geom_line(aes(x=tenyr_risk, y=beta_cdf), colour="red") +
+    scale_x_continuous(transform = "log10")
+  
+  # Should see from plot that fit is fairly poor!
+  print(h)
+  
+  # Try finding optimal parameters using least squares:
+  get_beta_rmse <- function(pars){
+    alpha <- pars[1]
+    beta <- pars[2]
+    cdf <- pbeta(tenyr_risk, alpha, beta)
+    rmse <- (1/length(data_quantiles)) * (data_quantiles - cdf)^2 %>% sum() %>% sqrt()
+    return(rmse)
+  }
+  
+  par_estim <- optim(c(alpha_vals[1], beta_vals[1]), get_beta_rmse)
+  
+  beta_cdf <- pbeta(tenyr_risk, par_estim$par[1], par_estim$par[2])
+  cdf_df <- data.frame("data_quantiles"=data_quantiles,
+                            "tenyr_risk"=tenyr_risk,
+                            "beta_cdf"=beta_cdf)
+  h <- ggplot(cdf_df, aes(x=tenyr_risk, y=data_quantiles)) +
+    geom_point() +
+    geom_line(aes(x=tenyr_risk, y=beta_cdf), colour="red") +
+    scale_x_continuous(transform = "log10") +
+    ggtitle(supp_data$Model_age[1])
+  
+  # Fit now looks much better!
+  print(h)
+  
+  # This fit does not preserve true mean:
+  estim_mean <- par_estim$par[1] / (par_estim$par[1] + par_estim$par[2])
+  true_mean <- supp_data_tc50$O[1] / supp_data_tc50$N[1]
+  
+  # Alternative approach: force fits to match mean
+  get_beta_rmse_with_mean <- function(alpha){
+    beta <- alpha / true_mean - alpha
+    cdf <- pbeta(tenyr_risk, alpha, beta)
+    rmse <- (1/length(data_quantiles)) * (data_quantiles - cdf)^2 %>% sum() %>% sqrt()
+    return(rmse)
+  }
+  par_estim <- optim(alpha_vals[1], get_beta_rmse_with_mean)
+  alpha_estim <- par_estim$par[1]
+  beta_estim <- alpha_estim / true_mean - alpha_estim
+  estim_mean <- alpha_estim / (alpha_estim + beta_estim)
+  
+  beta_cdf <- pbeta(tenyr_risk, alpha_estim, beta_estim)
+  cdf_df <- data.frame("data_quantiles"=data_quantiles,
+                            "tenyr_risk"=tenyr_risk,
+                            "beta_cdf"=beta_cdf)
+  # Should see much worse eyeball fit:
+  h <- ggplot(cdf_df, aes(x=tenyr_risk, y=data_quantiles)) +
+    geom_point() +
+    geom_line(aes(x=tenyr_risk, y=beta_cdf), colour="red") +
+    scale_x_continuous(transform = "log10")
+  print(h)
 }
-
-par_estim <- optim(c(alpha_vals[1], beta_vals[1]), get_beta_rmse)
-
-beta_cdf <- pbeta(heights, par_estim$par[1], par_estim$par[2])
-cdf_df <- data.frame("data_quantiles"=data_quantiles,
-                          "heights"=heights,
-                          "beta_cdf"=beta_cdf)
-h <- ggplot(cdf_df, aes(x=heights, y=data_quantiles)) +
-  geom_point() +
-  geom_line(aes(x=heights, y=beta_cdf), colour="red") +
-  scale_x_continuous(transform = "log10") +
-  ggtitle(supp_data$Model_age[1])
-
-# Fit now looks much better!
-print(h)
-# 
-# # This fit does not preserve true mean:
-# estim_mean <- par_estim$par[1] / (par_estim$par[1] + par_estim$par[2])
-# true_mean <- supp_data_tc50$O[1] / supp_data_tc50$N[1]
-# 
-# # Alternative approach: force fits to match mean
-# get_beta_rmse_with_mean <- function(alpha){
-#   beta <- alpha / true_mean - alpha
-#   cdf <- pbeta(heights, alpha, beta)
-#   rmse <- (1/length(data_quantiles)) * (data_quantiles - cdf)^2 %>% sum() %>% sqrt()
-#   return(rmse)
-# }
-# par_estim <- optim(alpha_vals[1], get_beta_rmse_with_mean)
-# alpha_estim <- par_estim$par[1]
-# beta_estim <- alpha_estim / true_mean - alpha_estim
-# estim_mean <- alpha_estim / (alpha_estim + beta_estim)
-# 
-# beta_cdf <- pbeta(heights, alpha_estim, beta_estim)
-# cdf_df <- data.frame("data_quantiles"=data_quantiles,
-#                           "heights"=heights,
-#                           "beta_cdf"=beta_cdf)
-# # Should see much worse eyeball fit:
-# h <- ggplot(cdf_df, aes(x=heights, y=data_quantiles)) +
-#   geom_point() +
-#   geom_line(aes(x=heights, y=beta_cdf), colour="red") +
-#   scale_x_continuous(transform = "log10")
-# print(h)
-
 #### Do least-squares beta regression systematically for each age/model combination
 
 n_classes <- supp_data$Model_age %>% unique() %>% length()
@@ -149,47 +153,77 @@ beta_fits_df <- data.frame("obs_mean"=numeric(length=n_classes),
 for (m in unique(supp_data$Model_age)){
   supp_data_m <- supp_data[which(supp_data$Model_age==m), ]
   data_quantiles <- cumsum(supp_data_m$N[2:6])/ supp_data_m$N[1]
-  print(data_quantiles)
+  # print(data_quantiles)
   
   # First do expected
-  heights <- c(supp_data_m$E[2:5] / supp_data_m$N[2:5], 1)
-  print(heights)
-  # heights[5] <- 1
+  tenyr_risk <- c(supp_data_m$E[2:5] / supp_data_m$N[2:5], 1)
+  # print(tenyr_risk)
+  # tenyr_risk[5] <- 1
   get_beta_rmse <- function(pars){
     alpha <- pars[1]
     beta <- pars[2]
-    cdf <- pbeta(heights, alpha, beta)
+    cdf <- pbeta(tenyr_risk, alpha, beta)
     rmse <- (1/length(data_quantiles)) * (data_quantiles - cdf)^2 %>% sum() %>% sqrt()
     return(rmse)
+  }
+  
+  # Alternative approach: maximum likelihood
+  comb_factor <- sapply(seq(2,6),
+                        FUN=function(i){lchoose(supp_data_m$N[i],
+                                               supp_data_m$E[i])}) %>%
+    sum()
+  get_beta_llh <- function(pars){
+    alpha <- pars[1]
+    beta <- pars[2]
+    l <- -comb_factor
+    lng_quantiles <- c(0, data_quantiles, 1)
+    for (i in seq(1,5)){
+      N <- supp_data_m$N[i+1]
+      x <- supp_data_m$E[i+1]
+      L <- qbeta(lng_quantiles[i],
+                 alpha,
+                 beta)
+      U <- qbeta(lng_quantiles[i+1],
+                 alpha,
+                 beta)
+      diff <- pbeta(U,
+                    x + alpha,
+                    N - x + beta) -
+        pbeta(L,
+              x + alpha,
+              N - x + beta)
+      l <- l - log(diff)
+    }
+    return(l)
   }
   
   alpha_0 <- supp_data_m$E[which(supp_data_m$Risk_class=="Total")] / supp_data_m$N[which(supp_data_m$Risk_class=="Total")] 
   beta_0 <- 1 - alpha_0
   par_estim_e <- optim(c(alpha_0, beta_0), get_beta_rmse)
   
-  X <- seq(0, max(heights), by=.001)
+  X <- seq(0, max(tenyr_risk), by=.001)
   
   beta_cdf <- pbeta(X, par_estim_e$par[1], par_estim_e$par[2])
   
-  data_df <- data.frame("heights"=heights,
+  data_df <- data.frame("tenyr_risk"=tenyr_risk,
                         "data_quantiles"=data_quantiles)
   cdf_df <- data.frame("X"=X,
                        "beta_cdf"=beta_cdf)
   
   h <- ggplot() +
-    geom_point(data=data_df, aes(x=heights, y=data_quantiles)) +
+    geom_point(data=data_df, aes(x=tenyr_risk, y=data_quantiles)) +
     geom_line(data=cdf_df, aes(x=X, y=beta_cdf), colour="red") +
     scale_x_continuous(transform = "log10") +
     ggtitle(paste(m, ", expected", sep=""))
   print(h)
   
   # Now do estimates
-  heights <- c(supp_data_m$O[2:5] / supp_data_m$N[2:5], 1)
-  # heights[5] <- 1
+  tenyr_risk <- c(supp_data_m$O[2:5] / supp_data_m$N[2:5], 1)
+  # tenyr_risk[5] <- 1
   get_beta_rmse <- function(pars){
     alpha <- pars[1]
     beta <- pars[2]
-    cdf <- pbeta(heights, alpha, beta)
+    cdf <- pbeta(tenyr_risk, alpha, beta)
     rmse <- (1/length(data_quantiles)) * (data_quantiles - cdf)^2 %>% sum() %>% sqrt()
     return(rmse)
   }
@@ -197,17 +231,17 @@ for (m in unique(supp_data$Model_age)){
   beta_0 <- 1 - alpha_0
   par_estim_o <- optim(c(alpha_0, beta_0), get_beta_rmse)
   
-  X <- seq(0, max(heights), by=.001)
+  X <- seq(0, max(tenyr_risk), by=.001)
   
   beta_cdf <- pbeta(X, par_estim_o$par[1], par_estim_o$par[2])
   
-  data_df <- data.frame("heights"=heights,
+  data_df <- data.frame("tenyr_risk"=tenyr_risk,
                         "data_quantiles"=data_quantiles)
   cdf_df <- data.frame("X"=X,
                        "beta_cdf"=beta_cdf)
   
   h <- ggplot() +
-    geom_point(data=data_df, aes(x=heights, y=data_quantiles)) +
+    geom_point(data=data_df, aes(x=tenyr_risk, y=data_quantiles)) +
     geom_line(data=cdf_df, aes(x=X, y=beta_cdf), colour="red") +
     scale_x_continuous(transform = "log10") +
     ggtitle(paste(m, ", observed", sep=""))
