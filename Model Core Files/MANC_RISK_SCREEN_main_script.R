@@ -13,20 +13,21 @@ library("dqrng")
 library("compiler")
 library("tidyverse")
 library("iterators")
+library("tictoc")
 
 #####Choose screening programme and related parameters##########
-
+tic()
 #Set the screening strategy: 1=PROCAS, 2=Risk tertiles, 3=3 yearly, 4=2 yearly,
 #5=5 yearly, 6=2 rounds at 50 and 60 (10 yearly), 7=Low risk (5 yearly),
 #8=Low risk (6 yearly),#9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-0
+screen_strategy<-3
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
 
 #Generate new sample? 1=YES, any other number NO
-gensample<-0
+gensample<-1
 
 #Deterministic (0) or Probabilistic Analysis (1)
 PSA=0
@@ -36,17 +37,16 @@ PSA=0
 intervals=0
 
 #Set working directory
-#setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Set loop numbers
-inum<-3000000 #Individual women to be sampled
-jnum<-1 #Lifetimes to be simulated per woman
+inum<-10000 #Individual women to be sampled
 mcruns<-1 #Monte Carlo runs used if PSA switched on
 chunks<-10 #Number of chunks to split inum into for faster running time
 seed<-set.seed(1) #Set seed for random draws
 
 #Register number of cores for foreach loop
-numcores<-16
+numcores<-19
 registerDoParallel(cores=numcores)
 
 #Load file containing required functions for the model
@@ -267,7 +267,7 @@ utility_stage_cat_follow <- c("stage1"=0.82/0.822,
 
 #########################CREATE SAMPLE OF WOMEN FOR MODEL###################
 if(gensample==1){dir.create("Risksample", showWarnings = FALSE)
-  create_sample(PSA,intervals,seed)}
+  cmp_create_sample(PSA,intervals,seed,screen_strategy)}
 
 ################Outer Individual sampling loop##############################
 
@@ -278,51 +278,14 @@ for (ii in 1:chunks) {
   prefix<-paste("^","X",ii,".",sep="")
   names(splitsample)<-sub(prefix,"",names(splitsample))
   
-  #Assign women to risk groups based on 10yr risk if using risk-stratified approach  
-  if(screen_strategy==1 | screen_strategy==9) {
-    splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk,risk_cutoffs_procas)
-  } else
-    if(screen_strategy==2) {
-      splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk,risk_cutoffs_tert)
-    } else
-      if(screen_strategy==7 | screen_strategy==8) {
-        splitsample$risk_group<-ifelse(splitsample$tenyrrisk<low_risk_cut,1,2)
-      }  
-  
   #Assign women to supplemental screening if switched on and criteria met 
-  if(supplemental_screening==1){
-    for (i in 1:length(splitsample$MRI_screen)) {
-      if(splitsample[i,"VDG"]>=density_cutoff & splitsample[i,"tenyearrisk"]>=8){splitsample[i,"MRI_screen"]<1}else
-        if(splitsample[i,"VDG"]>=density_cutoff & splitsample[i,"tenyearrisk"]<8){splitsample[i,"US_screen"]<-1}}}
-  
-  #If risk-stratified screening used then determine if each woman chooses to have
-  #risk predicted, attends risk consultation, and changes interval
-  if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strategy<10)){
-    splitsample$risk_predicted<-ifelse(dqrunif(
-      length(splitsample$risk_predicted),0,1)<
-        c(rep(risk_uptake,length(splitsample$risk_predicted))),1,0)
-    splitsample$feedback<-ifelse(splitsample$risk_predicted==1 & 
-                                   dqrunif(length(splitsample$feedback),0,1)<
-                                   c(rep(risk_feedback)),1,0)
-    splitsample$interval_change<-ifelse(splitsample$feedback==1 & 
-                                          dqrunif(length(splitsample$interval_change),0,1)<
-                                          c(rep(screen_change)),1,0)
-  }
+  #if(supplemental_screening==1){
+    #for (i in 1:length(splitsample$MRI_screen)) {
+      #if(splitsample[i,"VDG"]>=density_cutoff & splitsample[i,"tenyearrisk"]>=8){splitsample[i,"MRI_screen"]<1}else
+        #if(splitsample[i,"VDG"]>=density_cutoff & splitsample[i,"tenyearrisk"]<8){splitsample[i,"US_screen"]<-1}}}
   
   #Create iterator for the data.frame of women to pass to parallel processors  
   itx<-iter(splitsample,by="row")
-  
-  #Set counters for individual sampling loop
-  total_screens <- 0
-  total_cancers_detected <- 0
-  total_costs <- 0
-  total_US_costs <- 0
-  total_MRI_costs <- 0
-  total_life_years <- 0
-  total_US <- 0
-  total_MRI <- 0
-  total_QALYs <- 0
-  total_costs_follow_up <- 0
   
   #Open i loop: Simulating individual women through the strategy
   results <- foreach(i=itx,.combine = 'rbind',.packages = c('MASS','dqrng','tidyverse')) %dopar% {
@@ -387,74 +350,10 @@ for (ii in 1:chunks) {
     ############################## Set Screen times###############################
     
     #Assign screening intervals based on strategy and risk group    
-    screen_times <- c(999)
-    if (screen_strategy==1 & risk_data$interval_change==1) {
-      if (risk_data$risk_group<4) {screen_times<-low_risk_screentimes} else
-        if (risk_data$risk_group>3 & risk_data$risk_group<5) {screen_times<-med_risk_screentimes} else
-          if (risk_data$risk_group>4) {screen_times<-high_risk_screentimes}
-    } else if(screen_strategy==1 & risk_data$interval_change==0) {screen_times<-low_risk_screentimes}
-    if(screen_strategy==2 & risk_data$interval_change==1){
-      if(risk_data$risk_group==1){screen_times<-low_risk_screentimes} else
-        if(risk_data$risk_group==2){screen_times<-med_risk_screentimes} else
-          if(risk_data$risk_group==3){screen_times<-high_risk_screentimes}
-    } else if(screen_strategy==1 & risk_data$interval_change==0) {screen_times<-low_risk_screentimes}
-    if(screen_strategy==3){
-      screen_times <- low_risk_screentimes
-    }
-    if(screen_strategy==4){
-      screen_times <- med_risk_screentimes
-    }
-    if(screen_strategy==5){
-      screen_times <- seq(screen_startage, screen_startage+(5*4),5)
-    }
-    if(screen_strategy==6){
-      screen_times <- seq(screen_startage, screen_startage+10,10)
-    }
-    if(screen_strategy==7 & risk_data$interval_change==1){
-      if(risk_data$risk_group==1){screen_times<-seq(screen_startage, screen_startage+(5*4),5)}
-      if(risk_data$risk_group==2){screen_times<-low_risk_screentimes}
-    } else if(screen_strategy==7 & risk_data$interval_change==0) {screen_times<-low_risk_screentimes}
-    if(screen_strategy==8 & risk_data$interval_change==1){
-      if(risk_data$risk_group==1){screen_times<-seq(screen_startage,screen_startage+(6*3),6)}
-      if(risk_data$risk_group==2){screen_times<-low_risk_screentimes}
-    } else if (screen_strategy==8 & risk_data$interval_change==0) {screen_times<-low_risk_screentimes}
-    if(screen_strategy==9 & risk_data$interval_change==1){
-      if (risk_data$risk_group==1) {screen_times<-seq(screen_startage, screen_startage+(5*4),5)} else
-        if (risk_data$risk_group==2 | risk_data$risk_group==3) {screen_times<-low_risk_screentimes} else
-          if (risk_data$risk_group==4) {screen_times<-med_risk_screentimes} else
-            if (risk_data$risk_group==5) {screen_times<-high_risk_screentimes}
-    } else if(screen_strategy==9 & risk_data$interval_change==0) {screen_times<-low_risk_screentimes}
+    screen_times<-cmp_set_screen_times(risk_group=risk_data$risk_group,screen_strategy)
     
     ##########################Set counters at i loop level#########################
     
-    #screen-detected cancer counts
-    screen_detected_count <- 0 #Cancer detected by screening
-    sdfirst_counter <- 0 #Cancer found at first screen
-    sdlast_counter <-0 #Cancer found at last screen
-    #Count of screens
-    screen_counter <- 0 #Number of Screens
-    lastscreen_counter <-0 #Last screen attended
-    US_counter <- 0 #Number of ultrasounds
-    MRI_counter <- 0 #Number of MRIs
-    #Recall count
-    recall_counter <- 0 #Number of recalls
-    #Total cost
-    cost_counter <- 0 #Total costs
-    #Total life years
-    LY_counter <- 0 #Total life years
-    #Total QALYs
-    QALY_counter <- 0 #Total QALYs
-    #Cancer stage counters
-    stage1_counter <- 0 #Stage 1 cancer found
-    stage2_counter <- 0 #Stage 2 cancer found
-    stage3_counter <- 0 #Stage 3 cancer found
-    stage4_counter <- 0 #Stage 4 cancer found
-    DCIS_counter <- 0 #DCIS found
-    
-    #######J loop for individual experience of breast cancer screening##########
-    for (j in jnum){
-      
-      #Set J level counters
       screen_count <- 0 #Screens attended
       missed_screen<- 0 #Screens missed
       recall_count <- 0 #Number of recalls
@@ -469,58 +368,58 @@ for (ii in 1:chunks) {
       US_costs <- 0 #Ultrasound costs
       MRI_costs <- 0 #MRI costs
       costs_follow_up <- 0 #Follow up costs
-      
-      #Lifetime cancer incidence
-      #Determines if a cancer occurs and at what age
-      if (risk_data$cancer==1){
-        ca_case<-1
-        
-        #Determine cancer growth rate
-        grow_rate_i<-risk_data$growth_rate
-        
-        #Determine when the cancer would be clinically diagnosed
-        ca_incidence_i <- cmp_incidence_function(risk_data)
-        ca_incidence_age <- ca_incidence_i[1]
-        
-        #Determine size at clinical detection age
-        CD_size <- ca_incidence_i[4]#tumour diameter at CD
-        
-        #The detection age is either the age at clinical detection 
-        #or a formula is applied to determine the age at screen 
-        #detection
-        if(ca_incidence_i[2] ==1){CD_age <- ca_incidence_i[1]} else
-          CD_age <- ca_incidence_i[1] + ((log((Vm/Vc)^0.25-1)-
-          log((Vm/((4/3)*pi*(ca_incidence_i[4]/2)^3))^0.25-1))/(0.25*grow_rate_i)) - 
-          ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(ca_incidence_i[3]/2)^3))^0.25-1))/(0.25*grow_rate_i))
-        cancer_diagnostic[8] <- c(CD_age)
-        
-        #Calculate tumour genesis age
-        t_gen <- ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(CD_size/2)^3))^0.25-1))/(0.25*grow_rate_i)) #Calculate time to get to clinical detection size
-        gen_age <- CD_age - t_gen
-      } else {
-        ca_case <- 0
-        ca_incidence_age <- 999 #Redundant but ensures after end of simulation if called
-        CD_age <- 999 #Redundant but ensures after end of simulation if called
-      }
+
+      #Total life years
+      LY_counter <- 0 #Total life years
+      #Total QALYs
+      QALY_counter <- 0 #Total QALYs
       
       #Get an all-cause mortality age and make sure this is greater than start
       #age and cancer incidence age
       Mort_age <- risk_data$life_expectancy
-      
-      #If cancer occurs after age of death, re-draw age of death
-      if(ca_case == 1 & Mort_age <= ca_incidence_age){Mort_age <-qweibull(
-        p = dqrunif(n = 1,min = pweibull(
-          q = CD_age,shape = acmmortality_wb_a,scale = acmmortality_wb_b),max = 1),
-        shape = acmmortality_wb_a, scale = acmmortality_wb_b)}
-      if(Mort_age >= time_horizon){Mort_age <- 99.99}
-      cancer_diagnostic[7] <- c(Mort_age)
       
       #Other individual variables
       age <- start_age
       interval_ca <- 0 #Cancer clinically detected
       screen_detected_ca <- 0 #Cancer screen detected
       
-      ##############################DES COMPONENT ###################################
+      ##############################DES COMPONENT CANCER ###################################
+        
+        #Lifetime cancer incidence
+        #Determines if a cancer occurs and at what age
+        if (risk_data$cancer==1){
+          ca_case<-1
+          
+          #Determine cancer growth rate
+          grow_rate_i<-risk_data$growth_rate
+          
+          #Determine when the cancer would be clinically diagnosed
+          ca_incidence_i <- cmp_incidence_function(risk_data)
+          ca_incidence_age <- ca_incidence_i[1]
+          
+          #Determine size at clinical detection age
+          CD_size <- ca_incidence_i[4]#tumour diameter at CD
+          
+          #The detection age is either the age at clinical detection 
+          #or a formula is applied to determine the age at screen 
+          #detection
+          if(ca_incidence_i[2] ==1){CD_age <- ca_incidence_i[1]} else
+            CD_age <- ca_incidence_i[1] + ((log((Vm/Vc)^0.25-1)-
+                                              log((Vm/((4/3)*pi*(ca_incidence_i[4]/2)^3))^0.25-1))/(0.25*grow_rate_i)) - 
+            ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(ca_incidence_i[3]/2)^3))^0.25-1))/(0.25*grow_rate_i))
+          cancer_diagnostic[8] <- c(CD_age)
+          
+          #Calculate tumour genesis age
+          t_gen <- ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(CD_size/2)^3))^0.25-1))/(0.25*grow_rate_i)) #Calculate time to get to clinical detection size
+          gen_age <- CD_age - t_gen
+          
+          #If cancer occurs after age of death, re-draw age of death
+          if(Mort_age <= ca_incidence_age){Mort_age <-qweibull(
+            p = dqrunif(n = 1,min = pweibull(
+              q = CD_age,shape = acmmortality_wb_a,scale = acmmortality_wb_b),max = 1),
+            shape = acmmortality_wb_a, scale = acmmortality_wb_b)}
+          if(Mort_age >= time_horizon){Mort_age <- 99.99}
+          cancer_diagnostic[7] <- c(Mort_age)
       
       Time_to_screen <- screen_times[1] - age #Select the current next screen age and subtract age
       Time_to_death <- Mort_age - age #Time to death from current age
@@ -541,30 +440,25 @@ for (ii in 1:chunks) {
         
         #Open screening event
         if(Event_place == 1){
-          
-          #Check if woman attends screen
-          if (screen_count==0 & missed_screen==0 & dqrunif(1,0,1)>uptakefirstscreen |
-              screen_count==0 & missed_screen>0 & dqrunif(1,0,1)>uptakenoscreen|
-              screen_count>0 & dqrunif(1,0,1)>uptakeotherscreen) {missed_screen<-missed_screen+1}else{
                 
                 #Woman attends screen    
                 screen_count<-screen_count+1
                 
                 #Add cost of a mammography and risk prediction if first screen for relevant strategies
                 costs<-costs+(cost_screen*current_discount)
-                if(screen_count==1 & screen_strategy<3 & risk_data$risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
-                if(screen_count==1 & screen_strategy==7 & risk_data$risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
-                if(screen_count==1 & screen_strategy==8 & risk_data$risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
-                if(screen_count==1 & screen_strategy==9 & risk_data$risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
+                if(screen_count==1 & screen_strategy<3 & risk_data$risk_predicted==1 |
+                   screen_count==1 & screen_strategy==7 & risk_data$risk_predicted==1 |
+                   screen_count==1 & screen_strategy==8 & risk_data$risk_predicted==1 |
+                   screen_count==1 & screen_strategy==9 & risk_data$risk_predicted==1){costs<-costs+(cost_strat*current_discount)}
                 if(screen_count == length(screen_times)){lastscreen_count <- 1}
                 
                 #Add costs of supplemental screening if relevant
-                if(risk_data$US_screen == 1){US_count <- US_count + 1
-                costs <- costs + (cost_US*current_discount)
-                US_costs<-US_costs+(cost_US*current_discount)}
-                if(risk_data$MRI_screen == 1){MRI_count <- MRI_count + 1
-                costs <- costs + (cost_MRI*current_discount)
-                MRI_costs <- MRI_costs + (cost_MRI*current_discount)}
+                #if(risk_data$US_screen == 1){US_count <- US_count + 1
+                #costs <- costs + (cost_US*current_discount)
+                #US_costs<-US_costs+(cost_US*current_discount)}
+                #if(risk_data$MRI_screen == 1){MRI_count <- MRI_count + 1
+                #costs <- costs + (cost_MRI*current_discount)
+                #MRI_costs <- MRI_costs + (cost_MRI*current_discount)}
                 
                 #If the next event is a screen and a cancer is present:
                 if (Event_place == 1 && ca_case ==1){
@@ -584,10 +478,10 @@ for (ii in 1:chunks) {
                     if(screen_result[1] == 1){
                       screen_detected_ca <-1
                       cancer_diagnostic[1] <- c((age+Time_to_screen))
-                      cancer_diagnostic[3] <- c(Ca_size)
-                      cancer_diagnostic[4] <- c(1)
-                      cancer_diagnostic[5] <- c(screen_result[4])
-                      cancer_diagnostic[6] <- c(screen_result[3])
+                      cancer_diagnostic[3:6] <- c(Ca_size,
+                                                  1,
+                                                  screen_result[4],
+                                                  screen_result[3])
                       cancer_diagnostic[10] <- c(screen_count)
                       incidence_age_record = age+Time_to_screen
                       
@@ -598,7 +492,7 @@ for (ii in 1:chunks) {
                     if(screen_result[1] == 1 && screen_count == 1){sdfirst_cancer <-1} #ca detected in first screen
                     if(screen_result[1] == 1 && screen_count == length(screen_times)){sdlast_cancer <-1} #ca detected on last screen 
                   } else{screen_detected_ca <- 0} 
-                } else{screen_detected_ca <- 0} 
+                
                 
                 #If a cancer is not found does a false-positive occur?
                 if(Event_place == 1 && screen_detected_ca == 0 && dqrunif(1,0,1)<recall_rate){
@@ -629,21 +523,12 @@ for (ii in 1:chunks) {
           #Assign a stage based on tumour size
           stage_cat <- cmp_stage_by_size(Ca_size)
           
-          #Record the stage
-          if(stage_cat == 1){stage1_counter = stage1_counter+1}
-          if(stage_cat == 2){stage2_counter = stage2_counter+1}
-          if(stage_cat == 3){stage3_counter = stage3_counter+1}
-          if(stage_cat == 4){stage4_counter = stage4_counter+1}
-          if(stage_cat == 5){DCIS_counter = DCIS_counter+1
-          
           #Add the cost of DCIS
+          if(stage_cat == 5){
           costs = costs + (cost_DCIS*current_discount)}
           
           #Generate a cancer specific survival time, accounting for competing risks
           Ca_mort_age <- cmp_ca_survival_time(stage_cat,Mort_age,age,ca_incidence_age)
-          
-          #Reduce age of death if cancer causes woman to die earlier
-          if(Ca_mort_age<Mort_age){Mort_age<-Ca_mort_age}
           
           #Set up variables to look up treatment costs
           if(stage_cat<3){iStage<-"Early"} else {iStage<-"Late"}
@@ -672,79 +557,64 @@ for (ii in 1:chunks) {
       } #End first while loop
       if((screen_detected_ca+interval_ca) == 0){cancer_diagnostic[1] <- Mort_age} # Recorded age is age of death or cancer incidence
       
-      #Update all ca/screen counters
-      screen_detected_count <- screen_detected_count + screen_detected_ca
-      screen_counter <- screen_counter + screen_count
-      US_counter <- US_counter + US_count
-      MRI_counter <- MRI_counter + MRI_count
-      
-      #Update false-positive recalls
-      recall_counter <- recall_counter + recall_count
-      
-      #Update first screen detected ca counter
-      sdfirst_counter <- sdfirst_counter + sdfirst_cancer
-      
-      #Update last ca/screen counters
-      sdlast_counter <- sdlast_counter + sdlast_cancer
-      lastscreen_counter <- lastscreen_counter + lastscreen_count
-      
       #Update Life-year counter
-      LY_counter <- LY_counter + (Mort_age-start_age)
-      
-      #QALY counter
-      #Set up a QALY vector of length equal to life years
-      QALY_length <- ceiling(Mort_age)-(screen_startage-1)
-      
-      #If less than 1 life year lived, set length to 1
-      if(QALY_length<1){QALY_length <-1}
-      
-      #Ensure people don't live past end of time horizon 
-      if(QALY_length>time_horizon-screen_startage){QALY_length <-time_horizon-screen_startage}
-      
-      #Fill QALY vector with 0's
-      QALY_vect <- rep(0,QALY_length)
-      
-      #Fill QALY vector with discounted age related utility values
-      for (y in 1:length(QALY_vect)){
-        QALY_vect[y] <- (utility_ages[match((ceiling(((screen_startage-1)+y)/5)*5),utility_ages[,1]),2])*(1/(1+discount_health)^y)
-        QALY_vect[QALY_length]<-QALY_vect[QALY_length]*(1-(ceiling(Mort_age)-Mort_age))
-      }
-      #If cancer occurs then fill QALY vector with discounted cancer utilities from incidence age
-      #NB this code accounts for partial years spent in different health states
-      if (incidence_age_record > 0){
-        QALY_vect[floor(incidence_age_record)-screen_startage] <- utility_stage_cat_y1[stage_cat]*QALY_vect[floor(incidence_age_record)-screen_startage]*(1-(incidence_age_record-floor(incidence_age_record)))}
-      if(incidence_age_record>0 & Mort_age-incidence_age_record>1){
-        QALY_vect[(floor(incidence_age_record)-screen_startage)+1]<-(utility_stage_cat_y1[stage_cat]*QALY_vect[(floor(incidence_age_record)-screen_startage)+1]*(incidence_age_record-floor(incidence_age_record)))+
-          (utility_stage_cat_follow[stage_cat]*QALY_vect[(floor(incidence_age_record)-screen_startage)+1]*(1-(incidence_age_record-floor(incidence_age_record))))}
-      if(incidence_age_record > 0 && ceiling(if(Mort_age<100){Mort_age}else{100}) > incidence_age_record+2){
-        for (y in (incidence_age_record+2):min((incidence_age_record+8),ceiling(if(Mort_age<100){Mort_age}else{100}))){
-          QALY_vect[y-screen_startage] <- QALY_vect[y-screen_startage]*utility_stage_cat_follow[stage_cat]
-        }
-      }
+      LY_counter <- Mort_age-start_age
       
       #Record total QALYs for J loop
-      QALY_counter <- QALY_counter + sum(QALY_vect,na.rm = TRUE)
-    } #end j loop
-    
+      QALY_counter <- sum(cmp_QALY_counter(Mort_age,incidence_age_record),na.rm = TRUE)
+      }else{
+          ca_case <- 0
+        
+          if (Mort_age>time_horizon){Mort_age<-100}
+          
+        #For non-cancer individuals
+        screen_cost_vec<-rep(cost_screen,length(screen_times))
+        follow_up_vec<-rbinom(length(screen_times),1,recall_rate)
+        biop_vec<-follow_up_vec*(rbinom(length(follow_up_vec),1,biopsy_rate))
+        screen_cost_vec<-screen_cost_vec+(follow_up_vec*cost_follow_up)+(biop_vec*cost_biop)
+                                           
+        if (screen_strategy==1 | screen_strategy==2 | screen_strategy==7 |
+            screen_strategy==8 | screen_strategy==9){screen_cost_vec[1]<-screen_cost_vec[1]+cost_strat}
+        discount_vec<-screen_times-rep(screen_startage,length(screen_times))
+        for (i in length(screen_cost_vec)){
+          screen_cost_vec[i]<-screen_cost_vec[i]*(1/((1+discount_cost)^discount_vec[i]))}
+        
+        #Screen counter
+        screen_count<-length(screen_times)
+        
+        #Costs  
+        costs<-max(0,sum(screen_cost_vec),na.rm=TRUE)
+        
+        #Update Life-year counter
+        LY_counter <- Mort_age-start_age
+        
+        #Record total QALYs for J loop
+        QALY_counter <- sum(cmp_QALY_counter(Mort_age,incidence_age_record),na.rm = TRUE)
+        }
+      
     #If deterministic analysis then record outputs
     if(PSA==0){
-      return(c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca, screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age),cancer_diagnostic))}else{
+      return(c(QALY_counter, costs, screen_count,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca, screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age),cancer_diagnostic[2:3],Mort_age,cancer_diagnostic[10]))}else{
         #If PSA then record outputs + monte carlo draws
-        return(as.numeric(c(QALY_counter, costs, screen_counter,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca,screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age), c(risk_data[15:40]))))
+        return(as.numeric(c(QALY_counter, costs, screen_count,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca,screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age), c(risk_data[15:40]))))
       }
   }
   
   #Create a results data.frame
   results <- data.frame(results)
-  names(results)[1] <- 'QALY'
-  names(results)[2] <- 'Cost'
-  names(results)[3] <- 'Screens'
-  names(results)[4] <- "Cancer Diagnosed Age"
-  names(results)[5] <- "Cancer"
-  names(results)[6] <- "screen detected"
-  names(results)[7] <-"alternative"
-  names(results)[8] <- "Growth rate"
-  names(results)[9] <- "Life Years"
+  names(results) <- c('QALY',
+                      'Cost',
+                      'Screens',
+                      "Cancer Diagnosed Age",
+                      "Cancer",
+                      "screen detected",
+                      "alternative",
+                      "Growth rate",
+                      "Life Years",
+                      "Stage",
+                      "Cancer Size",
+                      "Death Age",
+                      "Cancer Screen Number")
   
   #If PSA add additional columns for Monte Carlo draws
   if(PSA==1){
@@ -801,5 +671,5 @@ if(PSA==0){
     write.csv(merged_result,file = paste("PSAresults_strat_",screen_strategy,".csv"))
   }
 
-
+toc()
 
