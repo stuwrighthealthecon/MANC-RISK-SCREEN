@@ -205,10 +205,11 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
     
   }
 }
+cmp_create_sample<-cmpfun(create_sample)
 
 # Version of create_sample that stores separate "true" and predicted ten year
 # risk:
-create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1){
+create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   
   #Import synthetic dataset derived from PROCAS2 study
   risk_mat<-read.csv("synthetic_risk_data_with_misclassification.csv")[,2:7] %>%
@@ -222,6 +223,17 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1){
   #Creat column for risk group to be entered
   risk_mat$risk_group<-numeric(length(risk_mat$VBD))
   
+  #Assign women to risk groups based on 10yr risk if using risk-stratified approach  
+  if(screen_strategy==1 | screen_strategy==9) {
+    risk_mat$risk_group<-1+findInterval(risk_mat$tenyrrisk_est,risk_cutoffs_procas)
+  } else
+    if(screen_strategy==2) {
+      risk_maat$risk_group<-1+findInterval(risk_mat$tenyrrisk_est,risk_cutoffs_tert)
+    } else
+      if(screen_strategy==7 | screen_strategy==8) {
+        risk_mat$risk_group<-ifelse(risk_mat$tenyrrisk_est<low_risk_cut,1,2)
+      }  
+  
   #Set VDG based on breast density
   risk_mat$VDG<-1+findInterval(risk_mat[,1],VDG_interval)
   
@@ -234,6 +246,20 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1){
                 "interval_change","life_expectancy","cancer",
                 "clinical_detect_size",
                 "growth_rate")]<-numeric(length=length(risksample$VBD))
+  
+  #If risk-stratified screening used then determine if each woman chooses to have
+  #risk predicted, attends risk consultation, and changes interval
+  if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strategy<10)){
+    risksample$risk_predicted<-ifelse(dqrunif(
+      length(risksample$risk_predicted),0,1)<
+        c(rep(risk_uptake,length(risksample$risk_predicted))),1,0)
+    risksample$feedback<-ifelse(risksample$risk_predicted==1 & 
+                                  dqrunif(length(risksample$feedback),0,1)<
+                                  c(rep(risk_feedback)),1,0)
+    risksample$interval_change<-ifelse(risksample$feedback==1 & 
+                                         dqrunif(length(risksample$interval_change),0,1)<
+                                         c(rep(screen_change)),1,0)
+  }
   
   ###Preload incidence, mortality and clinical detection times
   risksample$life_expectancy<- rweibull(n = length(risksample$life_expectancy),
@@ -396,7 +422,8 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1){
   }
 }
 
-# Work out new version of IncidenceMortality adjusted for effect of drug on hazard ratios.
+# Work out new version of IncidenceMortality adjusted for effect of drug on
+# hazard ratios for a single individual.
 get_drug_adj_IM <- function(ind_from_risksample,
                           uptake,
                           persistence,
@@ -423,4 +450,4 @@ get_drug_adj_IM <- function(ind_from_risksample,
   
   return(list(time_taking_drug, drug_IM))
 }
-cmp_create_sample<-cmpfun(create_sample)
+

@@ -634,12 +634,12 @@ for (ii in 1:chunks) {
                                       uptake,
                                       persistence,
                                       risk_red)
-      time_taking_drug <- drug_outputs[[1]]
+      risk_data$time_taking_drug <- drug_outputs[[1]]
       drug_IM <- drug_outputs[[2]]
       if (cost_in_full_courses){
         prop_drug_admin <- 1
       }else{
-        prop_drug_admin <- risk_data$time_taking_drug
+        prop_drug_admin <- risk_data$time_taking_drug / course_length[starting_menses_status]
       }
       costs <- costs + prop_drug_admin * cost_drug_base[risk_data$starting_menses_status]
       drug_costs <- drug_costs + prop_drug_admin * cost_drug_base[risk_data$starting_menses_status]

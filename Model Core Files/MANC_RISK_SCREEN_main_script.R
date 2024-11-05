@@ -1,10 +1,47 @@
-#Install required packages
-install.packages("doParallel")
-install.packages("MASS")
-install.packages("dqrng")
-install.packages("compiler")
-install.packages("tidyverse")
-install.packages("iterators")
+DO_INSTALL <- FALSE
+
+if (DO_INSTALL){
+  #Install required packages
+  install.packages("doParallel")
+  install.packages("MASS")
+  install.packages("dqrng")
+  install.packages("compiler")
+  install.packages("tidyverse")
+  install.packages("iterators")
+}
+
+MISCLASS <- TRUE # Set to TRUE to include impact of errors in risk prediction in model
+PREVENTATIVE_DRUG <- TRUE # Set to TRUE to simulate preventative drugs
+
+# Add specifiers for output files
+det_output_path <- "Deterministic results/"
+psa_output_path <- "PSA results/"
+if (MISCLASS & PREVENTATIVE_DRUG){
+  dir.create("Deterministic results/misclassification_and_preventative_drug",
+             showWarnings = FALSE)
+  det_output_path <- "Deterministic results/misclassification_and_preventative_drug/"
+  dir.create("PSA results/misclassification_and_preventative_drug",
+             showWarnings = FALSE)
+  psa_output_path <- "PSA results/misclassification_and_preventative_drug/"
+}else{
+  if (MISCLASS){
+    dir.create("Deterministic results/misclassification",
+               showWarnings = FALSE)
+    det_output_path <- "Deterministic results/misclassification/"
+    dir.create("PSA results/misclassification",
+               showWarnings = FALSE)
+    psa_output_path <- "PSA results/misclassification/"
+  }
+  if (PREVENTATIVE_DRUG){
+    dir.create("Deterministic results/preventative_drug",
+               showWarnings = FALSE)
+    det_output_path <- "Deterministic results/preventative_drug/"
+    dir.create("PSA results/misclassification_and_preventative_drug",
+               showWarnings = FALSE)
+    psa_output_path <- "PSA results/misclassification_and_preventative_drug/"
+  }
+}
+
 
 #Run required packages
 library("doParallel")
@@ -21,7 +58,7 @@ tic()
 #5=5 yearly, 6=2 rounds at 50 and 60 (10 yearly), 7=Low risk (5 yearly),
 #8=Low risk (6 yearly),#9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-3
+screen_strategy<-1
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
@@ -158,6 +195,138 @@ low_risk_cut<-1.5 #Cut off in low risk only strategies
 #Cancer size cut-points
 ca_size_cut <- c(0.025, 5, 10, 15, 20, 30, 128) #Size cut-points for deciding stage
 
+#### Drug data ####
+
+# First bring in log hazard ratios from networked analysis
+loghaz_ests <- readRDS("PreventionOutputs.RDS")
+efficacy_ests <- loghaz_ests[1]
+dropout_ests <- loghaz_ests[4]
+
+# Fit a Weibull distribution to data in Incidence_Mortality. Drug acts to change scale parameter.
+weibull_fit <- sample(Incidence_Mortality$age,
+                      size=100000,
+                      prob=Incidence_Mortality$Cond.on.getting.BC..prob.of.getting.cancer.at.age.t,
+                      replace=TRUE) %>%
+  fitdistr("weibull")
+inc_scale <- weibull_fit$estimate["scale"]
+inc_shape <- weibull_fit$estimate["shape"]
+
+ana_eff <- exp(efficacy_ests$AnyBC$means$Anastrozole)
+tam_eff <- exp(efficacy_ests$AnyBC$means$Tamoxifen)
+
+full_course_len <- 5
+
+# Assume constant drop out rate with 77% of individuals reaching 5yr mark
+tam_completion_prob <- .77
+
+# Estimate Anastrozole completion probability from Tamoxifen estimate and hazard ratios:
+ana_completion_prob <- exp(dropout_ests$Adherence$means$Anastrozole - dropout_ests$Adherence$means$Tamoxifen) * tam_completion_prob
+
+completion_prob <- c(ana_completion_prob, tam_completion_prob)
+
+# Now estimate per-unit-time dropout rates based on exponential time to dropout:
+tam_dropout_rate <- (1. / full_course_len) * log(1 / (tam_completion_prob))
+ana_dropout_rate <- (1. / full_course_len) * log(1 / (ana_completion_prob))
+
+# Work out mean time taking each drug
+mean_tam_length <- full_course_len * (1 - tam_completion_prob) / log(1 / tam_completion_prob)
+mean_ana_length <- full_course_len * (1 - ana_completion_prob) / log(1 / ana_completion_prob)
+
+# Quick check: quantities below give efficacy of taking full five-year course
+# assuming linear relationship between time taking and hazard ratio. If both of
+# these are less than one then the linear model is safe to use because no one
+# goes past this point.
+tam_full_course_eff <- 1 - (1 - tam_eff) * log(1 / tam_completion_prob) / (1 - tam_completion_prob)
+ana_full_course_eff <- 1 - (1 - ana_eff) * log(1 / ana_completion_prob) / (1 - ana_completion_prob)
+if ((tam_full_course_eff>1)|(ana_full_course_eff>1)){
+  print("Assumption of linear change to hazard ratio with time taking drug will
+        not work for one or both drugs being simulated.")
+}
+
+#Assign women to risk groups based on 10yr risk if using risk-stratified approach  
+if(screen_strategy==1 | screen_strategy==9) {
+  risk_red <- matrix(c(ana_eff, tam_eff,
+                       ana_eff, tam_eff,
+                       ana_eff, tam_eff,
+                       ana_eff, tam_eff,
+                       ana_eff, tam_eff),
+                     nrow = 5,
+                     ncol = 2)
+  
+  course_length <- c(5., 5.)
+  
+  uptake <-rbind(c(0., 0.),
+                 c(0., 0.),
+                 c(0., 0.),
+                 c(.71, .71),
+                 c(.71, .71))
+  
+  persistence <- matrix(c(ana_dropout_rate, tam_dropout_rate,
+                          ana_dropout_rate, tam_dropout_rate,
+                          ana_dropout_rate, tam_dropout_rate,
+                          ana_dropout_rate, tam_dropout_rate,
+                          ana_dropout_rate, tam_dropout_rate),
+                        nrow = 5,
+                        ncol = 2)
+} else
+  if(screen_strategy==2) {
+    risk_red <- matrix(c(ana_eff, tam_eff,
+                         ana_eff, tam_eff,
+                         ana_eff, tam_eff),
+                       nrow = 3,
+                       ncol = 2)
+    
+    course_length <- c(5., 5.)
+    
+    uptake <-rbind(c(0., 0.),
+                   c(0., 0.),
+                   c(.71, .71))
+    
+    persistence <- matrix(c(ana_dropout_rate, tam_dropout_rate,
+                            ana_dropout_rate, tam_dropout_rate,
+                            ana_dropout_rate, tam_dropout_rate),
+                          nrow = 3,
+                          ncol = 2)
+  } else
+    if(screen_strategy==7 | screen_strategy==8) {
+      risk_red <- matrix(c(ana_eff, tam_eff,
+                           ana_eff, tam_eff),
+                         nrow = 2,
+                         ncol = 2)
+      
+      course_length <- c(5., 5.)
+      
+      uptake <-rbind(c(0., 0.),
+                     c(.71, .71))
+      
+      persistence <- matrix(c(ana_dropout_rate, tam_dropout_rate,
+                              ana_dropout_rate, tam_dropout_rate),
+                            nrow = 2,
+                            ncol = 2)
+    }  else{
+      risk_red <- matrix(c(ana_eff, tam_eff),
+                         nrow = 1,
+                         ncol = 2)
+      
+      course_length <- c(5., 5.)
+      
+      uptake <-matrix(c(0., 0.),
+                      nrow = 1,
+                      ncol = 2)
+      
+      persistence <- matrix(c(ana_dropout_rate, tam_dropout_rate),
+                            nrow = 1,
+                            ncol = 2)
+    }
+
+
+age_prescribed <- 50
+
+median_age_at_men <- 51
+prob_premen <- exp(- age_prescribed * (log(2) / median_age_at_men)) # Assuming exponential distribution (not correct!)
+
+cost_in_full_courses <- TRUE # If TRUE then each person to be prescribed drug incurs cost of full course, otherwise cost is proportional to time taking
+
 #######################Cost Data#########################################
 
 cost_strat<-8.69 #Cost of risk prediction
@@ -167,6 +336,7 @@ cost_biop_base <- 297.98 #Cost of biopsyy
 cost_DCIS_base <- 10107.80 #Cost of treating DCIS
 cost_US_base <- 53.41 #Cost of ultrasound
 cost_MRI_base <-117.10 #Cost of MRI
+cost_drug_base <- c(100., 100.) # Cost of full course of drug
 
 #If deterministic analysis then set costs as base costs
 if(PSA==0){
@@ -266,17 +436,35 @@ utility_stage_cat_follow <- c("stage1"=0.82/0.822,
                               "DCIS"=utility_DCIS)
 
 #########################CREATE SAMPLE OF WOMEN FOR MODEL###################
-if(gensample==1){dir.create("Risksample", showWarnings = FALSE)
+if (MISCLASS){
+  if(gensample==1){dir.create("Risksamplewithmisclass", showWarnings = FALSE)
+  create_sample_with_misclass(PSA,intervals,seed,screen_strategy)}
+}else{
+  if(gensample==1){dir.create("Risksample", showWarnings = FALSE)
   cmp_create_sample(PSA,intervals,seed,screen_strategy)}
-
+}
 ################Outer Individual sampling loop##############################
 
 #Set loop to divide i loop into a number of sub-loops in case of simulation break
 for (ii in 1:chunks) {
   start_time <- Sys.time()
-  load(paste("Risksample/risksample_",ii,".Rdata",sep = ""))
+  if (MISCLASS){
+    load(paste("Risksamplewithmisclass/risksample_",ii,".Rdata",sep = ""))
+  }else{
+    load(paste("Risksample/risksample_",ii,".Rdata",sep = ""))
+  }
   prefix<-paste("^","X",ii,".",sep="")
   names(splitsample)<-sub(prefix,"",names(splitsample))
+  
+  if (PREVENTATIVE_DRUG){
+    # # Add extra fields for drug:
+    nsample <- nrow(splitsample)
+    # Use 1, 2 coding for menopause status to match indexing for drug efficacy/uptake
+    splitsample$starting_menses_status <- ifelse(dqrunif(nsample, 0, 1)
+                                                 <prob_premen, 1, 2)
+    splitsample$takes_drug <- logical(nsample)
+    splitsample$time_taking_drug <- numeric(nsample)
+  }
   
   #Assign women to supplemental screening if switched on and criteria met 
   #if(supplemental_screening==1){
@@ -367,6 +555,7 @@ for (ii in 1:chunks) {
       costs <- 0 #Total costs
       US_costs <- 0 #Ultrasound costs
       MRI_costs <- 0 #MRI costs
+      drug_costs <- 0 # Drug costs
       costs_follow_up <- 0 #Follow up costs
 
       #Total life years
@@ -393,8 +582,27 @@ for (ii in 1:chunks) {
           #Determine cancer growth rate
           grow_rate_i<-risk_data$growth_rate
           
-          #Determine when the cancer would be clinically diagnosed
-          ca_incidence_i <- cmp_incidence_function(risk_data)
+          # Do incididence time based on whether patient takes preventative drug
+          if (PREVENTATIVE_DRUG & risk_data$risk_group!=0){
+            #Determine when the cancer would be clinically diagnosed
+            ca_incidence_i <- cmp_adj_incidence_function(risk_data,
+                                                         uptake,
+                                                         persistence,
+                                                         risk_red)
+            
+            # Calculate cost of drug course based on time taking
+            time_taking_drug <- ca_incidence_i[[5]]
+            if (cost_in_full_courses){
+              prop_drug_admin <- 1.
+            }else{
+              prop_drug_admin <- time_taking_drug / course_length[starting_menses_status]
+            }
+            costs <- costs + prop_drug_admin * cost_drug_base[risk_data$starting_menses_status]
+            drug_costs <- drug_costs + prop_drug_admin * cost_drug_base[risk_data$starting_menses_status]
+          }else{
+            #Determine when the cancer would be clinically diagnosed
+            ca_incidence_i <- cmp_incidence_function(risk_data)
+          }
           ca_incidence_age <- ca_incidence_i[1]
           
           #Determine size at clinical detection age
@@ -403,10 +611,10 @@ for (ii in 1:chunks) {
           #The detection age is either the age at clinical detection 
           #or a formula is applied to determine the age at screen 
           #detection
-          if(ca_incidence_i[2] ==1){CD_age <- ca_incidence_i[1]} else
+          if(ca_incidence_i[2] ==1){CD_age <- ca_incidence_i[1]} else{
             CD_age <- ca_incidence_i[1] + ((log((Vm/Vc)^0.25-1)-
                                               log((Vm/((4/3)*pi*(ca_incidence_i[4]/2)^3))^0.25-1))/(0.25*grow_rate_i)) - 
-            ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(ca_incidence_i[3]/2)^3))^0.25-1))/(0.25*grow_rate_i))
+            ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(ca_incidence_i[3]/2)^3))^0.25-1))/(0.25*grow_rate_i))}
           cancer_diagnostic[8] <- c(CD_age)
           
           #Calculate tumour genesis age
@@ -561,7 +769,9 @@ for (ii in 1:chunks) {
       LY_counter <- Mort_age-start_age
       
       #Record total QALYs for J loop
-      QALY_counter <- sum(cmp_QALY_counter(Mort_age,incidence_age_record,stage_cat),na.rm = TRUE)
+      QALY_counter <- sum(cmp_QALY_counter(Mort_age,
+                                           incidence_age_record,
+                                           stage_cat),na.rm = TRUE)
       }else{
           ca_case <- 0
         
@@ -585,18 +795,61 @@ for (ii in 1:chunks) {
         #Costs  
         costs<-max(0,sum(screen_cost_vec),na.rm=TRUE)
         
+        if (PREVENTATIVE_DRUG & risk_data$risk_group!=0){ # Don't model impact of drug for strategies without risk stratification
+          # Decide if individual takes drugs and add cost if so
+          if (dqrunif(1,0,1) < uptake[risk_data$risk_group, risk_data$starting_menses_status]){
+            time_taking_drug <- min(rexp(1,
+                                         rate = persistence[risk_data$risk_group,
+                                                            risk_data$starting_menses_status]),
+                                    course_length)
+          }
+          else{
+            time_taking_drug <- 0
+          }
+          
+          # Calculate cost of drug course based on time taking
+          if (cost_in_full_courses){
+            prop_drug_admin <- 1.
+          }else{
+            prop_drug_admin <- time_taking_drug / course_length[starting_menses_status]
+          }
+          costs <- costs + prop_drug_admin * cost_drug_base[risk_data$starting_menses_status]
+          drug_costs <- drug_costs + prop_drug_admin * cost_drug_base[risk_data$starting_menses_status]
+        }
+        
         #Update Life-year counter
         LY_counter <- Mort_age-start_age
         
         #Record total QALYs for J loop
-        QALY_counter <- sum(cmp_QALY_counter(Mort_age,incidence_age_record,stage_cat),na.rm = TRUE)
+        QALY_counter <- sum(cmp_QALY_counter(Mort_age,
+                                             incidence_age_record,
+                                             stage_cat),na.rm = TRUE)
         }
       
     #If deterministic analysis then record outputs
     if(PSA==0){
-      return(c(QALY_counter, costs, screen_count,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca, screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age),cancer_diagnostic[2:3],Mort_age,cancer_diagnostic[10]))}else{
+      return(c(QALY_counter,
+               costs,
+               screen_count,
+               cancer_diagnostic[8],
+               (screen_detected_ca+interval_ca),
+               screen_detected_ca,
+               screen_strategy,
+               risk_data$growth_rate,
+               LY_counter-(screen_startage-start_age),
+               cancer_diagnostic[2:3],
+               Mort_age,cancer_diagnostic[10]))}else{
         #If PSA then record outputs + monte carlo draws
-        return(as.numeric(c(QALY_counter, costs, screen_count,cancer_diagnostic[8],(screen_detected_ca+interval_ca),screen_detected_ca,screen_strategy,risk_data$growth_rate,LY_counter-(screen_startage-start_age), c(risk_data[15:40]))))
+        return(as.numeric(c(QALY_counter,
+                            costs,
+                            screen_count,
+                            cancer_diagnostic[8],
+                            (screen_detected_ca+interval_ca),
+                            screen_detected_ca,
+                            screen_strategy,
+                            risk_data$growth_rate,
+                            LY_counter-(screen_startage-start_age),
+                            c(risk_data[15:40]))))
       }
   }
   
@@ -629,8 +882,19 @@ for (ii in 1:chunks) {
   
   #Save results from this chunk as an Rdata file
   if(PSA==0){
-    save(results,file = paste("Deterministic results/Determ_",screen_strategy,"_",ii,".Rdata",sep = ""))}else{
-      save(results,file = paste("PSA results/PSA_",screen_strategy,"_",ii,".Rdata",sep = "")) 
+    save(results,file = paste(det_output_path,
+                              "Determ_",
+                              screen_strategy,
+                              "_",
+                              ii,
+                              ".Rdata",
+                              sep = ""))}else{
+      save(results,file = paste(psa_output_path, "PSA_",
+                                screen_strategy,
+                                "_",
+                                ii,
+                                ".Rdata",
+                                sep = "")) 
     }
   
   #Print simulation progress
@@ -645,7 +909,13 @@ merged_result <- matrix(0,nrow = chunks,ncol = 7)
 if(PSA==0){
   for (i in 1:chunks){
     #Record average outputs for each chunk and save in an excel file
-    load(paste("Deterministic results/Determ_",screen_strategy,"_",i,".Rdata",sep = ""))
+    load(paste(det_output_path,
+               "Determ_",
+               screen_strategy,
+               "_",
+               i,
+               ".Rdata",
+               sep = ""))
     results<-results %>% filter(results[,4]>50 | results[,4]==0)
     merged_result[i,1] <- mean(results[,1])
     merged_result[i,2] <- mean(results[,2])
@@ -655,10 +925,19 @@ if(PSA==0){
     merged_result[i,6] <- mean(results[,7])
     merged_result[i,7] <- mean(results[,9])
   }
-  write.csv(merged_result,file = paste("Detresults_strat_",screen_strategy,".csv"))}else{
+  write.csv(merged_result,file = paste(det_output_path,
+                                       "Detresults_strat_",
+                                       screen_strategy,
+                                       ".csv",
+                                       sep=""))}else{
     for (i in 1:chunks){
       #Record average outputs for each chunk and save in an excel file
-      load(paste("PSA results/PSA_",screen_strategy,"_",i,".Rdata",sep = ""))
+      load(paste(psa_output_path, "PSA_",
+                 screen_strategy,
+                 "_",
+                 i,
+                 ".Rdata",
+                 sep = ""))
       results<-results %>% filter(results[,4]>50 | results[,4]==0)
       merged_result[i,1] <- mean(results[,1])
       merged_result[i,2] <- mean(results[,2])
@@ -668,7 +947,11 @@ if(PSA==0){
       merged_result[i,6] <- mean(results[,7])
       merged_result[i,7] <- mean(results[,9])
     } 
-    write.csv(merged_result,file = paste("PSAresults_strat_",screen_strategy,".csv"))
+    write.csv(merged_result,file = paste(psa_output_path,
+                                         "PSAresults_strat_",
+                                         screen_strategy,
+                                         ".csv",
+                                         sep=""))
   }
 
 toc()

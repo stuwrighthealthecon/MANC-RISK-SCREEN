@@ -1026,5 +1026,9 @@ Model Core Files/costmodelslim.RDS
 Model Core Files/QALYmodelslim.RDS
 Model Core Files/costmodelslim.RDS
 
+*/Deterministic results/misclassification_and_preventative_drug/*
+*/Deterministic results/preventative_drug/*
+*/Deterministic results/misclassification/*
+
 *.DS_Store
 .Rproj.user
