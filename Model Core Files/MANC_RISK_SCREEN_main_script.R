@@ -350,7 +350,7 @@ for (ii in 1:chunks) {
     ############################## Set Screen times###############################
     
     #Assign screening intervals based on strategy and risk group    
-    screen_times<-cmp_set_screen_times(risk_group=risk_data$risk_group,screen_strategy)
+    screen_times<-cmp_set_screen_times(risk_data,screen_strategy)
     
     ##########################Set counters at i loop level#########################
     
@@ -561,7 +561,7 @@ for (ii in 1:chunks) {
       LY_counter <- Mort_age-start_age
       
       #Record total QALYs for J loop
-      QALY_counter <- sum(cmp_QALY_counter(Mort_age,incidence_age_record),na.rm = TRUE)
+      QALY_counter <- sum(cmp_QALY_counter(Mort_age,incidence_age_record,stage_cat),na.rm = TRUE)
       }else{
           ca_case <- 0
         
@@ -589,7 +589,7 @@ for (ii in 1:chunks) {
         LY_counter <- Mort_age-start_age
         
         #Record total QALYs for J loop
-        QALY_counter <- sum(cmp_QALY_counter(Mort_age,incidence_age_record),na.rm = TRUE)
+        QALY_counter <- sum(cmp_QALY_counter(Mort_age,incidence_age_record,stage_cat),na.rm = TRUE)
         }
       
     #If deterministic analysis then record outputs

@@ -6,7 +6,7 @@ fnLookupBase <- function(iStage, iAge, iLE) {
 
 
 ############################Set Screen Times####################################
-set_screen_times<-function(risk_group,screen_strategy){
+set_screen_times<-function(risk_data,screen_strategy){
 screen_times <- c(999)
 if (screen_strategy==1 & risk_data$interval_change==1) {
   if (risk_data$risk_group<4) {screen_times<-low_risk_screentimes} else
@@ -110,10 +110,36 @@ Incidence_function <- function(risk_data){
 cmp_incidence_function<-cmpfun(Incidence_function)
 
 ############Function for determining when a cancer occurs with adjusted incidence rates#######################
-Adjusted_incidence_function <- function(risk_data, adj_IM){
+Adjusted_incidence_function <- function(risk_data,
+                                        uptake,
+                                        persistence,
+                                        risk_red){
+  
+  drug_IM <- Incidence_Mortality
+  # If takes drug assign time taking, otherwise set to zero
+  if (dqrunif(1,0,1) < uptake[risk_data$risk_group, risk_data$starting_menses_status]){
+    time_taking_drug <- min(rexp(1,
+                                 rate = persistence[risk_data$risk_group,
+                                                    risk_data$starting_menses_status]),
+                            course_length)
+    hazard_ratio <- (1 - risk_red[risk_data$risk_group, risk_data$starting_menses_status]) *
+      time_taking_drug * 
+      log(1/completion_prob[risk_data$starting_menses_status])
+    new_weibull_scale <- inc_scale / hazard_ratio
+    
+    
+    drug_IM$Cond.on.getting.BC..prob.of.getting.cancer.at.age.t <- dweibull(Incidence_Mortality$age,
+                                                                            shape=inc_shape,
+                                                                            scale=new_weibull_scale)
+  }
+  else{
+    time_taking_drug <- 0
+  }
   
   #Sample an incidence time (based on vector of probabilities of getting cancer at age t conditional on getting cancer and surviving to age t)
-  incidence_time_1 <- sample(x = adj_IM[,1][start_age:101],size = 1,prob = adj_IM[,2][start_age:101])
+  incidence_time_1 <- sample(x = drug_IM[,1][start_age:101],
+                             size = 1,
+                             prob = drug_IM[,2][start_age:101])
   
   #Add within year time (i.e. months)
   incidence_time <- incidence_time_1+ dqrunif(1,0,1)
@@ -146,7 +172,11 @@ Adjusted_incidence_function <- function(risk_data, adj_IM){
     }
   }
   
-  result<-c(incidence_time,detect_mode,ca_size_incidence, clin_detect_size_g)
+  result<-c(incidence_time,
+            detect_mode,
+            ca_size_incidence,
+            clin_detect_size_g,
+            time_taking_drug)
   return(result)
 }
 cmp_adj_incidence_function<-cmpfun(Adjusted_incidence_function)
@@ -313,7 +343,7 @@ Ca_survival_time <- function(stage_cat, Mort_age,age,ca_incidence_age){
 cmp_ca_survival_time<-cmpfun(Ca_survival_time)
 
 ###################################QALY Counter##########################
-QALY_counter<-function(Mort_age,incidence_age_record){
+QALY_counter<-function(Mort_age,incidence_age_record,stage_cat){
   
   #QALY counter
   #Set up a QALY vector of length equal to life years
