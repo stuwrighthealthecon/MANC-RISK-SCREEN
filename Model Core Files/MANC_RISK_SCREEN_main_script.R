@@ -346,6 +346,7 @@ if(PSA==0){
   cost_biop <- cost_biop_base
   cost_US <- cost_US_base
   cost_MRI <-cost_MRI_base
+  cost_drug <- cost_drug_base
 }
 
 #Set up look-up table for treatment costs
@@ -597,8 +598,8 @@ for (ii in 1:chunks) {
             }else{
               prop_drug_admin <- time_taking_drug / course_length[starting_menses_status]
             }
-            costs <- costs + prop_drug_admin * cost_drug_base[risk_data$starting_menses_status]
-            drug_costs <- drug_costs + prop_drug_admin * cost_drug_base[risk_data$starting_menses_status]
+            costs <- costs + prop_drug_admin * cost_drug[risk_data$starting_menses_status]
+            drug_costs <- drug_costs + prop_drug_admin * cost_drug[risk_data$starting_menses_status]
           }else{
             #Determine when the cancer would be clinically diagnosed
             ca_incidence_i <- cmp_incidence_function(risk_data)
@@ -813,8 +814,8 @@ for (ii in 1:chunks) {
           }else{
             prop_drug_admin <- time_taking_drug / course_length[starting_menses_status]
           }
-          costs <- costs + prop_drug_admin * cost_drug_base[risk_data$starting_menses_status]
-          drug_costs <- drug_costs + prop_drug_admin * cost_drug_base[risk_data$starting_menses_status]
+          costs <- costs + prop_drug_admin * cost_drug[risk_data$starting_menses_status]
+          drug_costs <- drug_costs + prop_drug_admin * cost_drug[risk_data$starting_menses_status]
         }
         
         #Update Life-year counter
