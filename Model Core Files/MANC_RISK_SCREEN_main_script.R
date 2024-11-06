@@ -10,7 +10,7 @@ if (DO_INSTALL){
   install.packages("iterators")
 }
 
-MISCLASS <- TRUE # Set to TRUE to include impact of errors in risk prediction in model
+MISCLASS <- FALSE # Set to TRUE to include impact of errors in risk prediction in model
 PREVENTATIVE_DRUG <- TRUE # Set to TRUE to simulate preventative drugs
 
 # Add specifiers for output files
@@ -67,7 +67,7 @@ supplemental_screening<-0
 gensample<-1
 
 #Deterministic (0) or Probabilistic Analysis (1)
-PSA=0
+PSA=1
 
 #Standard (0) or wide (1) distributions for PSA
 #Wide intervals recommended for generating data to predict GAM model
@@ -202,6 +202,12 @@ loghaz_ests <- readRDS("PreventionOutputs.RDS")
 efficacy_ests <- loghaz_ests[1]
 dropout_ests <- loghaz_ests[4]
 
+# Extract parameters for multivariate normal draws
+efficacy_mu <- efficacy_ests$AnyBC$means %>% as.numeric()
+efficacy_sigma <- efficacy_ests$AnyBC$vcov %>% as.matrix()
+dropout_mu <- dropout_ests$Adherence$means %>% as.numeric()
+dropout_sigma <- dropout_ests$Adherence$vcov %>% as.matrix()
+
 # Fit a Weibull distribution to data in Incidence_Mortality. Drug acts to change scale parameter.
 weibull_fit <- sample(Incidence_Mortality$age,
                       size=100000,
@@ -243,6 +249,8 @@ if ((tam_full_course_eff>1)|(ana_full_course_eff>1)){
         not work for one or both drugs being simulated.")
 }
 
+course_length <- c(5., 5.)
+
 #Assign women to risk groups based on 10yr risk if using risk-stratified approach  
 if(screen_strategy==1 | screen_strategy==9) {
   risk_red <- matrix(c(ana_eff, tam_eff,
@@ -276,8 +284,6 @@ if(screen_strategy==1 | screen_strategy==9) {
                        nrow = 3,
                        ncol = 2)
     
-    course_length <- c(5., 5.)
-    
     uptake <-rbind(c(0., 0.),
                    c(0., 0.),
                    c(.71, .71))
@@ -294,8 +300,6 @@ if(screen_strategy==1 | screen_strategy==9) {
                          nrow = 2,
                          ncol = 2)
       
-      course_length <- c(5., 5.)
-      
       uptake <-rbind(c(0., 0.),
                      c(.71, .71))
       
@@ -307,8 +311,6 @@ if(screen_strategy==1 | screen_strategy==9) {
       risk_red <- matrix(c(ana_eff, tam_eff),
                          nrow = 1,
                          ncol = 2)
-      
-      course_length <- c(5., 5.)
       
       uptake <-matrix(c(0., 0.),
                       nrow = 1,
@@ -534,6 +536,7 @@ for (ii in 1:chunks) {
       cost_biop <- cost_biop_base*(1+risk_data$PSA_cost_biop)
       cost_US <- cost_US_base*(1+risk_data$PSA_cost_US)
       cost_MRI <-cost_MRI_base*(1+risk_data$PSA_cost_MRI)
+      cost_drug <- cost_drug_base*(1+risk_data$PSA_cost_drug)
     }
     
     ############################## Set Screen times###############################
@@ -878,7 +881,7 @@ for (ii in 1:chunks) {
                              'PSA_VDG3_sen', 'PSA_VDG4_sen',"PSA_MRI_cdr","PSA_US_cdr",
                              "PSA_log_norm_mean","PSA_log_norm_sd","PSA_cost_strat","PSA_costvar",
                              "PSA_util_1to3","PSA_util_4","PSA_costscreen","PSA_cost_follow_up",
-                             "PSA_cost_biop","PSA_cost_US","PSA_cost_MRI","mcid")
+                             "PSA_cost_biop","PSA_cost_US","PSA_cost_MRI","PSA_cost_drug","mcid")
   }
   
   #Save results from this chunk as an Rdata file
