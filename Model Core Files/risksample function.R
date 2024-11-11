@@ -80,13 +80,17 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
                       c(-2.72264,-2.66053,-2.78617))
   survcovmat<-cov(survmvn)
   survmeans<-c(survmvn[1,1],survmvn[1,2],survmvn[1,3])
-  PSA_gamma_survival<-mvrnorm(mcruns,survmeans,survcovmat)
+  PSA_gamma_survival<-mvrnorm(mcruns,survmeans,survcovmat) %>%
+    data.frame() %>%
+    transpose()
   
   # Draw Metatstatic survival parameters
   metmvn<-data.frame(c(-1.78723,-1.67922,-1.89434),c(-1.38762,-1.33512,-1.49956),c(-1.01051,-0.93338,-1.08304))
   metmat<-cov(metmvn)
   metmeans<-c(metmvn[1,1],metmvn[1,2],metmvn[1,3])
-  PSA_meta_survival<-mvrnorm(mcruns,metmeans,metmat)
+  PSA_meta_survival<-mvrnorm(mcruns,metmeans,metmat) %>%
+                     data.frame() %>%
+                     transpose()
   
   #Draw Mammography with sensitivity conditional on tumour diameter parameters W-F
   PSA_beta1 <- rnorm(mcruns,1.47,0.1)
@@ -118,7 +122,9 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   lnutilmat<-log(utilmat)
   covutil<-cov(lnutilmat)
   utilmeans<-c(log(1-0.82),log(1-0.75))
-  PSA_util<-1-exp(mvrnorm(mcruns,utilmeans,covutil))
+  PSA_util<-(1-exp(mvrnorm(mcruns,utilmeans,covutil))) %>%
+            data.frame() %>%
+            transpose()
   
   }else{
     
@@ -296,13 +302,17 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
                           c(-2.72264,-2.66053,-2.78617))
       survcovmat<-cov(survmvn)
       survmeans<-c(survmvn[1,1],survmvn[1,2],survmvn[1,3])
-      PSA_gamma_survival<-mvrnorm(mcruns,survmeans,survcovmat)
+      PSA_gamma_survival<-mvrnorm(mcruns,survmeans,survcovmat) %>%
+        data.frame() %>%
+        transpose()
       
       # Draw Metatstatic survival parameters
       metmvn<-data.frame(c(-1.78723,-1.67922,-1.89434),c(-1.38762,-1.33512,-1.49956),c(-1.01051,-0.93338,-1.08304))
       metmat<-cov(metmvn)
       metmeans<-c(metmvn[1,1],metmvn[1,2],metmvn[1,3])
-      PSA_meta_survival<-mvrnorm(mcruns,metmeans,metmat)
+      PSA_meta_survival<-mvrnorm(mcruns,metmeans,metmat) %>%
+        data.frame() %>%
+        transpose()
       
       #Draw Mammography with sensitivity conditional on tumour diameter parameters W-F
       PSA_beta1 <- rnorm(mcruns,1.47,0.1)
@@ -334,7 +344,9 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
       lnutilmat<-log(utilmat)
       covutil<-cov(lnutilmat)
       utilmeans<-c(log(1-0.82),log(1-0.75))
-      PSA_util<-1-exp(mvrnorm(mcruns,utilmeans,covutil))
+      PSA_util<-(1-exp(mvrnorm(mcruns,utilmeans,covutil))) %>%
+        data.frame() %>%
+        transpose()
       
     }else{
       
@@ -388,10 +400,10 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
     
     #Bind individual level parameters and monte carlo draws
     masterframe<-data.frame(matrix(nrow=inum*mcruns,ncol=length(risksample[1,])+length(PSA_all_p[1,])))
-    masterframe[,1:14]<-risksample
-    masterframe[,15:40]<-PSA_all_p
-    colnames(masterframe)[1:14]<-colnames(risksample)
-    colnames(masterframe)[15:40]<-colnames(PSA_all_p)
+    masterframe[,1:16]<-risksample
+    masterframe[,17:42]<-PSA_all_p
+    colnames(masterframe)[1:16]<-colnames(risksample)
+    colnames(masterframe)[17:42]<-colnames(PSA_all_p)
     
     #Split the dataframe into chunks for easier computation
     masterframe$split<-(rep(1:chunks,times=round(length(masterframe$VBD)/chunks)))
