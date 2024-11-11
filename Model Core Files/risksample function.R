@@ -262,9 +262,9 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   #Bind individual level parameters and monte carlo draws
   masterframe<-data.frame(matrix(nrow=inum*mcruns,ncol=length(risksample[1,])+length(PSA_all_p[1,])))
   masterframe[,1:14]<-risksample
-  masterframe[,15:40]<-PSA_all_p
+  masterframe[,15:45]<-PSA_all_p
   colnames(masterframe)[1:14]<-colnames(risksample)
-  colnames(masterframe)[15:40]<-colnames(PSA_all_p)
+  colnames(masterframe)[15:45]<-colnames(PSA_all_p)
   
   #Split the dataframe into chunks for easier computation
   masterframe$split<-(rep(1:chunks,times=round(length(masterframe$VBD)/chunks)))
@@ -548,10 +548,10 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
                          "PSA_US_cdr",
                          "PSA_log_norm_mean",
                          "PSA_log_norm_sd",
-                         # "PSA_eff",
-                         # "PSA_dropout",
-                         # "PSA_uptake_1",
-                         # "PSA_uptake_2",
+                         "PSA_eff",
+                         "PSA_dropout",
+                         "PSA_uptake_1",
+                         "PSA_uptake_2",
                          "PSA_cost_strat",
                          "PSA_costvar",
                          "PSA_util_1to3",
@@ -567,9 +567,9 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
     #Bind individual level parameters and monte carlo draws
     masterframe<-data.frame(matrix(nrow=inum*mcruns,ncol=length(risksample[1,])+length(PSA_all_p[1,])))
     masterframe[,1:16]<-risksample
-    masterframe[,17:42]<-PSA_all_p
+    masterframe[,17:47]<-PSA_all_p
     colnames(masterframe)[1:16]<-colnames(risksample)
-    colnames(masterframe)[17:42]<-colnames(PSA_all_p)
+    colnames(masterframe)[17:47]<-colnames(PSA_all_p)
     
     #Split the dataframe into chunks for easier computation
     masterframe$split<-(rep(1:chunks,times=round(length(masterframe$VBD)/chunks)))
