@@ -416,7 +416,7 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
     #Save risk sample in chunks
     for(i in 1:chunks){
       splitsample<-as.data.frame(risksplit[i])
-      save(splitsample,file = paste("Risksample/risksample_",i,".Rdata",sep=""))
+      save(splitsample,file = paste("Risksamplewithmisclass/risksample_",i,".Rdata",sep=""))
     }
   } else {
     risksample$split<-(rep(1:chunks,times=round(length(risksample$VBD)/chunks)))
