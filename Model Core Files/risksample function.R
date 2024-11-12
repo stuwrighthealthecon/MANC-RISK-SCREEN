@@ -121,8 +121,12 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   dropout_mu <- dropout_ests$Adherence$means %>% as.numeric()
   dropout_sigma <- dropout_ests$Adherence$vcov %>% as.matrix()
   
-  PSA_eff <- mvrnorm(mcruns, efficacy_mu, efficacy_sigma)
-  PSA_dropout <- mvrnorm(mcruns, dropout_mu, dropout_sigma)
+  PSA_eff <- mvrnorm(mcruns, efficacy_mu, efficacy_sigma) %>%
+            data.frame() %>%
+            transpose()
+  PSA_dropout <- mvrnorm(mcruns, dropout_mu, dropout_sigma) %>%
+            data.frame() %>%
+            transpose()
   
   PSA_uptake_1 <- rnorm(mcruns, .71, .1)
   PSA_uptake_2 <- rnorm(mcruns, .71, .1)
@@ -243,8 +247,10 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
                           "PSA_US_cdr",
                           "PSA_log_norm_mean",
                           "PSA_log_norm_sd",
-                          "PSA_eff",
-                          "PSA_dropout",
+                          "PSA_eff_ana",
+                          "PSA_eff_tam",
+                          "PSA_dropout_ana",
+                          "PSA_dropout_tam",
                           "PSA_uptake_1",
                           "PSA_uptake_2",
                           "PSA_cost_strat",
@@ -262,9 +268,9 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   #Bind individual level parameters and monte carlo draws
   masterframe<-data.frame(matrix(nrow=inum*mcruns,ncol=length(risksample[1,])+length(PSA_all_p[1,])))
   masterframe[,1:14]<-risksample
-  masterframe[,15:45]<-PSA_all_p
+  masterframe[,15:47]<-PSA_all_p
   colnames(masterframe)[1:14]<-colnames(risksample)
-  colnames(masterframe)[15:45]<-colnames(PSA_all_p)
+  colnames(masterframe)[15:47]<-colnames(PSA_all_p)
   
   #Split the dataframe into chunks for easier computation
   masterframe$split<-(rep(1:chunks,times=round(length(masterframe$VBD)/chunks)))
@@ -426,8 +432,12 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
       dropout_mu <- dropout_ests$Adherence$means %>% as.numeric()
       dropout_sigma <- dropout_ests$Adherence$vcov %>% as.matrix()
       
-      PSA_eff <- mvrnorm(mcruns, efficacy_mu, efficacy_sigma)
-      PSA_dropout <- mvrnorm(mcruns, dropout_mu, dropout_sigma)
+      PSA_eff <- mvrnorm(mcruns, efficacy_mu, efficacy_sigma) %>%
+        data.frame() %>%
+        transpose()
+      PSA_dropout <- mvrnorm(mcruns, dropout_mu, dropout_sigma) %>%
+        data.frame() %>%
+        transpose()
       
       PSA_uptake_1 <- rnorm(mcruns, .71, .1)
       PSA_uptake_2 <- rnorm(mcruns, .71, .1)
@@ -517,10 +527,10 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
                    PSA_US_cdr,
                    PSA_log_norm_mean,
                    PSA_log_norm_sd,
-                   # PSA_eff,
-                   # PSA_dropout,
-                   # PSA_uptake_1,
-                   # PSA_uptake_2,
+                   PSA_eff,
+                   PSA_dropout,
+                   PSA_uptake_1,
+                   PSA_uptake_2,
                    PSA_cost_strat,
                    PSA_costvar,
                    PSA_util,
@@ -548,8 +558,10 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
                          "PSA_US_cdr",
                          "PSA_log_norm_mean",
                          "PSA_log_norm_sd",
-                         "PSA_eff",
-                         "PSA_dropout",
+                         "PSA_eff_ana",
+                         "PSA_eff_tam",
+                         "PSA_dropout_ana",
+                         "PSA_dropout_tam",
                          "PSA_uptake_1",
                          "PSA_uptake_2",
                          "PSA_cost_strat",
@@ -567,9 +579,9 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
     #Bind individual level parameters and monte carlo draws
     masterframe<-data.frame(matrix(nrow=inum*mcruns,ncol=length(risksample[1,])+length(PSA_all_p[1,])))
     masterframe[,1:16]<-risksample
-    masterframe[,17:47]<-PSA_all_p
+    masterframe[,17:49]<-PSA_all_p
     colnames(masterframe)[1:16]<-colnames(risksample)
-    colnames(masterframe)[17:47]<-colnames(PSA_all_p)
+    colnames(masterframe)[17:49]<-colnames(PSA_all_p)
     
     #Split the dataframe into chunks for easier computation
     masterframe$split<-(rep(1:chunks,times=round(length(masterframe$VBD)/chunks)))
@@ -629,3 +641,118 @@ get_drug_adj_IM <- function(ind_from_risksample,
   return(list(time_taking_drug, drug_IM))
 }
 
+# The following function is used during PSA to get new risk reduction and
+# dropout rate matrices for the preventative drug courses based on log hazard
+# ratios drawn during the sample generation.
+redraw_drug_pars <- function(risksample){
+  
+  # New efficacies
+  ana_eff <- exp(risksample$PSA_eff_ana)
+  tam_eff <- exp(risksample$PSA_eff_tam)
+  
+  full_course_len <- 5
+  
+  # Assume constant drop out rate with 77% of individuals reaching 5yr mark
+  tam_completion_prob <- .77
+  
+  # New dropout estimates
+  ana_dropout_rate <- risksample$PSA_dropout_ana
+  tam_dropout_rate <- risksample$PSA_dropout_tam
+  
+  # Estimate Anastrozole completion probability from Tamoxifen estimate and hazard ratios:
+  ana_completion_prob <- exp(ana_dropout_rate - tam_dropout_rate) * tam_completion_prob
+  
+  completion_prob <- c(ana_completion_prob, tam_completion_prob)
+  
+  # Now estimate per-unit-time dropout rates based on exponential time to dropout:
+  tam_dropout_rate <- (1. / full_course_len) * log(1 / (tam_completion_prob))
+  ana_dropout_rate <- (1. / full_course_len) * log(1 / (ana_completion_prob))
+  
+  # Work out mean time taking each drug
+  mean_tam_length <- full_course_len * (1 - tam_completion_prob) / log(1 / tam_completion_prob)
+  mean_ana_length <- full_course_len * (1 - ana_completion_prob) / log(1 / ana_completion_prob)
+  
+  # Quick check: quantities below give efficacy of taking full five-year course
+  # assuming linear relationship between time taking and hazard ratio. If both of
+  # these are less than one then the linear model is safe to use because no one
+  # goes past this point.
+  tam_full_course_eff <- 1 - (1 - tam_eff) * log(1 / tam_completion_prob) / (1 - tam_completion_prob)
+  ana_full_course_eff <- 1 - (1 - ana_eff) * log(1 / ana_completion_prob) / (1 - ana_completion_prob)
+  if ((tam_full_course_eff>1)|(ana_full_course_eff>1)){
+    print("Assumption of linear change to hazard ratio with time taking drug will
+        not work for one or both drugs being simulated.")
+  }
+  
+  course_length <- c(5., 5.)
+  
+  #Assign women to risk groups based on 10yr risk if using risk-stratified approach  
+  if(screen_strategy==1 | screen_strategy==9) {
+    risk_red <- matrix(c(ana_eff, tam_eff,
+                         ana_eff, tam_eff,
+                         ana_eff, tam_eff,
+                         ana_eff, tam_eff,
+                         ana_eff, tam_eff),
+                       nrow = 5,
+                       ncol = 2)
+    
+    course_length <- c(5., 5.)
+    
+    uptake <-rbind(c(0., 0.),
+                   c(0., 0.),
+                   c(0., 0.),
+                   c(.71, .71),
+                   c(.71, .71))
+    
+    persistence <- matrix(c(ana_dropout_rate, tam_dropout_rate,
+                            ana_dropout_rate, tam_dropout_rate,
+                            ana_dropout_rate, tam_dropout_rate,
+                            ana_dropout_rate, tam_dropout_rate,
+                            ana_dropout_rate, tam_dropout_rate),
+                          nrow = 5,
+                          ncol = 2)
+  } else
+    if(screen_strategy==2) {
+      risk_red <- matrix(c(ana_eff, tam_eff,
+                           ana_eff, tam_eff,
+                           ana_eff, tam_eff),
+                         nrow = 3,
+                         ncol = 2)
+      
+      uptake <-rbind(c(0., 0.),
+                     c(0., 0.),
+                     c(.71, .71))
+      
+      persistence <- matrix(c(ana_dropout_rate, tam_dropout_rate,
+                              ana_dropout_rate, tam_dropout_rate,
+                              ana_dropout_rate, tam_dropout_rate),
+                            nrow = 3,
+                            ncol = 2)
+    } else
+      if(screen_strategy==7 | screen_strategy==8) {
+        risk_red <- matrix(c(ana_eff, tam_eff,
+                             ana_eff, tam_eff),
+                           nrow = 2,
+                           ncol = 2)
+        
+        uptake <-rbind(c(0., 0.),
+                       c(.71, .71))
+        
+        persistence <- matrix(c(ana_dropout_rate, tam_dropout_rate,
+                                ana_dropout_rate, tam_dropout_rate),
+                              nrow = 2,
+                              ncol = 2)
+      }  else{
+        risk_red <- matrix(c(ana_eff, tam_eff),
+                           nrow = 1,
+                           ncol = 2)
+        
+        uptake <-matrix(c(0., 0.),
+                        nrow = 1,
+                        ncol = 2)
+        
+        persistence <- matrix(c(ana_dropout_rate, tam_dropout_rate),
+                              nrow = 1,
+                              ncol = 2)
+      }
+  return(list(risk_red, uptake, persistence))
+}

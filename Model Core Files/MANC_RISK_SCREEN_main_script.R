@@ -10,7 +10,7 @@ if (DO_INSTALL){
   install.packages("iterators")
 }
 
-MISCLASS <- FALSE # Set to TRUE to include impact of errors in risk prediction in model
+MISCLASS <- TRUE # Set to TRUE to include impact of errors in risk prediction in model
 PREVENTATIVE_DRUG <- TRUE # Set to TRUE to simulate preventative drugs
 
 # Add specifiers for output files
@@ -467,6 +467,12 @@ for (ii in 1:chunks) {
                                                  <prob_premen, 1, 2)
     splitsample$takes_drug <- logical(nsample)
     splitsample$time_taking_drug <- numeric(nsample)
+    
+    # Redraw effects for PSA, assuming Monte Carlo draws of parameters are the same for each individual
+    drug_matrix_list <- redraw_drug_pars(splitsample[1,])
+    risk_red <- drug_matrix_list[[1]]
+    uptake <- drug_matrix_list[[2]]
+    persistence <- drug_matrix_list[[3]]
   }
   
   #Assign women to supplemental screening if switched on and criteria met 
