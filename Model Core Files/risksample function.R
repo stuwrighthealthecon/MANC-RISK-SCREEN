@@ -184,8 +184,12 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   dropout_mu <- dropout_ests$Adherence$means %>% as.numeric()
   dropout_sigma <- dropout_ests$Adherence$vcov %>% as.matrix()
   
-  PSA_eff <- mvrnorm(mcruns, efficacy_mu, efficacy_sigma)
-  PSA_dropout <- mvrnorm(mcruns, dropout_mu, dropout_sigma)
+  PSA_eff <- mvrnorm(mcruns, efficacy_mu, efficacy_sigma) %>%
+            data.frame() %>%
+            transpose()
+  PSA_dropout <- mvrnorm(mcruns, dropout_mu, dropout_sigma) %>%
+            data.frame() %>%
+            transpose()
   
   PSA_uptake_1 <- rnorm(mcruns, .71, .1)
   PSA_uptake_2 <- rnorm(mcruns, .71, .1)
@@ -495,8 +499,12 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
       dropout_mu <- dropout_ests$Adherence$means %>% as.numeric()
       dropout_sigma <- dropout_ests$Adherence$vcov %>% as.matrix()
       
-      PSA_eff <- mvrnorm(mcruns, efficacy_mu, efficacy_sigma)
-      PSA_dropout <- mvrnorm(mcruns, dropout_mu, dropout_sigma)
+      PSA_eff <- mvrnorm(mcruns, efficacy_mu, efficacy_sigma) %>%
+        data.frame() %>%
+        transpose()
+      PSA_dropout <- mvrnorm(mcruns, dropout_mu, dropout_sigma) %>%
+        data.frame() %>%
+        transpose()
       
       PSA_uptake_1 <- rnorm(mcruns, .71, .1)
       PSA_uptake_2 <- rnorm(mcruns, .71, .1)
