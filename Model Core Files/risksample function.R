@@ -60,6 +60,48 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   risksample$cancer<-ifelse(dqrunif(length(risksample$cancer),0,1)
                                 <(risksample$liferisk/100),1,0)
   
+  if (CANCER_ONLY){
+    neg_locs <- which(risksample$cancer==0)
+    while(length(neg_locs)>0){
+      replacement_sample <- risk_mat[sample(nrow(risk_mat),length(neg_locs)*ifelse(PSA==1,mcruns,1),replace=TRUE),]
+      replacement_sample[,c("MRI_screen","US_screen","risk_predicted","feedback",
+                    "interval_change","life_expectancy","cancer",
+                    "clinical_detect_size",
+                    "growth_rate")]<-numeric(length=length(neg_locs))
+      
+      #If risk-stratified screening used then determine if each woman chooses to have
+      #risk predicted, attends risk consultation, and changes interval
+      if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strategy<10)){
+        replacement_sample$risk_predicted<-ifelse(dqrunif(
+          length(replacement_sample$risk_predicted),0,1)<
+            c(rep(risk_uptake,length(replacement_sample$risk_predicted))),1,0)
+        replacement_sample$feedback<-ifelse(replacement_sample$risk_predicted==1 & 
+                                      dqrunif(length(replacement_sample$feedback),0,1)<
+                                      c(rep(risk_feedback)),1,0)
+        replacement_sample$interval_change<-ifelse(replacement_sample$feedback==1 & 
+                                             dqrunif(length(replacement_sample$interval_change),0,1)<
+                                             c(rep(screen_change)),1,0)
+      }
+      
+      ###Preload incidence, mortality and clinical detection times
+      replacement_sample$life_expectancy<- rweibull(n = length(replacement_sample$life_expectancy),
+                                            shape = acmmortality_wb_a, 
+                                            scale = acmmortality_wb_b)
+      for (i in 1:length(replacement_sample$life_expectancy)) {
+        if(replacement_sample[i,"life_expectancy"] <= start_age){risksample[i,"life_expectancy"]<-qweibull(
+          p = dqrunif(n = 1,
+                      min = pweibull(q = start_age,shape = acmmortality_wb_a,scale = acmmortality_wb_b),
+                      max = 1),
+          shape = acmmortality_wb_a, scale = acmmortality_wb_b)}}
+      
+      #Determine if a cancer will develop
+      replacement_sample$cancer<-ifelse(dqrunif(length(replacement_sample$cancer),0,1)
+                                <(replacement_sample$liferisk/100),1,0)
+      
+      risksample[neg_locs,] <- replacement_sample
+    }
+  }
+  
   #Set clinical detection size for cancer
   risksample$clinical_detect_size<-risksample$cancer*(dqrnorm(
     n = length(risksample$cancer),
@@ -374,6 +416,48 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   #Determine if a cancer will develop
   risksample$cancer<-ifelse(dqrunif(length(risksample$cancer),0,1)
                             <(risksample$liferisk_true/100),1,0)
+  
+  if (CANCER_ONLY){
+    neg_locs <- which(risksample$cancer==0)
+    while(length(neg_locs)>0){
+      replacement_sample <- risk_mat[sample(nrow(risk_mat),length(neg_locs)*ifelse(PSA==1,mcruns,1),replace=TRUE),]
+      replacement_sample[,c("MRI_screen","US_screen","risk_predicted","feedback",
+                            "interval_change","life_expectancy","cancer",
+                            "clinical_detect_size",
+                            "growth_rate")]<-numeric(length=length(neg_locs))
+      
+      #If risk-stratified screening used then determine if each woman chooses to have
+      #risk predicted, attends risk consultation, and changes interval
+      if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strategy<10)){
+        replacement_sample$risk_predicted<-ifelse(dqrunif(
+          length(replacement_sample$risk_predicted),0,1)<
+            c(rep(risk_uptake,length(replacement_sample$risk_predicted))),1,0)
+        replacement_sample$feedback<-ifelse(replacement_sample$risk_predicted==1 & 
+                                              dqrunif(length(replacement_sample$feedback),0,1)<
+                                              c(rep(risk_feedback)),1,0)
+        replacement_sample$interval_change<-ifelse(replacement_sample$feedback==1 & 
+                                                     dqrunif(length(replacement_sample$interval_change),0,1)<
+                                                     c(rep(screen_change)),1,0)
+      }
+      
+      ###Preload incidence, mortality and clinical detection times
+      replacement_sample$life_expectancy<- rweibull(n = length(replacement_sample$life_expectancy),
+                                                    shape = acmmortality_wb_a, 
+                                                    scale = acmmortality_wb_b)
+      for (i in 1:length(replacement_sample$life_expectancy)) {
+        if(replacement_sample[i,"life_expectancy"] <= start_age){risksample[i,"life_expectancy"]<-qweibull(
+          p = dqrunif(n = 1,
+                      min = pweibull(q = start_age,shape = acmmortality_wb_a,scale = acmmortality_wb_b),
+                      max = 1),
+          shape = acmmortality_wb_a, scale = acmmortality_wb_b)}}
+      
+      #Determine if a cancer will develop
+      replacement_sample$cancer<-ifelse(dqrunif(length(replacement_sample$cancer),0,1)
+                                        <(replacement_sample$liferisk_true/100),1,0)
+      
+      risksample[neg_locs,] <- replacement_sample
+    }
+  }
   
   #Set clinical detection size for cancer
   risksample$clinical_detect_size<-risksample$cancer*(dqrnorm(
