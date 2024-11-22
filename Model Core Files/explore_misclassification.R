@@ -548,4 +548,7 @@ risk_mat_with_mc <- risk_mat_with_mc %>%
                     dplyr::select(-age_grp_idx) %>%
                     dplyr::select(-bin.10yr)
 
+# Rescale to percentages for consistency before saving
+risk_mat_with_mc[, c(2, 3, 5, 6)] <- 100 * risk_mat_with_mc[, c(2, 3, 5, 6)]
+
 write.csv(risk_mat_with_mc, "synthetic_risk_data_with_misclassification.csv")
