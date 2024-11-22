@@ -12,6 +12,12 @@ if (DO_INSTALL){
 
 MISCLASS <- TRUE # Set to TRUE to include impact of errors in risk prediction in model
 PREVENTATIVE_DRUG <- TRUE # Set to TRUE to simulate preventative drugs
+SEPARATE_SAMPLES <- TRUE # If true, only patients who develop cancer have their pathways simulated
+if (SEPARATE_SAMPLES){
+  sample_fname <- "possample_"
+}else{
+  sample_fname <- "risksample_"
+}
 
 # Add specifiers for output files
 det_output_path <- "Deterministic results/"
@@ -77,9 +83,12 @@ intervals=0
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Set loop numbers
-inum<-10000 #Individual women to be sampled
-mcruns<-1 #Monte Carlo runs used if PSA switched on
 chunks<-10 #Number of chunks to split inum into for faster running time
+expected_prev <- .12
+desired_cases <- 10000
+inum <- ceiling((desired_cases / expected_prev)) #Individual women to be sampled to give desired number of positive cancer cases
+inum <- chunks * ceiling(inum / chunks) # Make sure number of women is divisible by number of chunks
+mcruns<-1 #Monte Carlo runs used if PSA switched on
 seed<-set.seed(1) #Set seed for random draws
 
 #Register number of cores for foreach loop
@@ -452,9 +461,9 @@ if (MISCLASS){
 for (ii in 1:chunks) {
   start_time <- Sys.time()
   if (MISCLASS){
-    load(paste("Risksamplewithmisclass/risksample_",ii,".Rdata",sep = ""))
+    load(paste("Risksamplewithmisclass/",sample_fname,ii,".Rdata",sep = ""))
   }else{
-    load(paste("Risksample/risksample_",ii,".Rdata",sep = ""))
+    load(paste("Risksample/",sample_fname,ii,".Rdata",sep = ""))
   }
   prefix<-paste("^","X",ii,".",sep="")
   names(splitsample)<-sub(prefix,"",names(splitsample))
@@ -468,11 +477,13 @@ for (ii in 1:chunks) {
     splitsample$takes_drug <- logical(nsample)
     splitsample$time_taking_drug <- numeric(nsample)
     
-    # Redraw effects for PSA, assuming Monte Carlo draws of parameters are the same for each individual
-    drug_matrix_list <- redraw_drug_pars(splitsample[1,])
-    risk_red <- drug_matrix_list[[1]]
-    uptake <- drug_matrix_list[[2]]
-    persistence <- drug_matrix_list[[3]]
+    if (PSA==1){
+      # Redraw effects for PSA, assuming Monte Carlo draws of parameters are the same for each individual
+      drug_matrix_list <- redraw_drug_pars(splitsample[1,])
+      risk_red <- drug_matrix_list[[1]]
+      uptake <- drug_matrix_list[[2]]
+      persistence <- drug_matrix_list[[3]]
+    }
   }
   
   #Assign women to supplemental screening if switched on and criteria met 
