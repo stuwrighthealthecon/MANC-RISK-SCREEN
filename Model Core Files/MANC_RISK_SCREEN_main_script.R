@@ -10,7 +10,6 @@ if (DO_INSTALL){
   install.packages("iterators")
 }
 
-CANCER_ONLY <- FALSE
 MISCLASS <- TRUE # Set to TRUE to include impact of errors in risk prediction in model
 PREVENTATIVE_DRUG <- TRUE # Set to TRUE to simulate preventative drugs
 
@@ -469,13 +468,11 @@ for (ii in 1:chunks) {
     splitsample$takes_drug <- logical(nsample)
     splitsample$time_taking_drug <- numeric(nsample)
     
-    if (PSA==1){
-      # Redraw effects for PSA, assuming Monte Carlo draws of parameters are the same for each individual
-      drug_matrix_list <- redraw_drug_pars(splitsample[1,])
-      risk_red <- drug_matrix_list[[1]]
-      uptake <- drug_matrix_list[[2]]
-      persistence <- drug_matrix_list[[3]]
-    }
+    # Redraw effects for PSA, assuming Monte Carlo draws of parameters are the same for each individual
+    drug_matrix_list <- redraw_drug_pars(splitsample[1,])
+    risk_red <- drug_matrix_list[[1]]
+    uptake <- drug_matrix_list[[2]]
+    persistence <- drug_matrix_list[[3]]
   }
   
   #Assign women to supplemental screening if switched on and criteria met 
