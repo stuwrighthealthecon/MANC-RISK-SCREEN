@@ -41,6 +41,12 @@ if (MISCLASS & PREVENTATIVE_DRUG){
     psa_output_path <- "PSA results/misclassification_and_preventative_drug/"
   }
 }
+SEPARATE_SAMPLES <- TRUE # If true, only patients who develop cancer have their pathways simulated
+if (SEPARATE_SAMPLES){
+  sample_fname <- "possample_"
+}else{
+  sample_fname <- "risksample_"
+}
 
 
 #Run required packages
@@ -67,7 +73,7 @@ supplemental_screening<-0
 gensample<-1
 
 #Deterministic (0) or Probabilistic Analysis (1)
-PSA=1
+PSA=0
 
 #Standard (0) or wide (1) distributions for PSA
 #Wide intervals recommended for generating data to predict GAM model
