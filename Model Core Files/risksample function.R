@@ -636,13 +636,13 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
         cancer_col <- paste("X",i,".cancer",sep="") %>% as.name()
         splitsample <- risksplit[i] %>% as.data.frame() %>% filter(!!cancer_col==1) # We give this the same name as the merged sample to avoid extraneous if statements in the simulation script
         neg_split <- risksplit[i] %>% as.data.frame() %>% filter(!!cancer_col==0)
-        save(splitsample,file = paste("Risksample/possample_",i,".Rdata",sep=""))
-        save(neg_split,file = paste("Risksample/negsample_",i,".Rdata",sep=""))
+        save(splitsample,file = paste("Risksamplewithmisclass/possample_",i,".Rdata",sep=""))
+        save(neg_split,file = paste("Risksamplewithmisclass/negsample_",i,".Rdata",sep=""))
       }
     }else{
       for(i in 1:chunks){
         splitsample<-as.data.frame(risksplit[i])
-        save(splitsample,file = paste("Risksample/risksample_",i,".Rdata",sep=""))
+        save(splitsample,file = paste("Risksamplewithmisclass/risksample_",i,".Rdata",sep=""))
       }
     }
     
