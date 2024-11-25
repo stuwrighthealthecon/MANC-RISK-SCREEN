@@ -12,12 +12,6 @@ if (DO_INSTALL){
 
 MISCLASS <- TRUE # Set to TRUE to include impact of errors in risk prediction in model
 PREVENTATIVE_DRUG <- TRUE # Set to TRUE to simulate preventative drugs
-SEPARATE_SAMPLES <- FALSE # If true, only patients who develop cancer have their pathways simulated
-if (SEPARATE_SAMPLES){
-  sample_fname <- "possample_"
-}else{
-  sample_fname <- "risksample_"
-}
 
 # Add specifiers for output files
 det_output_path <- "Deterministic results/"
@@ -85,7 +79,7 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 #Set loop numbers
 chunks<-10 #Number of chunks to split inum into for faster running time
 expected_prev <- .12
-desired_cases <- 10000
+desired_cases <- 100000
 inum <- ceiling((desired_cases / expected_prev)) #Individual women to be sampled to give desired number of positive cancer cases
 inum <- chunks * ceiling(inum / chunks) # Make sure number of women is divisible by number of chunks
 mcruns<-1 #Monte Carlo runs used if PSA switched on

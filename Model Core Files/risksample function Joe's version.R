@@ -364,21 +364,27 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   #If risk-stratified screening used then determine if each woman chooses to have
   #risk predicted, attends risk consultation, and changes interval
   if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strategy<10)){
-    risksample$risk_predicted<-rbinom(length(risksample$VBD),1,risk_uptake)
+    risksample$risk_predicted<-ifelse(dqrunif(
+      length(risksample$risk_predicted),0,1)<
+        c(rep(risk_uptake,length(risksample$risk_predicted))),1,0)
     risksample$feedback<-ifelse(risksample$risk_predicted==1 & 
-                                  rbinom(length(risksample$VBD),1,(risk_feedback))==1,1,0)
+                                  dqrunif(length(risksample$feedback),0,1)<
+                                  c(rep(risk_feedback)),1,0)
     risksample$interval_change<-ifelse(risksample$feedback==1 & 
-                                         rbinom(length(risksample$VBD),1,risk_feedback)==1,1,0)
+                                         dqrunif(length(risksample$interval_change),0,1)<
+                                         c(rep(screen_change)),1,0)
   }
+  
   ###Preload incidence, mortality and clinical detection times
   risksample$life_expectancy<- rweibull(n = length(risksample$life_expectancy),
                                         shape = acmmortality_wb_a, 
                                         scale = acmmortality_wb_b)
-  risksample$life_expectancy<-ifelse(risksample$life_expectancy<=start_age,
-                                     qweibull(p = dqrunif(n = 1,
-                                                          min = pweibull(q = start_age,shape = acmmortality_wb_a,scale = acmmortality_wb_b),
-                                                          max = 1),
-                                              shape = acmmortality_wb_a, scale = acmmortality_wb_b),risksample$life_expectancy)
+  for (i in 1:length(risksample$life_expectancy)) {
+    if(risksample[i,"life_expectancy"] <= start_age){risksample[i,"life_expectancy"]<-qweibull(
+      p = dqrunif(n = 1,
+                  min = pweibull(q = start_age,shape = acmmortality_wb_a,scale = acmmortality_wb_b),
+                  max = 1),
+      shape = acmmortality_wb_a, scale = acmmortality_wb_b)}}
   
   #Determine if a cancer will develop
   risksample$cancer<-ifelse(dqrunif(length(risksample$cancer),0,1)
