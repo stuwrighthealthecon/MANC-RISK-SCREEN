@@ -12,7 +12,7 @@ if (DO_INSTALL){
 
 MISCLASS <- TRUE # Set to TRUE to include impact of errors in risk prediction in model
 PREVENTATIVE_DRUG <- TRUE # Set to TRUE to simulate preventative drugs
-SEPARATE_SAMPLES <- TRUE # If true, only patients who develop cancer have their pathways simulated
+SEPARATE_SAMPLES <- FALSE # If true, only patients who develop cancer have their pathways simulated
 if (SEPARATE_SAMPLES){
   sample_fname <- "possample_"
 }else{
