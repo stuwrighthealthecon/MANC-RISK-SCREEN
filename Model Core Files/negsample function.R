@@ -35,12 +35,44 @@ for(i in 1:length(screen_times)){
 
 negsample[,8]<-rbinom(length(negsample$risk_group),1,uptakefirstscreen)
 
-for (i in 1:length(negsample[1,])-8){
+for (i in 1:length(screen_times)-1){
 negsample[,8+i]<-ifelse(rowSums(negsample[8:(7+i)])>=1,
                       rbinom(length(negsample$risk_group),1,uptakeotherscreen),
                       rbinom(length(negsample$risk_group),1,uptakenoscreen))
 }
+negsample$total_screens<-rowSums(negsample[8:length(negsample[1,])])
+
+#################PEOPLE CAN HAVE SCREENING AFTER THEY DIE CURRENTLY##############
+
+for (i in 1:length(screen_times)){
+  negsample[,7+i]<-negsample[,7+i]*(cost_screen*((1/((1+discount_cost)^(screen_times[i]-screen_startage)))))
+}
+negsample$screencost<-rowSums(negsample[8:length(negsample[1,])])
 
 
-rowSums(negsample[3])
-
+results<-data.frame(rep(0,length=length(negsample$risk_group)),
+                    negsample$screencost,
+                    negsample$total_screens,
+                    rep(0,length=length(negsample$risk_group)),
+                    rep(0,length=length(negsample$risk_group)),
+                    rep(0,length=length(negsample$risk_group)),
+                    rep(screen_strategy,length=length(negsample$risk_group)),
+                    rep(0,length=length(negsample$risk_group)),
+                    negsample$life_expectancy-rep(start_age,length=length(negsample$risk_group)),
+                    rep(0,length=length(negsample$risk_group)),
+                    rep(0,length=length(negsample$risk_group)),
+                    negsample$life_expectancy,
+                    rep(0,length=length(negsample$risk_group)))
+names(results) <- c('QALY',
+                    'Cost',
+                    'Screens',
+                    "Cancer Diagnosed Age",
+                    "Cancer",
+                    "screen detected",
+                    "alternative",
+                    "Growth rate",
+                    "Life Years",
+                    "Stage",
+                    "Cancer Size",
+                    "Death Age",
+                    "Cancer Screen Number")
