@@ -274,6 +274,12 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   #Split the dataframe into chunks for easier computation
   masterframe$split<-(rep(1:chunks,times=round(length(masterframe$VBD)/chunks)))
   masterframe<-masterframe %>% filter(masterframe$life_expectancy>=50)
+  
+  if(SEPARATE_SAMPLES){
+  negsample<-masterframe %>% filter(masterframe$cancer==0)
+  save(negsample,file = paste("Risksample/negsample.Rdata",sep=""))
+  masterframe<-masterframe %>% filter(masterframe$cancer==1)}
+  
   risksplit<-split(masterframe,masterframe$split)
   
   #Clean up redundant inputs
@@ -284,9 +290,8 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
     for(i in 1:chunks){
       cancer_col <- paste("X",i,".cancer",sep="") %>% as.name()
       splitsample <- risksplit[i] %>% as.data.frame() %>% filter(!!cancer_col==1) # We give this the same name as the merged sample to avoid extraneous if statements in the simulation script
-      neg_split <- risksplit[i] %>% as.data.frame() %>% filter(!!cancer_col==0)
       save(splitsample,file = paste("Risksample/possample_",i,".Rdata",sep=""))
-      save(neg_split,file = paste("Risksample/negsample_",i,".Rdata",sep=""))
+      
     }
   }else{
     for(i in 1:chunks){
@@ -297,6 +302,10 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   } else {
     risksample$split<-(rep(1:chunks,times=round(length(risksample$VBD)/chunks)))
     risksample<-risksample %>% filter(risksample$life_expectancy>=50)
+    if(SEPARATE_SAMPLES){
+      negsample<-risksample %>% filter(risksample$cancer==0)
+      save(negsample,file = paste("Risksample/negsample.Rdata",sep=""))
+      risksample<-risksample %>% filter(risksample$cancer==1)}
     risksplit<-split(risksample,risksample$split)
     
     rm(risksample,risk_mat)
@@ -306,9 +315,7 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
       for(i in 1:chunks){
         cancer_col <- paste("X",i,".cancer",sep="") %>% as.name()
         splitsample <- risksplit[i] %>% as.data.frame() %>% filter(!!cancer_col==1) # We give this the same name as the merged sample to avoid extraneous if statements in the simulation script
-        neg_split <- risksplit[i] %>% as.data.frame() %>% filter(!!cancer_col==0)
         save(splitsample,file = paste("Risksample/possample_",i,".Rdata",sep=""))
-        save(neg_split,file = paste("Risksample/negsample_",i,".Rdata",sep=""))
       }
     }else{
       for(i in 1:chunks){
@@ -603,6 +610,10 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
     #Split the dataframe into chunks for easier computation
     masterframe$split<-(rep(1:chunks,times=round(length(masterframe$VBD)/chunks)))
     masterframe<-masterframe %>% filter(masterframe$life_expectancy>=50)
+    
+    if(SEPARATE_SAMPLES){
+      negsample<-masterframe %>% filter(masterframe$cancer==0)
+      save(negsample,file = paste("Risksamplewithmisclass/negsample.Rdata",sep=""))}
     risksplit<-split(masterframe,masterframe$split)
     
     #Clean up redundant inputs
@@ -613,9 +624,7 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
       for(i in 1:chunks){
         cancer_col <- paste("X",i,".cancer",sep="") %>% as.name()
         splitsample <- risksplit[i] %>% as.data.frame() %>% filter(!!cancer_col==1) # We give this the same name as the merged sample to avoid extraneous if statements in the simulation script
-        neg_split <- risksplit[i] %>% as.data.frame() %>% filter(!!cancer_col==0)
         save(splitsample,file = paste("Risksamplewithmisclass/possample_",i,".Rdata",sep=""))
-        save(neg_split,file = paste("Risksamplewithmisclass/negsample_",i,".Rdata",sep=""))
       }
     }else{
       for(i in 1:chunks){
@@ -626,6 +635,9 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   } else {
     risksample$split<-(rep(1:chunks,times=round(length(risksample$VBD)/chunks)))
     risksample<-risksample %>% filter(risksample$life_expectancy>=50)
+    if(SEPARATE_SAMPLES){
+      negsample<-risksample %>% filter(risksample$cancer==0)
+      save(negsample,file = paste("Risksamplewithmisclass/negsample.Rdata",sep=""))}
     risksplit<-split(risksample,risksample$split)
     
     rm(risksample,risk_mat)
@@ -635,9 +647,7 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
       for(i in 1:chunks){
         cancer_col <- paste("X",i,".cancer",sep="") %>% as.name()
         splitsample <- risksplit[i] %>% as.data.frame() %>% filter(!!cancer_col==1) # We give this the same name as the merged sample to avoid extraneous if statements in the simulation script
-        neg_split <- risksplit[i] %>% as.data.frame() %>% filter(!!cancer_col==0)
         save(splitsample,file = paste("Risksamplewithmisclass/possample_",i,".Rdata",sep=""))
-        save(neg_split,file = paste("Risksamplewithmisclass/negsample_",i,".Rdata",sep=""))
       }
     }else{
       for(i in 1:chunks){
