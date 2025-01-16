@@ -1,6 +1,6 @@
-screen_strategy<-3
+##############################Function for estaimating outcomes for non-cancer############
 
-
+#Load appropriate data
 if(SEPARATE_SAMPLES){
   if(MISCLASS){
     load("Risksamplewithmisclass/negsample.Rdata")}else{
@@ -8,6 +8,7 @@ if(SEPARATE_SAMPLES){
     }
   }
 
+#Retain key data
 negsample<-data.frame("risk_group"=negsample$risk_group,
                       "MRI_screen"=negsample$MRI_screen,
                       "US_screen"=negsample$US_screen,
@@ -16,6 +17,7 @@ negsample<-data.frame("risk_group"=negsample$risk_group,
                       "interval_change"=negsample$interval_change,
                       "life_expectancy"=negsample$life_expectancy)
 
+#Set screen times
 if(screen_strategy==3){
   screen_times <- low_risk_screentimes
 }
@@ -29,26 +31,55 @@ if(screen_strategy==6){
   screen_times <- seq(screen_startage, screen_startage+10,10)
 }
 
+#Add blank columns for potential screen times
 for(i in 1:length(screen_times)){
   negsample[,7+i]<-numeric(length(negsample$negsample.risk_group))
 }
 
+#Draw attendance at first screen
 negsample[,8]<-rbinom(length(negsample$risk_group),1,uptakefirstscreen)
 
+#Loop through remaining screens conditional on previous attendance
 for (i in 1:length(screen_times)-1){
 negsample[,8+i]<-ifelse(rowSums(negsample[8:(7+i)])>=1,
                       rbinom(length(negsample$risk_group),1,uptakeotherscreen),
                       rbinom(length(negsample$risk_group),1,uptakenoscreen))
 }
+
+#Remove screening attendance after death
+for (i in 1:length(screen_times)){
+  negsample[,7+i][negsample$life_expectancy<rep(screen_times[i],length(negsample$life_expectancy))]<-0
+}
+
+#Calculate screens attended
 negsample$total_screens<-rowSums(negsample[8:length(negsample[1,])])
 
-#################PEOPLE CAN HAVE SCREENING AFTER THEY DIE CURRENTLY##############
-
+#Calculate screening cost
 for (i in 1:length(screen_times)){
   negsample[,7+i]<-negsample[,7+i]*(cost_screen*((1/((1+discount_cost)^(screen_times[i]-screen_startage)))))
 }
 negsample$screencost<-rowSums(negsample[8:length(negsample[1,])])
 
+#Create QALY vector
+negsample$QALY<-rep(0,length=length(negsample$risk_group))
+
+#Create utility weight lookup table
+qalylookup<-data.frame("age"=seq(from=screen_startage,to=100,by=1),
+                       "qalyweight"=rep(0,length=100-screen_startage+1))
+
+#Fill in utility values for each age with discounting
+for (i in 1:length(qalylookup$qalyweight)){
+qalylookup$qalyweight[i]<-utility_ages[match((ceiling(((screen_startage-1)+i)/5)*5),utility_ages[,1]),2]*(1/(1+discount_health)^i)
+}
+
+#Calculate cumulative QALYs for round ages
+qalylookup$qalyyear<-cumsum(qalylookup$qalyweight)
+
+#Caluclate QALYS and add partial QALYs for final year of life
+for (i in 1:length(negsample$risk_group)){
+  negsample$QALY[i]<-(qalylookup[match(floor(negsample$life_expectancy[i]),qalylookup[,1]),3])+
+    ((negsample$life_expectancy[i]-floor(negsample$life_expectancy[i]))*(qalylookup[match(floor(negsample$life_expectancy[i]),qalylookup[,1]),2]))
+}
 
 results<-data.frame(rep(0,length=length(negsample$risk_group)),
                     negsample$screencost,
@@ -76,3 +107,11 @@ names(results) <- c('QALY',
                     "Cancer Size",
                     "Death Age",
                     "Cancer Screen Number")
+
+save(results,file = paste(det_output_path,
+                          "Determ_",
+                          screen_strategy,
+                          "_",
+                          "negresults",
+                          ".Rdata",
+                          sep = ""))
