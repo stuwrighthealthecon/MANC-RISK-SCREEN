@@ -77,13 +77,6 @@ qalylookup$qalyweight[i]<-utility_ages[match((ceiling(((screen_startage-1)+i)/5)
 #Calculate cumulative QALYs for round ages
 qalylookup$qalyyear<-cumsum(qalylookup$qalyweight)
 
-#Calculate QALYS and add partial QALYs for final year of life
-#THIS BIT IS SLOW!!!!!!!!!!!!!!!!
-#for (i in 1:length(negsample$risk_group)){
- # negsample$QALY[i]<-(qalylookup[match(floor(negsample$life_expectancy[i]),qalylookup[,1]),3])+
-    #((negsample$life_expectancy[i]-floor(negsample$life_expectancy[i]))*(qalylookup[match(floor(negsample$life_expectancy[i]),qalylookup[,1]),2]))
-#}
-
 negsample$QALY<-(qalylookup[match(floor(negsample$life_expectancy),qalylookup[,1]),3])+
   ((negsample$life_expectancy-floor(negsample$life_expectancy))*(qalylookup[match(floor(negsample$life_expectancy),qalylookup[,1]),2]))
 

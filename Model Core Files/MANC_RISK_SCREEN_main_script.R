@@ -794,8 +794,6 @@ for (ii in 1:chunks) {
                                            stage_cat),na.rm = TRUE)
       }else{
           ca_case <- 0
-        
-          if (Mort_age>time_horizon){Mort_age<-100}
           
         #For non-cancer individuals
         screen_cost_vec<-rep(cost_screen,length(screen_times))
