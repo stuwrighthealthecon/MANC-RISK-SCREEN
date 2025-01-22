@@ -12,7 +12,7 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
     risk_mat$risk_group<-1+findInterval(risk_mat$tenyrrisk,risk_cutoffs_procas)
   } else
     if(screen_strategy==2) {
-      risk_maat$risk_group<-1+findInterval(risk_mat$tenyrrisk,risk_cutoffs_tert)
+      risk_mat$risk_group<-1+findInterval(risk_mat$tenyrrisk,risk_cutoffs_tert)
     } else
       if(screen_strategy==7 | screen_strategy==8) {
         risk_mat$risk_group<-ifelse(risk_mat$tenyrrisk<low_risk_cut,1,2)
@@ -352,7 +352,7 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
     risk_mat$risk_group<-1+findInterval(risk_mat$tenyrrisk_est,risk_cutoffs_procas)
   } else
     if(screen_strategy==2) {
-      risk_maat$risk_group<-1+findInterval(risk_mat$tenyrrisk_est,risk_cutoffs_tert)
+      risk_mat$risk_group<-1+findInterval(risk_mat$tenyrrisk_est,risk_cutoffs_tert)
     } else
       if(screen_strategy==7 | screen_strategy==8) {
         risk_mat$risk_group<-ifelse(risk_mat$tenyrrisk_est<low_risk_cut,1,2)

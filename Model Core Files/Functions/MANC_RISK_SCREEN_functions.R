@@ -325,7 +325,6 @@ Ca_survival_time <- function(stage_cat, Mort_age,age,ca_incidence_age){
     if (age >=55 && age <75){age_cat_M <- 2}
     if (age >= 75){age_cat_M <- 3}
     survival_time <- -(log(dqrunif(1,0,1))/metastatic_survival[age_cat_M])
-    #Check lifetime does not exceed horizon and set to less than 100 if it does
   }
   
   #Assign survival for DCIS i.e. no effect
