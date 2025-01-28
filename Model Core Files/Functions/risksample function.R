@@ -1,7 +1,7 @@
 create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
 
   #Import synthetic dataset derived from PROCAS2 study
-  risk_mat<-read.csv("synthetic_risk_data.csv")[,2:4]
+  risk_mat<-read.csv("Data/synthetic_risk_data.csv")[,2:4]
   colnames(risk_mat)<-c("VBD","tenyrrisk","liferisk")
   
   #Creat column for risk group to be entered
@@ -336,7 +336,7 @@ cmp_create_sample<-cmpfun(create_sample)
 create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   
   #Import synthetic dataset derived from PROCAS2 study
-  risk_mat<-read.csv("synthetic_risk_data_with_misclassification.csv")[,2:7] %>%
+  risk_mat<-read.csv("Data/synthetic_risk_data_with_misclassification.csv")[,2:7] %>%
     dplyr::select(!syn.Age)
   colnames(risk_mat)<-c("VBD",
                         "tenyrrisk_est",

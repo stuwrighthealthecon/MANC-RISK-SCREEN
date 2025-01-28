@@ -80,7 +80,7 @@ qalylookup$qalyyear<-cumsum(qalylookup$qalyweight)
 negsample$QALY<-(qalylookup[match(floor(negsample$life_expectancy),qalylookup[,1]),3])+
   ((negsample$life_expectancy-floor(negsample$life_expectancy))*(qalylookup[match(floor(negsample$life_expectancy),qalylookup[,1]),2]))
 
-results<-data.frame(rep(0,length=length(negsample$risk_group)),
+results<-data.frame(negsample$QALY,
                     negsample$screencost,
                     negsample$total_screens,
                     rep(0,length=length(negsample$risk_group)),

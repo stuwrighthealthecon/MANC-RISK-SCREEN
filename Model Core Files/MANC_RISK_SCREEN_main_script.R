@@ -63,7 +63,7 @@ tic()
 #5=5 yearly, 6=2 rounds at 50 and 60 (10 yearly), 7=Low risk (5 yearly),
 #8=Low risk (6 yearly),#9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-2
+screen_strategy<-3
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
@@ -82,9 +82,9 @@ intervals=0
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Set loop numbers
-chunks<-10 #Number of chunks to split inum into for faster running time
+chunks<-2 #Number of chunks to split inum into for faster running time
 expected_prev <- .12
-desired_cases <- 20000
+desired_cases <- 360000
 inum <- ceiling((desired_cases / expected_prev)) #Individual women to be sampled to give desired number of positive cancer cases
 inum <- chunks * ceiling(inum / chunks) # Make sure number of women is divisible by number of chunks
 mcruns<-1 #Monte Carlo runs used if PSA switched on
@@ -136,7 +136,7 @@ gamma_survival_3<-exp(-2.723) #Exponential distribution scale parameter stage 3
 gamma_stage <- c(gamma_survival_1,gamma_survival_2,gamma_survival_3)
 
 #Read in distribution of cancer incidence by age
-Incidence_Mortality<-read.csv("Incidence_Mortality_ONS2.csv")
+Incidence_Mortality<-read.csv("Data/Incidence_Mortality_ONS2.csv")
 
 #Set metastatic cancer probabilities by age
 metastatic_prob <- data.frame(c(25,35,45,55,65,75,85),
@@ -206,7 +206,7 @@ ca_size_cut <- c(0.025, 5, 10, 15, 20, 30, 128) #Size cut-points for deciding st
 #### Drug data ####
 
 # First bring in log hazard ratios from networked analysis
-loghaz_ests <- readRDS("PreventionOutputs.RDS")
+loghaz_ests <- readRDS("Data/PreventionOutputs.RDS")
 efficacy_ests <- loghaz_ests[1]
 dropout_ests <- loghaz_ests[4]
 
@@ -973,4 +973,6 @@ if(PSA==0){
   }
 
 toc()
+
+
 
