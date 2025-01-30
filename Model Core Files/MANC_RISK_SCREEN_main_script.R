@@ -63,7 +63,7 @@ tic()
 #5=5 yearly, 6=2 rounds at 50 and 60 (10 yearly), 7=Low risk (5 yearly),
 #8=Low risk (6 yearly),#9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-9
+screen_strategy<-3
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
@@ -84,7 +84,7 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 #Set loop numbers
 chunks<-10 #Number of chunks to split inum into for faster running time
 expected_prev <- .12
-desired_cases <- 100000
+desired_cases <- 264000
 inum <- ceiling((desired_cases / expected_prev)) #Individual women to be sampled to give desired number of positive cancer cases
 inum <- chunks * ceiling(inum / chunks) # Make sure number of women is divisible by number of chunks
 mcruns<-1 #Monte Carlo runs used if PSA switched on

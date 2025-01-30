@@ -4,7 +4,6 @@ fnLookupBase <- function(iStage, iAge, iLE) {
   as.numeric(tblLookup$CDCost.p.i.d[tblLookup$Stage==iStage & tblLookup$Age==iAge & tblLookup$Yr==iLE])
 }
 
-
 ############################Set Screen Times####################################
 set_screen_times<-function(risk_data,screen_strategy){
 screen_times <- c(999)
@@ -65,7 +64,6 @@ screen_times<-screen_times[!att_screen_times==0]
 return(screen_times)
 }
 cmp_set_screen_times<-cmpfun(set_screen_times)
-
 
 ############Function for determining when a cancer occurs#######################
 Incidence_function <- function(risk_data){
@@ -248,7 +246,6 @@ stage_by_size <- function(Ca_size){
 cmp_stage_by_size<-cmpfun(stage_by_size)
 
 #######################Screening test results simulation##########################
-
 
 #Inputs are tumour diameter, VDG, MRI_screening(0/1), US_screening(0/1) 
 screening_result <- function(Ca_size,VDG,MRI_screening,US_screening){
