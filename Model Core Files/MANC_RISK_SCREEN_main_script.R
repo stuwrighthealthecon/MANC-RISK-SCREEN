@@ -578,11 +578,6 @@ for (ii in 1:chunks) {
       MRI_costs <- 0 #MRI costs
       drug_costs <- 0 # Drug costs
       costs_follow_up <- 0 #Follow up costs
-
-      #Total life years
-      LY_counter <- 0 #Total life years
-      #Total QALYs
-      QALY_counter <- 0 #Total QALYs
       
       #Get an all-cause mortality age and make sure this is greater than start
       #age and cancer incidence age
@@ -597,8 +592,7 @@ for (ii in 1:chunks) {
         
         #Lifetime cancer incidence
         #Determines if a cancer occurs and at what age
-        if (risk_data$cancer==1){
-          ca_case<-1
+        ca_case<-1
           
           #Determine cancer growth rate
           grow_rate_i<-risk_data$growth_rate
@@ -688,9 +682,6 @@ for (ii in 1:chunks) {
                 #if(risk_data$MRI_screen == 1){MRI_count <- MRI_count + 1
                 #costs <- costs + (cost_MRI*current_discount)
                 #MRI_costs <- MRI_costs + (cost_MRI*current_discount)}
-                
-                #If the next event is a screen and a cancer is present:
-                if (Event_place == 1 && ca_case ==1){
                   
                   #Determine if tumour is present at screen
                   t <- (age+Next_event_time) - gen_age
@@ -722,7 +713,6 @@ for (ii in 1:chunks) {
                     if(screen_result[1] == 1 && screen_count == length(screen_times)){sdlast_cancer <-1} #ca detected on last screen 
                   } else{screen_detected_ca <- 0} 
                 
-                
                 #If a cancer is not found does a false-positive occur?
                 if(Event_place == 1 && screen_detected_ca == 0 && dqrunif(1,0,1)<recall_rate){
                   recall_count <- recall_count+1
@@ -730,7 +720,7 @@ for (ii in 1:chunks) {
                   #Add costs of false-positive recall
                   costs=costs+(cost_follow_up*current_discount)+(biopsy_rate*cost_biop*current_discount)
                   costs_follow_up=costs_follow_up+(costs_follow_up*current_discount)+(biopsy_rate*cost_biop*current_discount)}
-              }} #End screening event
+              } #End screening event
         
         #Clinical cancer diagnosis event
         if(Event_place == 3){
@@ -793,7 +783,7 @@ for (ii in 1:chunks) {
       QALY_counter <- sum(cmp_QALY_counter(Mort_age,
                                            incidence_age_record,
                                            stage_cat),na.rm = TRUE)
-      }
+      
         
         if (PREVENTATIVE_DRUG & risk_data$risk_group!=0){ # Don't model impact of drug for strategies without risk stratification
           # Decide if individual takes drugs and add cost if so
