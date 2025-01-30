@@ -194,7 +194,8 @@ med_risk_screentimes <- seq(screen_startage,screen_endage,2) #Two yearly screeni
 low_risk_screentimes <- seq(screen_startage,screen_endage,3) #Three yearly screening
 
 #Set maximum screening sensitivity
-sensitivity_max <- 0.95
+sensitivity_max <- 0.999
+#0.95
 
 #Risk cut-offs for different screening approaches
 risk_cutoffs_procas <- c(1.5,3.5,5,8,100) #PROCAS and PROCAS Full
