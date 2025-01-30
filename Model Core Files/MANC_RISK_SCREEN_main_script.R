@@ -97,6 +97,7 @@ registerDoParallel(cores=numcores)
 #Load file containing required functions for the model
 source(file="Functions/MANC_RISK_SCREEN_functions.R")
 source(file="Functions/risksample function.R")
+source(file="Functions/negsample function.R")
 
 #################################Define baseline parameters####################
 
@@ -922,6 +923,8 @@ for (ii in 1:chunks) {
   cat("Chunk", ii, "took", elapsed, "seconds.\n")
 } #End i loop
 
+negsamplefn(screen_strategy,MISCLASS)
+
 #Create summarised results
 merged_result <- matrix(0,nrow = chunks,ncol = 7)
 if(PSA==0){
@@ -973,6 +976,5 @@ if(PSA==0){
   }
 
 toc()
-
 
 

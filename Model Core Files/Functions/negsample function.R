@@ -1,5 +1,7 @@
 ##############################Function for estaimating outcomes for non-cancer############
 
+negsamplefn<-function(screen_strategy,MISCLASS){
+
 #Load appropriate data
   if(MISCLASS){
     load("Risksamplewithmisclass/negsample.Rdata")}else{
@@ -240,4 +242,5 @@ save(results,file = paste(det_output_path,
                           "negresults",
                           ".Rdata",
                           sep = ""))
+}
 }
