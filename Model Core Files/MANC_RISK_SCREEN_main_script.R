@@ -793,26 +793,7 @@ for (ii in 1:chunks) {
       QALY_counter <- sum(cmp_QALY_counter(Mort_age,
                                            incidence_age_record,
                                            stage_cat),na.rm = TRUE)
-      }else{
-          ca_case <- 0
-          
-        #For non-cancer individuals
-        screen_cost_vec<-rep(cost_screen,length(screen_times))
-        follow_up_vec<-rbinom(length(screen_times),1,recall_rate)
-        biop_vec<-follow_up_vec*(rbinom(length(follow_up_vec),1,biopsy_rate))
-        screen_cost_vec<-screen_cost_vec+(follow_up_vec*cost_follow_up)+(biop_vec*cost_biop)
-                                           
-        if (screen_strategy==1 | screen_strategy==2 | screen_strategy==7 |
-            screen_strategy==8 | screen_strategy==9){screen_cost_vec[1]<-screen_cost_vec[1]+cost_strat}
-        discount_vec<-screen_times-rep(screen_startage,length(screen_times))
-        for (i in length(screen_cost_vec)){
-          screen_cost_vec[i]<-screen_cost_vec[i]*(1/((1+discount_cost)^discount_vec[i]))}
-        
-        #Screen counter
-        screen_count<-length(screen_times)
-        
-        #Costs  
-        costs<-max(0,sum(screen_cost_vec),na.rm=TRUE)
+      }
         
         if (PREVENTATIVE_DRUG & risk_data$risk_group!=0){ # Don't model impact of drug for strategies without risk stratification
           # Decide if individual takes drugs and add cost if so
@@ -834,15 +815,6 @@ for (ii in 1:chunks) {
           }
           costs <- costs + prop_drug_admin * cost_drug[risk_data$starting_menses_status]
           drug_costs <- drug_costs + prop_drug_admin * cost_drug[risk_data$starting_menses_status]
-        }
-        
-        #Update Life-year counter
-        LY_counter <- Mort_age-start_age
-        
-        #Record total QALYs for J loop
-        QALY_counter <- sum(cmp_QALY_counter(Mort_age,
-                                             incidence_age_record,
-                                             stage_cat),na.rm = TRUE)
         }
       
     #If deterministic analysis then record outputs
