@@ -330,7 +330,6 @@ if(screen_strategy==1 | screen_strategy==9) {
                             ncol = 2)
     }
 
-
 age_prescribed <- 50
 
 median_age_at_men <- 51
@@ -589,9 +588,6 @@ for (ii in 1:chunks) {
       screen_detected_ca <- 0 #Cancer screen detected
       
       ##############################DES COMPONENT CANCER ###################################
-        
-        #Lifetime cancer incidence
-        #Determines if a cancer occurs and at what age
         ca_case<-1
           
           #Determine cancer growth rate
@@ -784,7 +780,6 @@ for (ii in 1:chunks) {
                                            incidence_age_record,
                                            stage_cat),na.rm = TRUE)
       
-        
         if (PREVENTATIVE_DRUG & risk_data$risk_group!=0){ # Don't model impact of drug for strategies without risk stratification
           # Decide if individual takes drugs and add cost if so
           if (dqrunif(1,0,1) < uptake[risk_data$risk_group, risk_data$starting_menses_status]){
