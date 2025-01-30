@@ -157,6 +157,13 @@ save(results,file = paste(det_output_path,
                           sep = ""))
 
 }}else if(screen_strategy>2 & screen_strategy<7){
+  negsample<-data.frame("risk_group"=negsample$risk_group,
+                        "MRI_screen"=negsample$MRI_screen,
+                        "US_screen"=negsample$US_screen,
+                        "risk_predicted"=negsample$risk_predicted,
+                        "feedback"=negsample$feedback,
+                        "interval_change"=negsample$interval_change,
+                        "life_expectancy"=negsample$life_expectancy)
 
 #Set screen times
 if(screen_strategy==3){
