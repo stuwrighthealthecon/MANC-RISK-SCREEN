@@ -41,12 +41,8 @@ if (MISCLASS & PREVENTATIVE_DRUG){
     psa_output_path <- "PSA results/misclassification_and_preventative_drug/"
   }
 }
-SEPARATE_SAMPLES <- TRUE # If true, only patients who develop cancer have their pathways simulated
-if (SEPARATE_SAMPLES){
-  sample_fname <- "possample_"
-}else{
-  sample_fname <- "risksample_"
-}
+
+sample_fname <- "possample_"
 
 #Run required packages
 library("doParallel")
@@ -63,13 +59,13 @@ tic()
 #5=5 yearly, 6=2 rounds at 50 and 60 (10 yearly), 7=Low risk (5 yearly),
 #8=Low risk (6 yearly),#9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-3
+screen_strategy<-0
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
 
 #Generate new sample? 1=YES, any other number NO
-gensample<-1
+gensample<-0
 
 #Deterministic (0) or Probabilistic Analysis (1)
 PSA=0
@@ -84,13 +80,14 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 #Set loop numbers
 chunks<-10 #Number of chunks to split inum into for faster running time
 expected_prev <- .12
-desired_cases <- 264000
+desired_cases <- 100000
 inum <- ceiling((desired_cases / expected_prev)) #Individual women to be sampled to give desired number of positive cancer cases
 inum <- chunks * ceiling(inum / chunks) # Make sure number of women is divisible by number of chunks
 mcruns<-1 #Monte Carlo runs used if PSA switched on
 seed<-set.seed(1) #Set seed for random draws
 
 #Register number of cores for foreach loop
+closeAllConnections()
 numcores<-19
 registerDoParallel(cores=numcores)
 

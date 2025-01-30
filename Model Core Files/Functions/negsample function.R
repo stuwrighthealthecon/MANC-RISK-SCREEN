@@ -101,10 +101,6 @@ qalylookup$qalyyear<-cumsum(qalylookup$qalyweight)
 negsample$QALY<-(qalylookup[match(floor(negsample$life_expectancy),qalylookup[,1]),3])+
   ((negsample$life_expectancy-floor(negsample$life_expectancy))*(qalylookup[match(floor(negsample$life_expectancy),qalylookup[,1]),2]))
 
-if(screen_strategy==0 | screen_strategy>9){
-  negsample$screencost<-rep(0,length=nrows(negsample))
-}
-
 results<-data.frame(negsample$QALY,
                     negsample$screencost,
                     negsample$total_screens,
@@ -140,8 +136,8 @@ save(results,file = paste(det_output_path,
                           "negresults",
                           ".Rdata",
                           sep = ""))
-}
-}else{
+
+}}else if(screen_strategy>0 & screen_strategy<10){
 
 #Set screen times
 if(screen_strategy==3){
@@ -204,9 +200,62 @@ qalylookup$qalyyear<-cumsum(qalylookup$qalyweight)
 negsample$QALY<-(qalylookup[match(floor(negsample$life_expectancy),qalylookup[,1]),3])+
   ((negsample$life_expectancy-floor(negsample$life_expectancy))*(qalylookup[match(floor(negsample$life_expectancy),qalylookup[,1]),2]))
 
-if(screen_strategy==0 | screen_strategy>9){
-  negsample$screencost<-rep(0,length=nrows(negsample))
-}
+
+results<-data.frame(negsample$QALY,
+                    negsample$screencost,
+                    negsample$total_screens,
+                    rep(0,length=length(negsample$risk_group)),
+                    rep(0,length=length(negsample$risk_group)),
+                    rep(0,length=length(negsample$risk_group)),
+                    rep(screen_strategy,length=length(negsample$risk_group)),
+                    rep(0,length=length(negsample$risk_group)),
+                    negsample$life_expectancy-rep(start_age,length=length(negsample$risk_group)),
+                    rep(0,length=length(negsample$risk_group)),
+                    rep(0,length=length(negsample$risk_group)),
+                    negsample$life_expectancy,
+                    rep(0,length=length(negsample$risk_group)))
+names(results) <- c('QALY',
+                    'Cost',
+                    'Screens',
+                    "Cancer Diagnosed Age",
+                    "Cancer",
+                    "screen detected",
+                    "alternative",
+                    "Growth rate",
+                    "Life Years",
+                    "Stage",
+                    "Cancer Size",
+                    "Death Age",
+                    "Cancer Screen Number")
+
+save(results,file = paste(det_output_path,
+                          "Determ_",
+                          screen_strategy,
+                          "_",
+                          "negresults",
+                          ".Rdata",
+                          sep = ""))
+
+}else{
+    negsample$screencost<-rep(0,length=nrow(negsample))
+    negsample$total_screens<-rep(0,length=nrow(negsample))
+    #Create QALY vector
+    negsample$QALY<-rep(0,length=length(negsample$risk_group))
+    
+    #Create utility weight lookup table
+    qalylookup<-data.frame("age"=seq(from=screen_startage,to=100,by=1),
+                           "qalyweight"=rep(0,length=100-screen_startage+1))
+    
+    #Fill in utility values for each age with discounting
+    for (i in 1:length(qalylookup$qalyweight)){
+      qalylookup$qalyweight[i]<-utility_ages[match((ceiling(((screen_startage-1)+i)/5)*5),utility_ages[,1]),2]*(1/(1+discount_health)^i)
+    }
+    
+    #Calculate cumulative QALYs for round ages
+    qalylookup$qalyyear<-cumsum(qalylookup$qalyweight)
+    
+    negsample$QALY<-(qalylookup[match(floor(negsample$life_expectancy),qalylookup[,1]),3])+
+      ((negsample$life_expectancy-floor(negsample$life_expectancy))*(qalylookup[match(floor(negsample$life_expectancy),qalylookup[,1]),2]))
 
 results<-data.frame(negsample$QALY,
                     negsample$screencost,
@@ -244,3 +293,7 @@ save(results,file = paste(det_output_path,
                           sep = ""))
 }
 }
+
+
+
+

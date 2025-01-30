@@ -3,38 +3,11 @@ library(gt)
 library(tidyverse)
 library(magrittr)
 
-#Create Output data.frame
-output_df <- data.frame(matrix(nrow=6,ncol=4))
+filenames<-list.files(det_output_path,full.names = TRUE)
+alldata<-lapply(filenames,function(x){get(load(x,.GlobalEnv))})
+alldata<-do.call("rbind",alldata)
 
-#Define vector of strategies to evaluate
-#These must align with the values used in the screen strategy parameter in the main script
-#Data must have been generated for each strategy used
-screen_strategies<-c(0,1,2,3,4,9)
-
-#Import data, dropping uneccessary columns to save space
-for (j in 1:length(screen_strategies)){
-  screen_strategy<-screen_strategies[j]
-load(paste("Deterministic results/Determ_",screen_strategy,"_",1,".Rdata",sep = ""))
-
-#Remove women with cancer diagnosed before age 50
-results<-results %>% filter(results[,4]>50 | results[,4]==0)
-results<-results[-c(4:8)]
-results<-results[-c(5:14)]
-detresults<-results
-
-for (i in 2:10){
-  #name of saved files needed
-  load(paste("Deterministic results/Determ_",screen_strategy,"_",i,".Rdata",sep = ""))
-  
-  #Remove women with cancer diagnosed before age 50
-  results<-results %>% filter(results[,4]>50 | results[,4]==0)
-  results<-results[-c(4:8)]
-  results<-results[-c(5:14)]
-  detresults<-rbind(detresults,results)
-}
-#Produce average output values for each strategy
-output_df[j,]<-c(mean(detresults[,1]),mean(detresults[,2]),mean(detresults[,3]),mean(detresults[,4]))
-}
+output_df<-
 
 #Assign names to strategies
 #Note-currently fixed to 6 strategies considered in final paper
