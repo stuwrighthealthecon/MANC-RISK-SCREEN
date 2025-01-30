@@ -7,17 +7,6 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   #Creat column for risk group to be entered
   risk_mat$risk_group<-numeric(length(risk_mat$VBD))
   
-  #Assign women to risk groups based on 10yr risk if using risk-stratified approach  
-  if(screen_strategy==1 | screen_strategy==9) {
-    risk_mat$risk_group<-1+findInterval(risk_mat$tenyrrisk,risk_cutoffs_procas)
-  } else
-    if(screen_strategy==2) {
-      risk_mat$risk_group<-1+findInterval(risk_mat$tenyrrisk,risk_cutoffs_tert)
-    } else
-      if(screen_strategy==7 | screen_strategy==8) {
-        risk_mat$risk_group<-ifelse(risk_mat$tenyrrisk<low_risk_cut,1,2)
-      }  
-  
   #Set VDG based on breast density
   risk_mat$VDG<-1+findInterval(risk_mat[,1],VDG_interval)
   
@@ -329,17 +318,6 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   
   #Creat column for risk group to be entered
   risk_mat$risk_group<-numeric(length(risk_mat$VBD))
-  
-  #Assign women to risk groups based on 10yr risk if using risk-stratified approach  
-  if(screen_strategy==1 | screen_strategy==9) {
-    risk_mat$risk_group<-1+findInterval(risk_mat$tenyrrisk_est,risk_cutoffs_procas)
-  } else
-    if(screen_strategy==2) {
-      risk_mat$risk_group<-1+findInterval(risk_mat$tenyrrisk_est,risk_cutoffs_tert)
-    } else
-      if(screen_strategy==7 | screen_strategy==8) {
-        risk_mat$risk_group<-ifelse(risk_mat$tenyrrisk_est<low_risk_cut,1,2)
-      }  
   
   #Set VDG based on breast density
   risk_mat$VDG<-1+findInterval(risk_mat[,1],VDG_interval)

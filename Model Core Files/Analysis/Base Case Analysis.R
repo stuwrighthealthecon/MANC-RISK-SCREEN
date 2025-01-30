@@ -3,17 +3,36 @@ library(gt)
 library(tidyverse)
 library(magrittr)
 
+alternatives<-c(0,1,2,3,4,9)
+
 filenames<-list.files(det_output_path,full.names = TRUE)
 alldata<-lapply(filenames,function(x){get(load(x,.GlobalEnv))})
 alldata<-do.call("rbind",alldata)
 
-output_df<-
+output_df<-as.data.frame(matrix(nrow=6,ncol=4))
 
 #Assign names to strategies
 #Note-currently fixed to 6 strategies considered in final paper
 strategies<-c("No Screening","Risk-1","Risk-2","3 Yearly","2 Yearly","Risk-3")
 rownames(output_df) <- strategies
 colnames(output_df)<-c("qaly","cost","screens","life years")
+
+output_df$qaly<-alldata %>%
+  group_by(alternative)%>%
+  summarize(Mean = mean(QALY, na.rm=TRUE)) %>% select(Mean)
+
+output_df$cost<-alldata %>%
+  group_by(alternative)%>%
+  summarize(Mean = mean(Cost, na.rm=TRUE)) %>% select(Mean)
+
+output_df$screens<-alldata %>%
+  group_by(alternative)%>%
+  summarize(Mean = mean(Screens, na.rm=TRUE)) %>% select(Mean)
+
+output_df$`life years`<-alldata %>%
+  group_by(alternative)%>%
+  summarize(Mean = mean(`Life Years`, na.rm=TRUE)) %>% select(Mean)
+
 
 #Calculate Incremental Results
 output_df[,"incQALYS"]<-c(output_df$qaly-output_df$qaly[1])

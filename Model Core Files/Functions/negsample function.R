@@ -7,7 +7,26 @@ negsamplefn<-function(screen_strategy,MISCLASS){
     load("Risksamplewithmisclass/negsample.Rdata")}else{
    load("Risksample/negsample.Rdata")
     }
-
+  if(MISCLASS){
+    #Assign women to risk groups based on 10yr risk if using risk-stratified approach  
+    if(screen_strategy==1 | screen_strategy==9) {
+      splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk_true,risk_cutoffs_procas)
+    } else
+      if(screen_strategy==2) {
+        splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk_true,risk_cutoffs_tert)
+      } else
+        if(screen_strategy==7 | screen_strategy==8) {
+          splitsample$risk_group<-ifelse(splitsample$tenyrrisk_true<low_risk_cut,1,2)
+        } }else{
+          if(screen_strategy==1 | screen_strategy==9) {
+            splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk,risk_cutoffs_procas)
+          } else
+            if(screen_strategy==2) {
+              splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk,risk_cutoffs_tert)
+            } else
+              if(screen_strategy==7 | screen_strategy==8) {
+                splitsample$risk_group<-ifelse(splitsample$tenyrrisk<low_risk_cut,1,2) 
+              }}
 if(screen_strategy==1 | screen_strategy==2 | screen_strategy==7 | screen_strategy==8 | screen_strategy==9){
 
 #Retain key data
@@ -137,7 +156,7 @@ save(results,file = paste(det_output_path,
                           ".Rdata",
                           sep = ""))
 
-}}else if(screen_strategy>0 & screen_strategy<10){
+}}else if(screen_strategy>2 & screen_strategy<7){
 
 #Set screen times
 if(screen_strategy==3){
@@ -200,7 +219,6 @@ qalylookup$qalyyear<-cumsum(qalylookup$qalyweight)
 negsample$QALY<-(qalylookup[match(floor(negsample$life_expectancy),qalylookup[,1]),3])+
   ((negsample$life_expectancy-floor(negsample$life_expectancy))*(qalylookup[match(floor(negsample$life_expectancy),qalylookup[,1]),2]))
 
-
 results<-data.frame(negsample$QALY,
                     negsample$screencost,
                     negsample$total_screens,
@@ -237,6 +255,14 @@ save(results,file = paste(det_output_path,
                           sep = ""))
 
 }else{
+  negsample<-data.frame("risk_group"=negsample$risk_group,
+                        "MRI_screen"=negsample$MRI_screen,
+                        "US_screen"=negsample$US_screen,
+                        "risk_predicted"=negsample$risk_predicted,
+                        "feedback"=negsample$feedback,
+                        "interval_change"=negsample$interval_change,
+                        "life_expectancy"=negsample$life_expectancy)
+  
     negsample$screencost<-rep(0,length=nrow(negsample))
     negsample$total_screens<-rep(0,length=nrow(negsample))
     #Create QALY vector
