@@ -10,22 +10,22 @@ negsamplefn<-function(screen_strategy,MISCLASS){
   if(MISCLASS){
     #Assign women to risk groups based on 10yr risk if using risk-stratified approach  
     if(screen_strategy==1 | screen_strategy==9) {
-      splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk_true,risk_cutoffs_procas)
+      negsample$risk_group<-1+findInterval(negsample$tenyrrisk_est,risk_cutoffs_procas)
     } else
       if(screen_strategy==2) {
-        splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk_true,risk_cutoffs_tert)
+        negsample$risk_group<-1+findInterval(negsample$tenyrrisk_est,risk_cutoffs_tert)
       } else
         if(screen_strategy==7 | screen_strategy==8) {
-          splitsample$risk_group<-ifelse(splitsample$tenyrrisk_true<low_risk_cut,1,2)
+          negsample$risk_group<-ifelse(negsample$tenyrrisk_est<low_risk_cut,1,2)
         } }else{
           if(screen_strategy==1 | screen_strategy==9) {
-            splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk,risk_cutoffs_procas)
+            negsample$risk_group<-1+findInterval(negsample$tenyrrisk,risk_cutoffs_procas)
           } else
             if(screen_strategy==2) {
-              splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk,risk_cutoffs_tert)
+              negsample$risk_group<-1+findInterval(negsample$tenyrrisk,risk_cutoffs_tert)
             } else
               if(screen_strategy==7 | screen_strategy==8) {
-                splitsample$risk_group<-ifelse(splitsample$tenyrrisk<low_risk_cut,1,2) 
+                negsample$risk_group<-ifelse(negsample$tenyrrisk<low_risk_cut,1,2) 
               }}
 if(screen_strategy==1 | screen_strategy==2 | screen_strategy==7 | screen_strategy==8 | screen_strategy==9){
 
