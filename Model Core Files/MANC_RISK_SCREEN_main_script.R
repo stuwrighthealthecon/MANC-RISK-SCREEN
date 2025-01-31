@@ -10,8 +10,8 @@ if (DO_INSTALL){
   install.packages("iterators")
 }
 
-MISCLASS <- TRUE # Set to TRUE to include impact of errors in risk prediction in model
-PREVENTATIVE_DRUG <- TRUE # Set to TRUE to simulate preventative drugs
+MISCLASS <- FALSE # Set to TRUE to include impact of errors in risk prediction in model
+PREVENTATIVE_DRUG <- FALSE # Set to TRUE to simulate preventative drugs
 
 # Add specifiers for output files
 det_output_path <- "Deterministic results/"
@@ -59,7 +59,7 @@ tic()
 #5=5 yearly, 6=2 rounds at 50 and 60 (10 yearly), 7=Low risk (5 yearly),
 #8=Low risk (6 yearly),#9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-1
+screen_strategy<-2
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
@@ -952,5 +952,6 @@ if(PSA==0){
   }
 
 toc()
+
 
 

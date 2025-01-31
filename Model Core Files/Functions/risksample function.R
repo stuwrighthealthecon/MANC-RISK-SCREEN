@@ -22,13 +22,13 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   
   #If risk-stratified screening used then determine if each woman chooses to have
   #risk predicted, attends risk consultation, and changes interval
-  if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strategy<10)){
+  
     risksample$risk_predicted<-rbinom(length(nrow(risksample)),1,risk_uptake)
     risksample$feedback<-ifelse(risksample$risk_predicted==1 & 
                                    rbinom(length(nrow(risksample)),1,(risk_feedback))==1,1,0)
     risksample$interval_change<-ifelse(risksample$feedback==1 & 
                                           rbinom(length(nrow(risksample)),1,risk_feedback)==1,1,0)
-  }
+  
   
   ###Preload incidence, mortality and clinical detection times
   risksample$life_expectancy<- rweibull(n = length(risksample$life_expectancy),
@@ -285,7 +285,7 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   } else {
     risksample$split<-(rep(1:chunks,times=round(length(risksample$VBD)/chunks)))
     risksample<-risksample %>% filter(risksample$life_expectancy>=50)
-    if(SEPARATE_SAMPLES){
+    
       negsample<-risksample %>% filter(risksample$cancer==0)
       save(negsample,file = paste("Risksample/negsample.Rdata",sep=""))
       risksample<-risksample %>% filter(risksample$cancer==1)}
@@ -299,7 +299,7 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
         splitsample <- risksplit[i] %>% as.data.frame() %>% filter(!!cancer_col==1) # We give this the same name as the merged sample to avoid extraneous if statements in the simulation script
         save(splitsample,file = paste("Risksample/possample_",i,".Rdata",sep=""))
     }
-  }
+  
 }
 cmp_create_sample<-cmpfun(create_sample)
 
@@ -334,13 +334,13 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   
   #If risk-stratified screening used then determine if each woman chooses to have
   #risk predicted, attends risk consultation, and changes interval
-  if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strategy<10)){
+  
     risksample$risk_predicted<-rbinom(length(risksample$VBD),1,risk_uptake)
     risksample$feedback<-ifelse(risksample$risk_predicted==1 & 
                                   rbinom(length(risksample$VBD),1,(risk_feedback))==1,1,0)
     risksample$interval_change<-ifelse(risksample$feedback==1 & 
                                          rbinom(length(risksample$VBD),1,risk_feedback)==1,1,0)
-  }
+  
   ###Preload incidence, mortality and clinical detection times
   risksample$life_expectancy<- rweibull(n = length(risksample$life_expectancy),
                                         shape = acmmortality_wb_a, 

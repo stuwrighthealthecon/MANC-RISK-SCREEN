@@ -14,6 +14,7 @@ negsamplefn<-function(screen_strategy,MISCLASS){
     } else
       if(screen_strategy==2) {
         negsample$risk_group<-1+findInterval(negsample$tenyrrisk_est,risk_cutoffs_tert)
+        negsample$risk_group<-negsample$risk_group+2
       } else
         if(screen_strategy==7 | screen_strategy==8) {
           negsample$risk_group<-ifelse(negsample$tenyrrisk_est<low_risk_cut,1,2)
@@ -23,6 +24,7 @@ negsamplefn<-function(screen_strategy,MISCLASS){
           } else
             if(screen_strategy==2) {
               negsample$risk_group<-1+findInterval(negsample$tenyrrisk,risk_cutoffs_tert)
+              negsample$risk_group<-negsample$risk_group+2
             } else
               if(screen_strategy==7 | screen_strategy==8) {
                 negsample$risk_group<-ifelse(negsample$tenyrrisk<low_risk_cut,1,2) 
@@ -44,7 +46,7 @@ subsamples<-unique(negsample$risk_group)
 mastersample<-negsample
 
 for (i in 1:length(subsamples)){
-  negsample<-mastersample %>% filter(mastersample$risk_group==subsamples[i])
+  negsample<-filter(mastersample,risk_group==subsamples[i])
 
 #Set screen times
 if(negsample$risk_group[1]==5){
@@ -151,7 +153,8 @@ save(results,file = paste(det_output_path,
                           "Determ_",
                           screen_strategy,
                           "_",
-                          negsample$risk_group[1],
+                          subsamples[i],
+                          "_",
                           "negresults",
                           ".Rdata",
                           sep = ""))

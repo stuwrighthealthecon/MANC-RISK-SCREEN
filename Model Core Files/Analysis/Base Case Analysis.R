@@ -19,23 +19,26 @@ colnames(output_df)<-c("qaly","cost","screens","life years")
 
 output_df$qaly<-alldata %>%
   group_by(alternative)%>%
-  summarize(Mean = mean(QALY, na.rm=TRUE)) %>% select(Mean)
+  summarize(Mean=mean(QALY, na.rm=TRUE)) %>% select(Mean)
+output_df$qaly<-unlist(output_df$qaly)
 
 output_df$cost<-alldata %>%
   group_by(alternative)%>%
-  summarize(Mean = mean(Cost, na.rm=TRUE)) %>% select(Mean)
+  summarize(Mean=mean(Cost, na.rm=TRUE)) %>% select(Mean)
+output_df$cost<-unlist(output_df$cost)
 
 output_df$screens<-alldata %>%
   group_by(alternative)%>%
-  summarize(Mean = mean(Screens, na.rm=TRUE)) %>% select(Mean)
+  summarize(Mean=mean(Screens, na.rm=TRUE)) %>% select(Mean)
+output_df$screens<-unlist(output_df$screens)
 
 output_df$`life years`<-alldata %>%
   group_by(alternative)%>%
-  summarize(Mean = mean(`Life Years`, na.rm=TRUE)) %>% select(Mean)
-
+  summarize(Mean=mean(`Life Years`, na.rm=TRUE)) %>% select(Mean)
+output_df$`life years`<-unlist(output_df$`life years`)
 
 #Calculate Incremental Results
-output_df[,"incQALYS"]<-c(output_df$qaly-output_df$qaly[1])
+output_df[,"incQALYS"]<-output_df$qaly-rep(output_df$qaly[1],length=nrow(output_df))
 output_df[,"incCost"]<-c(output_df$cost-output_df$cost[1])
 output_df[,"ICER"]<-c(output_df$incCost/output_df$incQALYS)
 output_df[,"NB20k"]<-c((output_df$incQALYS*20000)-output_df$incCost)
