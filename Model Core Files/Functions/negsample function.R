@@ -44,9 +44,10 @@ negsample$risk_group<-negsample$risk_group*negsample$interval_change
 
 subsamples<-unique(negsample$risk_group)
 mastersample<-negsample
+rm(negsample)
 
-for (i in 1:length(subsamples)){
-  negsample<-filter(mastersample,risk_group==subsamples[i])
+for (ii in 1:length(subsamples)){
+  negsample<-filter(mastersample,risk_group==subsamples[ii])
 
 #Set screen times
 if(negsample$risk_group[1]==5){
@@ -153,13 +154,15 @@ save(results,file = paste(det_output_path,
                           "Determ_",
                           screen_strategy,
                           "_",
-                          subsamples[i],
+                          ii,
                           "_",
                           "negresults",
                           ".Rdata",
                           sep = ""))
+}
+}
 
-}}else if(screen_strategy>2 & screen_strategy<7){
+  if(screen_strategy>2 & screen_strategy<7){
   negsample<-data.frame("risk_group"=negsample$risk_group,
                         "MRI_screen"=negsample$MRI_screen,
                         "US_screen"=negsample$US_screen,
@@ -264,7 +267,8 @@ save(results,file = paste(det_output_path,
                           ".Rdata",
                           sep = ""))
 
-}else{
+  }
+  if (screen_strategy==0 | screen_strategy>9){
   negsample<-data.frame("risk_group"=negsample$risk_group,
                         "MRI_screen"=negsample$MRI_screen,
                         "US_screen"=negsample$US_screen,
