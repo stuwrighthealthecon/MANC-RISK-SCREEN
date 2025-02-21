@@ -407,7 +407,7 @@ tblLookup <- tblPred %>%
   mutate(across(c(Yr, pred, DCost.p), ~0)) %>%
   bind_rows(tblPred) %>%
   group_by(Stage, Age) %>%
-  mutate(DCost.p.i    = DCost.p * 1.219312579, # NHSCII inflator for 2010/11-->2020/21
+  mutate(DCost.p.i    = DCost.p * 1.2524778811488, # NHSCII inflator for 2010/11-->2020/22
          disc         = 1/1.035^(Yr-0.5),
          DCost.p.i.d  = DCost.p.i * disc,
          CDCost.p.i.d = cumsum(DCost.p.i.d),
@@ -770,10 +770,10 @@ for (ii in 1:chunks) {
           
           #If deterministic analysis then look up a treatment cost for the cancer
           if(PSA==0){
-            if(stage_cat <5){costs<-costs+(as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),10))))*current_discount)}
+            if(stage_cat <5){costs<-costs+(as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),9))))*current_discount)}
           } else {
             #If PSA analysis then look up treatment cost and apply cost variation
-            if(stage_cat <5){costs<-costs+((1+risk_data$PSA_costvar)*as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),10))))*current_discount)}
+            if(stage_cat <5){costs<-costs+((1+risk_data$PSA_costvar)*as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),9))))*current_discount)}
           }         
           
           #Record age of death and stage of cancer
