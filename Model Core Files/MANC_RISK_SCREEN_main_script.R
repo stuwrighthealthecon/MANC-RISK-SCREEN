@@ -770,10 +770,10 @@ for (ii in 1:chunks) {
           
           #If deterministic analysis then look up a treatment cost for the cancer
           if(PSA==0){
-            if(stage_cat <5){costs<-costs+(as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),50)))*current_discount))}
+            if(stage_cat <5){costs<-costs+(as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),10))))*current_discount)}
           } else {
             #If PSA analysis then look up treatment cost and apply cost variation
-            if(stage_cat <5){costs<-costs+((1+risk_data$PSA_costvar)*as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),50)))*current_discount))}
+            if(stage_cat <5){costs<-costs+((1+risk_data$PSA_costvar)*as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),10))))*current_discount)}
           }         
           
           #Record age of death and stage of cancer
