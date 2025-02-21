@@ -922,7 +922,7 @@ if(PSA==0){
     merged_result[i,6] <- mean(results[,7])
     merged_result[i,7] <- mean(results[,9])
   }
-  write.csv(merged_result,file = paste(det_output_path,
+  write.csv(merged_result,file = paste("Analysis/Summary results_",
                                        "Detresults_strat_",
                                        screen_strategy,
                                        ".csv",
@@ -944,7 +944,7 @@ if(PSA==0){
       merged_result[i,6] <- mean(results[,7])
       merged_result[i,7] <- mean(results[,9])
     } 
-    write.csv(merged_result,file = paste(psa_output_path,
+    write.csv(merged_result,file = paste("Analysis/Summary results_",
                                          "PSAresults_strat_",
                                          screen_strategy,
                                          ".csv",
