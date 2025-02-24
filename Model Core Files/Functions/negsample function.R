@@ -1,7 +1,7 @@
 ##############################Function for estaimating outcomes for non-cancer############
 
 negsamplefn<-function(screen_strategy,MISCLASS){
-
+  
 #Load appropriate data
   if(MISCLASS){
     load("Risksamplewithmisclass/negsample.Rdata")}else{
@@ -77,7 +77,7 @@ for(i in 1:length(screen_times)){
 negsample[,8]<-rbinom(length(negsample$risk_group),1,uptakefirstscreen)
 
 #Loop through remaining screens conditional on previous attendance
-for (i in 1:length(screen_times)-1){
+for (i in 1:(length(screen_times)-1)){
 negsample[,8+i]<-ifelse(rowSums(negsample[8:(7+i)])>=1,
                       rbinom(length(negsample$risk_group),1,uptakeotherscreen),
                       rbinom(length(negsample$risk_group),1,uptakenoscreen))
@@ -196,7 +196,7 @@ for(i in 1:length(screen_times)){
 negsample[,8]<-rbinom(length(negsample$risk_group),1,uptakefirstscreen)
 
 #Loop through remaining screens conditional on previous attendance
-for (i in 1:length(screen_times)-1){
+for (i in 1:(length(screen_times)-1)){
   negsample[,8+i]<-ifelse(rowSums(negsample[8:(7+i)])>=1,
                           rbinom(length(negsample$risk_group),1,uptakeotherscreen),
                           rbinom(length(negsample$risk_group),1,uptakenoscreen))
