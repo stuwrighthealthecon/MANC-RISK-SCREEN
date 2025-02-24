@@ -345,7 +345,7 @@ QALY_counter<-function(Mort_age,incidence_age_record,stage_cat){
   
   #Fill QALY vector with discounted age related utility values
   for (y in 1:length(QALY_vect)){
-    QALY_vect[y] <- (utility_ages[match((ceiling(((screen_startage-1)+y)/5)*5),utility_ages[,1]),2])*(1/(1+discount_health)^y)
+    QALY_vect[y] <- (utility_ages[match((ceiling(((screen_startage-1)+y)/5)*5),utility_ages[,1]),2])*(1/(1+discount_health)^(y-0.5))
     QALY_vect[QALY_length]<-QALY_vect[QALY_length]*(1-(ceiling(Mort_age)-Mort_age))
   }
   #If cancer occurs then fill QALY vector with discounted cancer utilities from incidence age

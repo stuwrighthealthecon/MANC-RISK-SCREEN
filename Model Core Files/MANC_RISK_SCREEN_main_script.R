@@ -80,7 +80,7 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 #Set loop numbers
 chunks<-10 #Number of chunks to split inum into for faster running time
 expected_prev <- .12
-desired_cases <- 360000
+desired_cases <- 100000
 inum <- ceiling((desired_cases / expected_prev)) #Individual women to be sampled to give desired number of positive cancer cases
 inum <- chunks * ceiling(inum / chunks) # Make sure number of women is divisible by number of chunks
 mcruns<-1 #Monte Carlo runs used if PSA switched on
@@ -191,8 +191,7 @@ med_risk_screentimes <- seq(screen_startage,screen_endage,2) #Two yearly screeni
 low_risk_screentimes <- seq(screen_startage,screen_endage,3) #Three yearly screening
 
 #Set maximum screening sensitivity
-sensitivity_max <- 0.999
-#0.95
+sensitivity_max <- 0.95
 
 #Risk cut-offs for different screening approaches
 risk_cutoffs_procas <- c(1.5,3.5,5,8,100) #PROCAS and PROCAS Full
@@ -652,11 +651,13 @@ for (ii in 1:chunks) {
           gen_age <- CD_age - t_gen
           
           #If cancer occurs after age of death, re-draw age of death
-          if(Mort_age <= ca_incidence_age){Mort_age <-qweibull(
+          if(Mort_age <= CD_age){Mort_age <-qweibull(
             p = dqrunif(n = 1,min = pweibull(
               q = CD_age,shape = acmmortality_wb_a,scale = acmmortality_wb_b),max = 1),
             shape = acmmortality_wb_a, scale = acmmortality_wb_b)}
           if(Mort_age >= time_horizon){Mort_age <- 99.99}
+          if(CD_age>Mort_age){CD_age<-(Mort_age-0.01)}
+          
           cancer_diagnostic[7] <- c(Mort_age)
       
       Time_to_screen <- screen_times[1] - age #Select the current next screen age and subtract age
@@ -674,7 +675,7 @@ for (ii in 1:chunks) {
         Next_event_time <- Event_list[Event_place] #The time to nearest event
         
         #Calculate current discount rate
-        current_discount<-(1/((1+discount_cost)^(Next_event_time+age-screen_startage)))
+        current_discount<-(1/((1+discount_cost)^((Next_event_time+age-screen_startage)-0.5)))
         
         #Open screening event
         if(Event_place == 1){

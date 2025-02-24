@@ -8,7 +8,7 @@ alternatives<-c(0,1,2,3,4,9)
 filenames<-list.files(det_output_path,full.names = TRUE)
 alldata<-lapply(filenames,function(x){get(load(x,.GlobalEnv))})
 alldata<-do.call("rbind",alldata)
-alldata<-alldata %>% filter(alldata$`Cancer Diagnosed Age`>50 | alldata$`Cancer Diagnosed Age`==0)
+alldata<-alldata %>% filter(alldata$`Cancer Diagnosed Age`>=50 | alldata$`Cancer Diagnosed Age`==0)
 
 output_df<-as.data.frame(matrix(nrow=6,ncol=4))
 
