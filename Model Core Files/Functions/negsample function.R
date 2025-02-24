@@ -18,7 +18,9 @@ negsamplefn<-function(screen_strategy,MISCLASS){
       } else
         if(screen_strategy==7 | screen_strategy==8) {
           negsample$risk_group<-ifelse(negsample$tenyrrisk_est<low_risk_cut,1,2)
-        } }else{
+        } }
+  
+  if(MISCLASS==FALSE){
           if(screen_strategy==1 | screen_strategy==9) {
             negsample$risk_group<-1+findInterval(negsample$tenyrrisk,risk_cutoffs_procas)
           } else
@@ -96,7 +98,7 @@ for (i in 1:length(screen_times)){
 
 negsample <- negsample %>%
   mutate(first_case = {
-    tmp <- select(., starts_with('V'))
+    tmp <- dplyr::select(negsample,starts_with('V'))
     ifelse(rowSums(tmp) == 0, NA, max.col(tmp != 0, ties.method = 'first'))
   })
 
