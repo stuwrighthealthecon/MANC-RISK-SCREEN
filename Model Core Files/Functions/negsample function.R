@@ -111,8 +111,8 @@ negsample$screencost<-negsample$screencost+negsample$riskcost
 negsample$QALY<-rep(0,length=length(negsample$risk_group))
 
 #Create utility weight lookup table
-qalylookup<-data.frame("age"=seq(from=screen_startage,to=100,by=1),
-                       "qalyweight"=rep(0,length=100-screen_startage+1))
+qalylookup<-data.frame("age"=seq(from=screen_startage-1,to=100,by=1),
+                       "qalyweight"=rep(0,length=100-screen_startage+2))
 
 #Fill in utility values for each age with discounting
 for (i in 1:length(qalylookup$qalyweight)){

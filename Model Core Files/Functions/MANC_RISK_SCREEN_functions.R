@@ -333,6 +333,7 @@ cmp_ca_survival_time<-cmpfun(Ca_survival_time)
 ###################################QALY Counter##########################
 QALY_counter<-function(Mort_age,incidence_age_record,stage_cat){
   
+  
   #QALY counter
   #Set up a QALY vector of length equal to life years
   QALY_length <- ceiling(Mort_age)-(screen_startage-1)
@@ -348,6 +349,7 @@ QALY_counter<-function(Mort_age,incidence_age_record,stage_cat){
     QALY_vect[y] <- (utility_ages[match((ceiling(((screen_startage-1)+y)/5)*5),utility_ages[,1]),2])*(1/(1+discount_health)^(y-0.5))
     QALY_vect[QALY_length]<-QALY_vect[QALY_length]*(1-(ceiling(Mort_age)-Mort_age))
   }
+  
   #If cancer occurs then fill QALY vector with discounted cancer utilities from incidence age
   #NB this code accounts for partial years spent in different health states
   if (incidence_age_record > 0){

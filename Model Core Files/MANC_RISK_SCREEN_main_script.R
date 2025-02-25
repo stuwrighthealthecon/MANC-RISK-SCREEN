@@ -59,7 +59,7 @@ tic()
 #5=5 yearly, 6=2 rounds at 50 and 60 (10 yearly), 7=Low risk (5 yearly),
 #8=Low risk (6 yearly),#9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-2
+screen_strategy<-0
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
@@ -766,6 +766,7 @@ for (ii in 1:chunks) {
           
           #Generate a cancer specific survival time, accounting for competing risks
           Ca_mort_age <- cmp_ca_survival_time(stage_cat,Mort_age,age,ca_incidence_age)
+          Mort_age<-Ca_mort_age
           
           #Set up variables to look up treatment costs
           if(stage_cat<3){iStage<-"Early"} else {iStage<-"Late"}
@@ -773,14 +774,14 @@ for (ii in 1:chunks) {
           
           #If deterministic analysis then look up a treatment cost for the cancer
           if(PSA==0){
-            if(stage_cat <5){costs<-costs+(as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),9))))*current_discount)}
+            if(stage_cat <5){costs<-costs+(as.numeric(fnLookupBase(iStage,iAge,min(c(round(Ca_mort_age-age),9))))*current_discount)}
           } else {
             #If PSA analysis then look up treatment cost and apply cost variation
-            if(stage_cat <5){costs<-costs+((1+risk_data$PSA_costvar)*as.numeric(fnLookupBase(iStage,iAge,min(c(round(Mort_age-age),9))))*current_discount)}
+            if(stage_cat <5){costs<-costs+((1+risk_data$PSA_costvar)*as.numeric(fnLookupBase(iStage,iAge,min(c(round(Ca_mort_age-age),9))))*current_discount)}
           }         
           
           #Record age of death and stage of cancer
-          cancer_diagnostic[9] <- c(Mort_age)
+          cancer_diagnostic[9] <- c(Ca_mort_age)
           cancer_diagnostic[2] <- c(stage_cat) 
           
         }else{age <- age + Next_event_time #Update age if no cancer
@@ -795,10 +796,10 @@ for (ii in 1:chunks) {
       if((screen_detected_ca+interval_ca) == 0){cancer_diagnostic[1] <- Mort_age} # Recorded age is age of death or cancer incidence
       
       #Update Life-year counter
-      LY_counter <- Mort_age-start_age
+      LY_counter <- Ca_mort_age-start_age
       
       #Record total QALYs for J loop
-      QALY_counter <- sum(cmp_QALY_counter(Mort_age,
+      QALY_counter <- sum(cmp_QALY_counter(Mort_age=Ca_mort_age,
                                            incidence_age_record,
                                            stage_cat),na.rm = TRUE)
       
@@ -834,9 +835,9 @@ for (ii in 1:chunks) {
                screen_detected_ca,
                screen_strategy,
                risk_data$growth_rate,
-               LY_counter-(screen_startage-start_age),
+               LY_counter,
                cancer_diagnostic[2:3],
-               Mort_age,cancer_diagnostic[10]))}else{
+               Ca_mort_age,cancer_diagnostic[10]))}else{
         #If PSA then record outputs + monte carlo draws
         return(as.numeric(c(QALY_counter,
                             costs,
@@ -846,7 +847,7 @@ for (ii in 1:chunks) {
                             screen_detected_ca,
                             screen_strategy,
                             risk_data$growth_rate,
-                            LY_counter-(screen_startage-start_age),
+                            LY_counter,
                             c(risk_data[15:40]))))
       }
   }
