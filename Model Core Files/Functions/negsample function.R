@@ -123,7 +123,9 @@ qalylookup$qalyweight[i]<-utility_ages[match((ceiling(((screen_startage-1)+i)/5)
 qalylookup$qalyyear<-cumsum(qalylookup$qalyweight)
 
 negsample$QALY<-(qalylookup[match(floor(negsample$life_expectancy),qalylookup[,1]),3])+
-  ((negsample$life_expectancy-floor(negsample$life_expectancy))*(qalylookup[match(floor(negsample$life_expectancy),qalylookup[,1]),2]))
+  ((negsample$life_expectancy-floor(negsample$life_expectancy))*((qalylookup[match(ceiling(negsample$life_expectancy),qalylookup[,1]),2])-
+                                                                   (qalylookup[match(floor(negsample$life_expectancy),qalylookup[,1]),2]))
+  )
 
 results<-data.frame(negsample$QALY,
                     negsample$screencost,
@@ -232,7 +234,9 @@ for (i in 1:length(qalylookup$qalyweight)){
 qalylookup$qalyyear<-cumsum(qalylookup$qalyweight)
 
 negsample$QALY<-(qalylookup[match(floor(negsample$life_expectancy),qalylookup[,1]),3])+
-  ((negsample$life_expectancy-floor(negsample$life_expectancy))*(qalylookup[match(floor(negsample$life_expectancy),qalylookup[,1]),2]))
+  ((negsample$life_expectancy-floor(negsample$life_expectancy))*((qalylookup[match(ceiling(negsample$life_expectancy),qalylookup[,1]),2])-
+                                                                   (qalylookup[match(floor(negsample$life_expectancy),qalylookup[,1]),2]))
+  )
 
 results<-data.frame(negsample$QALY,
                     negsample$screencost,
@@ -297,7 +301,9 @@ save(results,file = paste(det_output_path,
     qalylookup$qalyyear<-cumsum(qalylookup$qalyweight)
     
     negsample$QALY<-(qalylookup[match(floor(negsample$life_expectancy),qalylookup[,1]),3])+
-      ((negsample$life_expectancy-floor(negsample$life_expectancy))*(qalylookup[match(floor(negsample$life_expectancy),qalylookup[,1]),2]))
+      ((negsample$life_expectancy-floor(negsample$life_expectancy))*((qalylookup[match(ceiling(negsample$life_expectancy),qalylookup[,1]),2])-
+        (qalylookup[match(floor(negsample$life_expectancy),qalylookup[,1]),2]))
+      )
 
 results<-data.frame(negsample$QALY,
                     negsample$screencost,
