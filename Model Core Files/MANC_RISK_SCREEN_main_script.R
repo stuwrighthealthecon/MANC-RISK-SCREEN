@@ -59,7 +59,9 @@ tic()
 #5=5 yearly, 6=2 rounds at 50 and 60 (10 yearly), 7=Low risk (5 yearly),
 #8=Low risk (6 yearly),#9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategy<-0
+screen_strategies<-c(0,1,2,3,4,9)
+for (r in 1:length(screen_strategies)){
+screen_strategy<-screen_strategies[r]
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
 supplemental_screening<-0
@@ -658,7 +660,7 @@ for (ii in 1:chunks) {
               q = CD_age,shape = acmmortality_wb_a,scale = acmmortality_wb_b),max = 1),
             shape = acmmortality_wb_a, scale = acmmortality_wb_b)}
           if(Mort_age >= time_horizon){Mort_age <- 99.99}
-          if(CD_age>Mort_age){CD_age<-(Mort_age-0.01)}
+          if(CD_age>=Mort_age){CD_age<-(Mort_age-0.01)}
           
           cancer_diagnostic[7] <- c(Mort_age)
       
@@ -765,8 +767,7 @@ for (ii in 1:chunks) {
           costs = costs + (cost_DCIS*current_discount)}
           
           #Generate a cancer specific survival time, accounting for competing risks
-          Ca_mort_age <- cmp_ca_survival_time(stage_cat,Mort_age,age,ca_incidence_age)
-          Mort_age<-Ca_mort_age
+          Ca_mort_age <- cmp_ca_survival_time(stage_cat,Mort_age,age,CD_age)
           
           #Set up variables to look up treatment costs
           if(stage_cat<3){iStage<-"Early"} else {iStage<-"Late"}
@@ -956,6 +957,6 @@ if(PSA==0){
   }
 
 toc()
-
+}
 
 
