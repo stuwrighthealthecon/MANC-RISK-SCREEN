@@ -40,7 +40,7 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
                 max = 1),
     shape = acmmortality_wb_a, scale = acmmortality_wb_b),risksample$life_expectancy)
   risksample$life_expectancy<-ifelse(risksample$life_expectancy>=rep(100,length=length(risksample$life_expectancy)),
-                                     100,
+                                     99.99,
                                      risksample$life_expectancy)
   
   #Determine if a cancer will develop
