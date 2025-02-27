@@ -8,7 +8,7 @@ alternatives<-c(0,1,2,3,4,9)
 filenames<-list.files(det_output_path,full.names = TRUE)
 alldata<-lapply(filenames,function(x){get(load(x,.GlobalEnv))})
 alldata<-do.call("rbind",alldata)
-alldata<-alldata %>% filter(alldata$`Cancer Diagnosed Age`>=50 | alldata$`Cancer Diagnosed Age`==0)
+#alldata<-alldata %>% filter(alldata$`Cancer Diagnosed Age`>=50 | alldata$`Cancer Diagnosed Age`==0)
 
 output_df<-as.data.frame(matrix(nrow=6,ncol=4))
 
@@ -47,7 +47,7 @@ output_df[,"NB30k"]<-c((output_df$incQALYS*30000)-output_df$incCost)
 
 alldata %>%
   group_by(alternative,Cancer) %>%
-  summarise(Mean=mean(`Life Years`))
+  summarise(Mean=mean(`Death Age`))
 
 #Plot CEP for strategies
 icer_strat<-calculate_icers(cost=output_df$cost,
@@ -161,7 +161,7 @@ fnIncCU <- function(Names, Costs, QALYs , blnNHB=TRUE, WTP=c(20000,30000), blnCU
   } else plt <- NULL
   
   prettyIncCU <- IncCU %>%
-    select(ID,
+    dplyr::select(ID,
            StratName,
            strCost,
            strQALY,
