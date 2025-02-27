@@ -1,27 +1,16 @@
 create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
 
   #Import synthetic dataset derived from PROCAS2 study
-  risk_mat<-read.csv("synthetic_risk_data.csv")[,2:4]
+  risk_mat<-read.csv("Data/synthetic_risk_data.csv")[,2:4]
   colnames(risk_mat)<-c("VBD","tenyrrisk","liferisk")
   
   #Creat column for risk group to be entered
   risk_mat$risk_group<-numeric(length(risk_mat$VBD))
   
-  #Assign women to risk groups based on 10yr risk if using risk-stratified approach  
-  if(screen_strategy==1 | screen_strategy==9) {
-    risk_mat$risk_group<-1+findInterval(risk_mat$tenyrrisk,risk_cutoffs_procas)
-  } else
-    if(screen_strategy==2) {
-      risk_maat$risk_group<-1+findInterval(risk_mat$tenyrrisk,risk_cutoffs_tert)
-    } else
-      if(screen_strategy==7 | screen_strategy==8) {
-        risk_mat$risk_group<-ifelse(risk_mat$tenyrrisk<low_risk_cut,1,2)
-      }  
-  
   #Set VDG based on breast density
   risk_mat$VDG<-1+findInterval(risk_mat[,1],VDG_interval)
   
-  #Breast density cut-offs for supplemental sreening
+  #Breast density cut-offs for supplemental screening
   density_cutoff <-3
   
   #Set up data frame of women's lifetimes to simulate
@@ -33,13 +22,13 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   
   #If risk-stratified screening used then determine if each woman chooses to have
   #risk predicted, attends risk consultation, and changes interval
-  if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strategy<10)){
-    risksample$risk_predicted<-rbinom(length(risksample),1,risk_uptake)
+  
+    risksample$risk_predicted<-rbinom(length(nrow(risksample)),1,risk_uptake)
     risksample$feedback<-ifelse(risksample$risk_predicted==1 & 
-                                   rbinom(length(risksample),1,(risk_feedback))==1,1,0)
+                                   rbinom(length(nrow(risksample)),1,(risk_feedback))==1,1,0)
     risksample$interval_change<-ifelse(risksample$feedback==1 & 
-                                          rbinom(length(risksample),1,risk_feedback)==1,1,0)
-  }
+                                          rbinom(length(nrow(risksample)),1,risk_feedback)==1,1,0)
+  
   
   ###Preload incidence, mortality and clinical detection times
   risksample$life_expectancy<- rweibull(n = length(risksample$life_expectancy),
@@ -50,6 +39,9 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
                 min = pweibull(q = start_age,shape = acmmortality_wb_a,scale = acmmortality_wb_b),
                 max = 1),
     shape = acmmortality_wb_a, scale = acmmortality_wb_b),risksample$life_expectancy)
+  risksample$life_expectancy<-ifelse(risksample$life_expectancy>=rep(100,length=length(risksample$life_expectancy)),
+                                     99.99,
+                                     risksample$life_expectancy)
   
   #Determine if a cancer will develop
   risksample$cancer<-ifelse(dqrunif(length(risksample$cancer),0,1)
@@ -274,50 +266,40 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   #Split the dataframe into chunks for easier computation
   masterframe$split<-(rep(1:chunks,times=round(length(masterframe$VBD)/chunks)))
   masterframe<-masterframe %>% filter(masterframe$life_expectancy>=50)
+  
+  negsample<-masterframe %>% filter(masterframe$cancer==0)
+  save(negsample,file = paste("Risksample/negsample.Rdata",sep=""))
+  masterframe<-masterframe %>% filter(masterframe$cancer==1)
+  
   risksplit<-split(masterframe,masterframe$split)
   
   #Clean up redundant inputs
   rm(masterframe,risksample,PSA_all_p,risk_mat)
   
   #Save risk sample in chunks
-  if (SEPARATE_SAMPLES){
     for(i in 1:chunks){
       cancer_col <- paste("X",i,".cancer",sep="") %>% as.name()
       splitsample <- risksplit[i] %>% as.data.frame() %>% filter(!!cancer_col==1) # We give this the same name as the merged sample to avoid extraneous if statements in the simulation script
-      neg_split <- risksplit[i] %>% as.data.frame() %>% filter(!!cancer_col==0)
       save(splitsample,file = paste("Risksample/possample_",i,".Rdata",sep=""))
-      save(neg_split,file = paste("Risksample/negsample_",i,".Rdata",sep=""))
     }
-  }else{
-    for(i in 1:chunks){
-      splitsample<-as.data.frame(risksplit[i])
-      save(splitsample,file = paste("Risksample/risksample_",i,".Rdata",sep=""))
-    }
-  }
   } else {
     risksample$split<-(rep(1:chunks,times=round(length(risksample$VBD)/chunks)))
     risksample<-risksample %>% filter(risksample$life_expectancy>=50)
+    
+      negsample<-risksample %>% filter(risksample$cancer==0)
+      save(negsample,file = paste("Risksample/negsample.Rdata",sep=""))
+      risksample<-risksample %>% filter(risksample$cancer==1)}
     risksplit<-split(risksample,risksample$split)
     
     rm(risksample,risk_mat)
     
     #Save risk sample in chunks
-    if (SEPARATE_SAMPLES){
       for(i in 1:chunks){
         cancer_col <- paste("X",i,".cancer",sep="") %>% as.name()
         splitsample <- risksplit[i] %>% as.data.frame() %>% filter(!!cancer_col==1) # We give this the same name as the merged sample to avoid extraneous if statements in the simulation script
-        neg_split <- risksplit[i] %>% as.data.frame() %>% filter(!!cancer_col==0)
         save(splitsample,file = paste("Risksample/possample_",i,".Rdata",sep=""))
-        save(neg_split,file = paste("Risksample/negsample_",i,".Rdata",sep=""))
-      }
-    }else{
-      for(i in 1:chunks){
-        splitsample<-as.data.frame(risksplit[i])
-        save(splitsample,file = paste("Risksample/risksample_",i,".Rdata",sep=""))
-      }
     }
-    
-  }
+  
 }
 cmp_create_sample<-cmpfun(create_sample)
 
@@ -326,7 +308,7 @@ cmp_create_sample<-cmpfun(create_sample)
 create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   
   #Import synthetic dataset derived from PROCAS2 study
-  risk_mat<-read.csv("synthetic_risk_data_with_misclassification.csv")[,2:7] %>%
+  risk_mat<-read.csv("Data/synthetic_risk_data_with_misclassification.csv")[,2:7] %>%
     dplyr::select(!syn.Age)
   colnames(risk_mat)<-c("VBD",
                         "tenyrrisk_est",
@@ -336,17 +318,6 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   
   #Creat column for risk group to be entered
   risk_mat$risk_group<-numeric(length(risk_mat$VBD))
-  
-  #Assign women to risk groups based on 10yr risk if using risk-stratified approach  
-  if(screen_strategy==1 | screen_strategy==9) {
-    risk_mat$risk_group<-1+findInterval(risk_mat$tenyrrisk_est,risk_cutoffs_procas)
-  } else
-    if(screen_strategy==2) {
-      risk_maat$risk_group<-1+findInterval(risk_mat$tenyrrisk_est,risk_cutoffs_tert)
-    } else
-      if(screen_strategy==7 | screen_strategy==8) {
-        risk_mat$risk_group<-ifelse(risk_mat$tenyrrisk_est<low_risk_cut,1,2)
-      }  
   
   #Set VDG based on breast density
   risk_mat$VDG<-1+findInterval(risk_mat[,1],VDG_interval)
@@ -363,13 +334,13 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   
   #If risk-stratified screening used then determine if each woman chooses to have
   #risk predicted, attends risk consultation, and changes interval
-  if(screen_strategy==1 | screen_strategy==2 | (screen_strategy>6 & screen_strategy<10)){
+  
     risksample$risk_predicted<-rbinom(length(risksample$VBD),1,risk_uptake)
     risksample$feedback<-ifelse(risksample$risk_predicted==1 & 
                                   rbinom(length(risksample$VBD),1,(risk_feedback))==1,1,0)
     risksample$interval_change<-ifelse(risksample$feedback==1 & 
                                          rbinom(length(risksample$VBD),1,risk_feedback)==1,1,0)
-  }
+  
   ###Preload incidence, mortality and clinical detection times
   risksample$life_expectancy<- rweibull(n = length(risksample$life_expectancy),
                                         shape = acmmortality_wb_a, 
@@ -379,7 +350,9 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
                                                           min = pweibull(q = start_age,shape = acmmortality_wb_a,scale = acmmortality_wb_b),
                                                           max = 1),
                                               shape = acmmortality_wb_a, scale = acmmortality_wb_b),risksample$life_expectancy)
-  
+  risksample$life_expectancy<-ifelse(risksample$life_expectancy>=rep(100,length=length(risksample$life_expectancy)),
+                                     100,
+                                     risksample$life_expectancy)
   #Determine if a cancer will develop
   risksample$cancer<-ifelse(dqrunif(length(risksample$cancer),0,1)
                             <(risksample$liferisk_true/100),1,0)
@@ -603,49 +576,36 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
     #Split the dataframe into chunks for easier computation
     masterframe$split<-(rep(1:chunks,times=round(length(masterframe$VBD)/chunks)))
     masterframe<-masterframe %>% filter(masterframe$life_expectancy>=50)
+    
+      negsample<-masterframe %>% filter(masterframe$cancer==0)
+      save(negsample,file = paste("Risksamplewithmisclass/negsample.Rdata",sep=""))
     risksplit<-split(masterframe,masterframe$split)
     
     #Clean up redundant inputs
     rm(masterframe,risksample,PSA_all_p,risk_mat)
     
     #Save risk sample in chunks
-    if (SEPARATE_SAMPLES){
       for(i in 1:chunks){
         cancer_col <- paste("X",i,".cancer",sep="") %>% as.name()
         splitsample <- risksplit[i] %>% as.data.frame() %>% filter(!!cancer_col==1) # We give this the same name as the merged sample to avoid extraneous if statements in the simulation script
-        neg_split <- risksplit[i] %>% as.data.frame() %>% filter(!!cancer_col==0)
         save(splitsample,file = paste("Risksamplewithmisclass/possample_",i,".Rdata",sep=""))
-        save(neg_split,file = paste("Risksamplewithmisclass/negsample_",i,".Rdata",sep=""))
       }
-    }else{
-      for(i in 1:chunks){
-        splitsample<-as.data.frame(risksplit[i])
-        save(splitsample,file = paste("Risksamplewithmisclass/risksample_",i,".Rdata",sep=""))
-      }
-    }
   } else {
     risksample$split<-(rep(1:chunks,times=round(length(risksample$VBD)/chunks)))
     risksample<-risksample %>% filter(risksample$life_expectancy>=50)
+    
+      negsample<-risksample %>% filter(risksample$cancer==0)
+      save(negsample,file = paste("Risksamplewithmisclass/negsample.Rdata",sep=""))
     risksplit<-split(risksample,risksample$split)
     
     rm(risksample,risk_mat)
     
     #Save risk sample in chunks
-    if (SEPARATE_SAMPLES){
       for(i in 1:chunks){
         cancer_col <- paste("X",i,".cancer",sep="") %>% as.name()
         splitsample <- risksplit[i] %>% as.data.frame() %>% filter(!!cancer_col==1) # We give this the same name as the merged sample to avoid extraneous if statements in the simulation script
-        neg_split <- risksplit[i] %>% as.data.frame() %>% filter(!!cancer_col==0)
         save(splitsample,file = paste("Risksamplewithmisclass/possample_",i,".Rdata",sep=""))
-        save(neg_split,file = paste("Risksamplewithmisclass/negsample_",i,".Rdata",sep=""))
       }
-    }else{
-      for(i in 1:chunks){
-        splitsample<-as.data.frame(risksplit[i])
-        save(splitsample,file = paste("Risksamplewithmisclass/risksample_",i,".Rdata",sep=""))
-      }
-    }
-    
   }
 }
 
