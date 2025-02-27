@@ -644,10 +644,7 @@ for (ii in 1:chunks) {
           #The detection age is either the age at clinical detection 
           #or a formula is applied to determine the age at screen 
           #detection
-          if(ca_incidence_i[2] ==1){CD_age <- ca_incidence_i[1]} else{
-            CD_age <- ca_incidence_i[1] + ((log((Vm/Vc)^0.25-1)-
-                                              log((Vm/((4/3)*pi*(ca_incidence_i[4]/2)^3))^0.25-1))/(0.25*grow_rate_i)) - 
-            ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(ca_incidence_i[3]/2)^3))^0.25-1))/(0.25*grow_rate_i))}
+          CD_age <- ca_incidence_i[1]
           cancer_diagnostic[8] <- c(CD_age)
           
           #Calculate tumour genesis age
