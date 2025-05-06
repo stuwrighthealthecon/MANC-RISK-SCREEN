@@ -45,10 +45,6 @@ output_df[,"ICER"]<-c(output_df$incCost/output_df$incQALYS)
 output_df[,"NB20k"]<-c((output_df$incQALYS*20000)-output_df$incCost)
 output_df[,"NB30k"]<-c((output_df$incQALYS*30000)-output_df$incCost)
 
-alldata %>%
-  group_by(alternative,Cancer) %>%
-  summarise(Mean=mean(`Death Age`))
-
 #Plot CEP for strategies
 icer_strat<-calculate_icers(cost=output_df$cost,
                             effect=output_df$qaly,
