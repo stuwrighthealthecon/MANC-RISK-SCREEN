@@ -41,8 +41,9 @@ negsample<-data.frame("risk_group"=negsample$risk_group,
                       "feedback"=negsample$feedback,
                       "interval_change"=negsample$interval_change,
                       "life_expectancy"=negsample$life_expectancy,
-                      "cost_screen"=negsample$PSA_costscreen,
-                      "cost_strat"=negsample$PSA_cost_strat)
+                      "cost_screen"=ifelse(PSA==1,negsample$PSA_costscreen,c(cost_screen)),
+                      "cost_strat"=ifelse(PSA==1,negsample$PSA_cost_strat,c(cost_strat)))
+
 
 negsample$risk_group<-negsample$risk_group*negsample$interval_change
 
@@ -177,8 +178,8 @@ save(results,file = paste(det_output_path,
                         "feedback"=negsample$feedback,
                         "interval_change"=negsample$interval_change,
                         "life_expectancy"=negsample$life_expectancy,
-                        "cost_screen"=negsample$PSA_costscreen,
-                        "cost_strat"=negsample$PSA_cost_strat)
+                        "cost_screen"=ifelse(PSA==1,negsample$PSA_costscreen,c(cost_screen)),
+                        "cost_strat"=ifelse(PSA==1,negsample$PSA_cost_strat,c(cost_strat)))
 
 #Set screen times
 if(screen_strategy==3){
@@ -289,8 +290,8 @@ save(results,file = paste(det_output_path,
                         "feedback"=negsample$feedback,
                         "interval_change"=negsample$interval_change,
                         "life_expectancy"=negsample$life_expectancy,
-                        "cost_screen"=negsample$PSA_costscreen,
-                        "cost_strat"=negsample$PSA_cost_strat)
+                        "cost_screen"=ifelse(PSA==1,negsample$PSA_costscreen,c(cost_screen)),
+                        "cost_strat"=ifelse(PSA==1,negsample$PSA_cost_strat,c(cost_strat)))
   
     negsample$screencost<-rep(0,length=nrow(negsample))
     negsample$total_screens<-rep(0,length=nrow(negsample))

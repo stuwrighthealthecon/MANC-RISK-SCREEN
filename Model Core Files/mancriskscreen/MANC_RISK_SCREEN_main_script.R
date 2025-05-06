@@ -70,11 +70,11 @@ supplemental_screening<-0
 gensample<-1
 
 #Deterministic (0) or Probabilistic Analysis (1)
-PSA=1
+PSA=0
 
 #Standard (0) or wide (1) distributions for PSA
 #Wide intervals recommended for generating data to predict GAM model
-intervals=1
+intervals=0
 
 #Set working directory
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
@@ -82,10 +82,10 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 #Set loop numbers
 chunks<-10 #Number of chunks to split inum into for faster running time
 expected_prev <- .12
-desired_cases <- 10
+desired_cases <- 100000
 inum <- ceiling((desired_cases / expected_prev)) #Individual women to be sampled to give desired number of positive cancer cases
 inum <- chunks * ceiling(inum / chunks) # Make sure number of women is divisible by number of chunks
-mcruns<-100 #Monte Carlo runs used if PSA switched on
+mcruns<-1 #Monte Carlo runs used if PSA switched on
 seed<-set.seed(1) #Set seed for random draws
 
 #Register number of cores for foreach loop
