@@ -79,7 +79,7 @@ summary(modQ)
 
 #Slim down QALY GAM and save
 modQ[2:43]<-NULL
-saveRDS(modQ,file="GAM models/QALYmodelslim.RDS")
+saveRDS(modQ,file="QALYmodelslim.RDS")
 
 #Re-load full PSA results
 load(paste("PSA results/PSA_psaresults",".Rdata",sep = ""))
@@ -115,4 +115,4 @@ summary(modC)
 
 #Slim down cost GAM and save
 modC[2:43]<-NULL
-saveRDS(modC,file="GAM models/costmodelslim.RDS")
+saveRDS(modC,file="costmodelslim.RDS")
