@@ -70,30 +70,10 @@ Incidence_function <- function(risk_data){
   #First determine if screen detected or clinical detected in current data 
   detect_mode <- 1 #Clinically detected
   
-  #Assign a proportion of cancers to be clnically detected
-  if (incidence_time <= screen_endage & incidence_time >= screen_startage & dqrunif(1,0,1)<prop_screen_detected){detect_mode <- 0} #screen detected
-  
   #Determine size at detection - as number of tumour doublings in diameter from a 0.25mm diameter
   clin_detect_size_g <- risk_data$clinical_detect_size
   clin_detect_size_g <- start_size*2^clin_detect_size_g
   ca_size_incidence <- clin_detect_size_g
-  if(detect_mode == 0){
-    screen_detect_size_g <- dqrnorm(n = 1,mean = screen_detection_m,sd = screen_detection_sd)
-    screen_detect_size_g[screen_detect_size_g < 3.5] <- 3.5 # to prevent unrealistic left tail
-    screen_detect_size_g[screen_detect_size_g >= 9] <- 8.99 # to prevent unrealistic right tail
-    screen_doubles <- screen_detect_size_g #size as number of doublings
-    screen_detect_size_g <- start_size*2^screen_detect_size_g 
-    ca_size_incidence <- screen_detect_size_g
-    
-    #Generate a valid potential clinical detection time - i.e. after screen detection
-    if(clin_detect_size_g< screen_detect_size_g){
-      clin_detect_size_g <- qnorm(dqrunif(n = 1,min = pnorm(
-        screen_doubles,clin_detection_m,clin_detection_sd),max = 1),
-        mean = clin_detection_m,sd = clin_detection_sd)
-      clin_detect_size_g[clin_detect_size_g >= 9] <- 8.999 # To prevent unrealistic right tail
-      clin_detect_size_g <- start_size*2^clin_detect_size_g
-    }
-  }
   
   result<-c(incidence_time,detect_mode,ca_size_incidence, clin_detect_size_g)
   return(result)
@@ -138,30 +118,10 @@ Adjusted_incidence_function <- function(risk_data,
   #First determine if screen detected or clinical detected in current data 
   detect_mode <- 1 #Clinically detected
   
-  #Assign a proportion of cancers to be clnically detected
-  if (incidence_time <= screen_endage & incidence_time >= screen_startage & dqrunif(1,0,1)<prop_screen_detected){detect_mode <- 0} #screen detected
-  
   #Determine size at detection - as number of tumour doublings in diameter from a 0.25mm diameter
   clin_detect_size_g <- risk_data$clinical_detect_size
   clin_detect_size_g <- start_size*2^clin_detect_size_g
   ca_size_incidence <- clin_detect_size_g
-  if(detect_mode == 0){
-    screen_detect_size_g <- dqrnorm(n = 1,mean = screen_detection_m,sd = screen_detection_sd)
-    screen_detect_size_g[screen_detect_size_g < 3.5] <- 3.5 # to prevent unrealistic left tail
-    screen_detect_size_g[screen_detect_size_g >= 9] <- 8.99 # to prevent unrealistic right tail
-    screen_doubles <- screen_detect_size_g #size as number of doublings
-    screen_detect_size_g <- start_size*2^screen_detect_size_g 
-    ca_size_incidence <- screen_detect_size_g
-    
-    #Generate a valid potential clinical detection time - i.e. after screen detection
-    if(clin_detect_size_g< screen_detect_size_g){
-      clin_detect_size_g <- qnorm(dqrunif(n = 1,min = pnorm(
-        screen_doubles,clin_detection_m,clin_detection_sd),max = 1),
-        mean = clin_detection_m,sd = clin_detection_sd)
-      clin_detect_size_g[clin_detect_size_g >= 9] <- 8.999 # To prevent unrealistic right tail
-      clin_detect_size_g <- start_size*2^clin_detect_size_g
-    }
-  }
   
   result<-c(incidence_time,
             detect_mode,
@@ -178,36 +138,16 @@ Drug_adj_incidence_function <- function(risk_data, drug_mortality){
   #Sample an incidence time (based on vector of probabilities of getting cancer at age t conditional on getting cancer and surviving to age t)
   incidence_time_1 <- sample(x = drug_mortality[,1][start_age:101],size = 1,prob = drug_mortality[,2][start_age:101])
   
+  #Placeholder
+  detect_mode==1
+  
   #Add within year time (i.e. months)
   incidence_time <- incidence_time_1+ dqrunif(1,0,1)
-  
-  #First determine if screen detected or clinical detected in current data 
-  detect_mode <- 1 #Clinically detected
-  
-  #Assign a proportion of cancers to be clnically detected
-  if (incidence_time <= screen_endage & incidence_time >= screen_startage & dqrunif(1,0,1)<prop_screen_detected){detect_mode <- 0} #screen detected
   
   #Determine size at detection - as number of tumour doublings in diameter from a 0.25mm diameter
   clin_detect_size_g <- risk_data$clinical_detect_size
   clin_detect_size_g <- start_size*2^clin_detect_size_g
   ca_size_incidence <- clin_detect_size_g
-  if(detect_mode == 0){
-    screen_detect_size_g <- dqrnorm(n = 1,mean = screen_detection_m,sd = screen_detection_sd)
-    screen_detect_size_g[screen_detect_size_g < 3.5] <- 3.5 # to prevent unrealistic left tail
-    screen_detect_size_g[screen_detect_size_g >= 9] <- 8.99 # to prevent unrealistic right tail
-    screen_doubles <- screen_detect_size_g #size as number of doublings
-    screen_detect_size_g <- start_size*2^screen_detect_size_g 
-    ca_size_incidence <- screen_detect_size_g
-    
-    #Generate a valid potential clinical detection time - i.e. after screen detection
-    if(clin_detect_size_g< screen_detect_size_g){
-      clin_detect_size_g <- qnorm(dqrunif(n = 1,min = pnorm(
-        screen_doubles,clin_detection_m,clin_detection_sd),max = 1),
-        mean = clin_detection_m,sd = clin_detection_sd)
-      clin_detect_size_g[clin_detect_size_g >= 9] <- 8.999 # To prevent unrealistic right tail
-      clin_detect_size_g <- start_size*2^clin_detect_size_g
-    }
-  }
   
   result<-c(incidence_time,detect_mode,ca_size_incidence, clin_detect_size_g)
   return(result)
@@ -333,7 +273,6 @@ cmp_ca_survival_time<-cmpfun(Ca_survival_time)
 ###################################QALY Counter##########################
 QALY_counter<-function(Mort_age,incidence_age_record,stage_cat){
   
-  
   #QALY counter
   #Set up a QALY vector of length equal to life years
   QALY_length <- ceiling(Mort_age)-(screen_startage-1)
@@ -346,7 +285,7 @@ QALY_counter<-function(Mort_age,incidence_age_record,stage_cat){
   
   #Fill QALY vector with discounted age related utility values
   for (y in 1:length(QALY_vect)){
-    QALY_vect[y] <- (utility_ages[match((ceiling(((screen_startage-1)+y)/5)*5),utility_ages[,1]),2])*(1/(1+discount_health)^(y-0.5))
+    QALY_vect[y] <- (utility_ages[match((ceiling((screen_startage-1)+y)),utility_ages[,1]),2])*(1/(1+discount_health)^(y-0.5))
     QALY_vect[QALY_length]<-QALY_vect[QALY_length]*(1-(ceiling(Mort_age)-Mort_age))
   }
   

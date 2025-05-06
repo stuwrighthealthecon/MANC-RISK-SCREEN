@@ -1,6 +1,6 @@
 ##############################Function for estaimating outcomes for non-cancer############
 
-negsamplefn<-function(screen_strategy,MISCLASS){
+negsamplefn<-function(screen_strategy,MISCLASS,PSA=0){
   
 #Load appropriate data
   if(MISCLASS){
@@ -40,7 +40,9 @@ negsample<-data.frame("risk_group"=negsample$risk_group,
                       "risk_predicted"=negsample$risk_predicted,
                       "feedback"=negsample$feedback,
                       "interval_change"=negsample$interval_change,
-                      "life_expectancy"=negsample$life_expectancy)
+                      "life_expectancy"=negsample$life_expectancy,
+                      "cost_screen"=negsample$PSA_costscreen,
+                      "cost_strat"=negsample$PSA_cost_strat)
 
 negsample$risk_group<-negsample$risk_group*negsample$interval_change
 
@@ -93,7 +95,7 @@ negsample$total_screens<-rowSums(negsample[8:length(negsample[1,])])
 
 #Calculate screening cost
 for (i in 1:length(screen_times)){
-  negsample[,7+i]<-negsample[,7+i]*(cost_screen*((1/((1+discount_cost)^(screen_times[i]-screen_startage-0.5)))))
+  negsample[,7+i]<-negsample[,7+i]*(negsample$cost_screen*((1/((1+discount_cost)^(screen_times[i]-screen_startage-0.5)))))
 }
 
 negsample <- negsample %>%
@@ -103,7 +105,7 @@ negsample <- negsample %>%
   })
 
 negsample$screencost<-rowSums(negsample[8:length(negsample[1,])])
-negsample$riskcost<-rep(cost_strat,length=nrow(negsample))*
+negsample$riskcost<-rep(negsample$cost_strat,length=nrow(negsample))*
   ((1/((1+discount_cost)^((screen_times[negsample$first_case]-rep(screen_startage-0.5,length(nrow(negsample))))))))
 negsample$screencost<-negsample$screencost+negsample$riskcost
 
@@ -115,7 +117,7 @@ qalylookup<-data.frame("age"=seq(from=screen_startage,to=100,by=1),
 
 #Fill in utility values for each age with discounting
 for (i in 1:length(qalylookup$qalyweight)){
-  qalylookup$qalyweight[i]<-utility_ages[match((ceiling(((screen_startage-1)+i)/5)*5),utility_ages[,1]),2]*(1/(1+discount_health)^(i-0.5))
+  qalylookup$qalyweight[i]<-utility_ages[match((ceiling((screen_startage-1)+i)),utility_ages[,1]),2]*(1/(1+discount_health)^(i-0.5))
 }
 
 #Calculate cumulative QALYs for round ages
@@ -174,7 +176,9 @@ save(results,file = paste(det_output_path,
                         "risk_predicted"=negsample$risk_predicted,
                         "feedback"=negsample$feedback,
                         "interval_change"=negsample$interval_change,
-                        "life_expectancy"=negsample$life_expectancy)
+                        "life_expectancy"=negsample$life_expectancy,
+                        "cost_screen"=negsample$PSA_costscreen,
+                        "cost_strat"=negsample$PSA_cost_strat)
 
 #Set screen times
 if(screen_strategy==3){
@@ -215,7 +219,7 @@ negsample$total_screens<-rowSums(negsample[8:length(negsample[1,])])
 
 #Calculate screening cost
 for (i in 1:length(screen_times)){
-  negsample[,7+i]<-negsample[,7+i]*(cost_screen*((1/((1+discount_cost)^(screen_times[i]-screen_startage-0.5)))))
+  negsample[,7+i]<-negsample[,7+i]*(negsample$cost_screen*((1/((1+discount_cost)^(screen_times[i]-screen_startage-0.5)))))
 }
 negsample$screencost<-rowSums(negsample[8:length(negsample[1,])])
 
@@ -228,7 +232,7 @@ qalylookup<-data.frame("age"=seq(from=screen_startage,to=100,by=1),
 
 #Fill in utility values for each age with discounting
 for (i in 1:length(qalylookup$qalyweight)){
-  qalylookup$qalyweight[i]<-utility_ages[match((ceiling(((screen_startage-1)+i)/5)*5),utility_ages[,1]),2]*(1/(1+discount_health)^(i-0.5))
+  qalylookup$qalyweight[i]<-utility_ages[match((ceiling((screen_startage-1)+i)),utility_ages[,1]),2]*(1/(1+discount_health)^(i-0.5))
 }
 
 #Calculate cumulative QALYs for round ages
@@ -284,7 +288,9 @@ save(results,file = paste(det_output_path,
                         "risk_predicted"=negsample$risk_predicted,
                         "feedback"=negsample$feedback,
                         "interval_change"=negsample$interval_change,
-                        "life_expectancy"=negsample$life_expectancy)
+                        "life_expectancy"=negsample$life_expectancy,
+                        "cost_screen"=negsample$PSA_costscreen,
+                        "cost_strat"=negsample$PSA_cost_strat)
   
     negsample$screencost<-rep(0,length=nrow(negsample))
     negsample$total_screens<-rep(0,length=nrow(negsample))
@@ -297,7 +303,7 @@ save(results,file = paste(det_output_path,
     
     #Fill in utility values for each age with discounting
     for (i in 1:length(qalylookup$qalyweight)){
-      qalylookup$qalyweight[i]<-utility_ages[match((ceiling(((screen_startage-1)+i)/5)*5),utility_ages[,1]),2]*(1/(1+discount_health)^(i-0.5))
+      qalylookup$qalyweight[i]<-utility_ages[match((ceiling((screen_startage-1)+i)),utility_ages[,1]),2]*(1/(1+discount_health)^(i-0.5))
     }
     
     #Calculate cumulative QALYs for round ages
