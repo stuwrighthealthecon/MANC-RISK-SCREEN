@@ -54,8 +54,8 @@ library("profvis")
   registerDoParallel(cores=numcores)
   
   #Load file containing required functions for the model
-  source(file="MANC_RISK_SCREEN_functions.R")
-  source(file="risksample function.R")
+  source(file="Functions/MANC_RISK_SCREEN_functions.R")
+  source(file="Functions/risksample function.R")
   
   #################################Define baseline parameters####################
   

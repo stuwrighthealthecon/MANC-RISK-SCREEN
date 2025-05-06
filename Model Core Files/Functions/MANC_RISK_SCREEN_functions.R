@@ -4,7 +4,6 @@ fnLookupBase <- function(iStage, iAge, iLE) {
   as.numeric(tblLookup$CDCost.p.i.d[tblLookup$Stage==iStage & tblLookup$Age==iAge & tblLookup$Yr==iLE])
 }
 
-
 ############################Set Screen Times####################################
 set_screen_times<-function(risk_data,screen_strategy){
 screen_times <- c(999)
@@ -45,27 +44,19 @@ if(screen_strategy==9 & risk_data$interval_change==1){
         if (risk_data$risk_group==5) {screen_times<-high_risk_screentimes}
 } else if(screen_strategy==9 & risk_data$interval_change==0) {screen_times<-low_risk_screentimes}
 
-att_screen_times<-vector(length=length(screen_times))
-att_screen_times[1]<-rbinom(1,1, uptakefirstscreen)
-for (i in 2:length(att_screen_times)){
-  att_screen_times[i]<-if(sum(att_screen_times[1:i-1])>0){rbinom(1,1,uptakeotherscreen)}else{
-    rbinom(1,1,uptakenoscreen)}
-  }
-
 att_screen_times<-rep(0,length(screen_times))
 att_screen_times[1]<-rbinom(1,1, uptakefirstscreen)
 for (i in 2:length(att_screen_times)){
-  att_screen_times[i]<-if(sum(att_screen_times[1:i-1])>0){rbinom(1,1,uptakeotherscreen)}else{
+  att_screen_times[i]<-if(sum(att_screen_times[1:(i-1)])>0){rbinom(1,1,uptakeotherscreen)}else{
     rbinom(1,1,uptakenoscreen)}
 }
 
 screen_times<-att_screen_times*screen_times
-screen_times<-screen_times[!att_screen_times==0]
+screen_times<-screen_times[!screen_times==0]
 
 return(screen_times)
 }
 cmp_set_screen_times<-cmpfun(set_screen_times)
-
 
 ############Function for determining when a cancer occurs#######################
 Incidence_function <- function(risk_data){
@@ -249,7 +240,6 @@ cmp_stage_by_size<-cmpfun(stage_by_size)
 
 #######################Screening test results simulation##########################
 
-
 #Inputs are tumour diameter, VDG, MRI_screening(0/1), US_screening(0/1) 
 screening_result <- function(Ca_size,VDG,MRI_screening,US_screening){
   
@@ -325,8 +315,6 @@ Ca_survival_time <- function(stage_cat, Mort_age,age,ca_incidence_age){
     if (age >=55 && age <75){age_cat_M <- 2}
     if (age >= 75){age_cat_M <- 3}
     survival_time <- -(log(dqrunif(1,0,1))/metastatic_survival[age_cat_M])
-    #Check lifetime does not exceed horizon and set to less than 100 if it does
-    if (ca_incidence_age+survival_time >=100){survival_time <- time_horizon - ca_incidence_age}
   }
   
   #Assign survival for DCIS i.e. no effect
@@ -345,6 +333,7 @@ cmp_ca_survival_time<-cmpfun(Ca_survival_time)
 ###################################QALY Counter##########################
 QALY_counter<-function(Mort_age,incidence_age_record,stage_cat){
   
+  
   #QALY counter
   #Set up a QALY vector of length equal to life years
   QALY_length <- ceiling(Mort_age)-(screen_startage-1)
@@ -352,17 +341,15 @@ QALY_counter<-function(Mort_age,incidence_age_record,stage_cat){
   #If less than 1 life year lived, set length to 1
   if(QALY_length<1){QALY_length <-1}
   
-  #Ensure people don't live past end of time horizon 
-  if(QALY_length>time_horizon-screen_startage){QALY_length <-time_horizon-screen_startage}
-  
   #Fill QALY vector with 0's
   QALY_vect <- rep(0,QALY_length)
   
   #Fill QALY vector with discounted age related utility values
   for (y in 1:length(QALY_vect)){
-    QALY_vect[y] <- (utility_ages[match((ceiling(((screen_startage-1)+y)/5)*5),utility_ages[,1]),2])*(1/(1+discount_health)^y)
+    QALY_vect[y] <- (utility_ages[match((ceiling(((screen_startage-1)+y)/5)*5),utility_ages[,1]),2])*(1/(1+discount_health)^(y-0.5))
     QALY_vect[QALY_length]<-QALY_vect[QALY_length]*(1-(ceiling(Mort_age)-Mort_age))
   }
+  
   #If cancer occurs then fill QALY vector with discounted cancer utilities from incidence age
   #NB this code accounts for partial years spent in different health states
   if (incidence_age_record > 0){
