@@ -13,10 +13,10 @@ PSA_beta1<-c(1.47,0.1)
 PSA_beta2<-c(6.51,0.5)
 
 #Sensitivity by VDG group
-PSA_Sen_VDG1<-c(96,16)
-PSA_Sen_VDG2<-c(298,86)
-PSA_Sen_VDG3<-c(212,93)
-PSA_Sen_VDG4<-c(61,39)
+PSA_Sen_VDG1<-c(48,16)
+PSA_Sen_VDG2<-c(208,75)
+PSA_Sen_VDG3<-c(113,76)
+PSA_Sen_VDG4<-c(40,38)
 Sen_VDG_av<- 0.757
 
 #Draw supplemental Screening CDRs
@@ -45,8 +45,8 @@ PSA_uptake_1<-c(.71, .1)
 PSA_uptake_2<-c(.71, .1)
 
 #Draw costs
-PSA_cost_strat<-c(2.13387381,0.06349671)
-cost_inflator<-0.1
+PSA_cost_strat<-c(7.40,0.06349671)
+cost_inflator<-0.2
 cost_dist_sd<-(cost_inflator/1.96)^2
 PSA_costvar<-c(0,cost_dist_sd)
 PSA_costscreen<-c(0,cost_dist_sd)
