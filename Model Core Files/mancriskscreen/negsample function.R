@@ -96,7 +96,10 @@ negsample$total_screens<-rowSums(negsample[8:length(negsample[1,])])
 
 #Calculate screening cost
 for (i in 1:length(screen_times)){
-  negsample[,7+i]<-negsample[,7+i]*(negsample$cost_screen*((1/((1+discount_cost)^(screen_times[i]-screen_startage-0.5)))))
+  negsample[,7+i]<-negsample[,7+i]*(negsample$cost_screen+
+                                      (recall_rate*cost_follow_up)+
+                                      (recall_rate*biopsy_rate*cost_biop)*
+                                      ((1/((1+discount_cost)^(screen_times[i]-screen_startage-0.5)))))
 }
 
 negsample <- negsample %>%
@@ -220,7 +223,10 @@ negsample$total_screens<-rowSums(negsample[8:length(negsample[1,])])
 
 #Calculate screening cost
 for (i in 1:length(screen_times)){
-  negsample[,7+i]<-negsample[,7+i]*(negsample$cost_screen*((1/((1+discount_cost)^(screen_times[i]-screen_startage-0.5)))))
+  negsample[,7+i]<-negsample[,7+i]*(negsample$cost_screen+
+                                      (recall_rate*cost_follow_up)+
+                                      (recall_rate*biopsy_rate*cost_biop)*
+                                      ((1/((1+discount_cost)^(screen_times[i]-screen_startage-0.5)))))
 }
 negsample$screencost<-rowSums(negsample[8:length(negsample[1,])])
 
