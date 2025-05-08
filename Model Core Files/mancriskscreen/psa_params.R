@@ -1,7 +1,7 @@
 #Stage I to III survival parameters
-survmvn<-data.frame(c(-5.46208,-5.2077,-5.8016),
-                    c(-3.8163,-3.75901,-3.8811),
-                    c(-2.72264,-2.66053,-2.78617))
+survmvn<-data.frame(c(-5.6178,-5.2857,-6.1138),
+                    c(-3.8083,-3.7400,-3.8704),
+                    c(-2.7311,-2.6687,-2.7963))
 survcovmat<-cov(survmvn)
 survmeans<-c(survmvn[1,1],survmvn[1,2],survmvn[1,3])
 
@@ -17,10 +17,10 @@ PSA_beta1<-c(1.47,0.1)
 PSA_beta2<-c(6.51,0.5)
 
 #Sensitivity by VDG group
-PSA_Sen_VDG1<-c(96,16)
-PSA_Sen_VDG2<-c(298,86)
-PSA_Sen_VDG3<-c(212,93)
-PSA_Sen_VDG4<-c(61,39)
+PSA_Sen_VDG1<-c(48,16)
+PSA_Sen_VDG2<-c(208,75)
+PSA_Sen_VDG3<-c(113,76)
+PSA_Sen_VDG4<-c(40,38)
 Sen_VDG_av<- 0.757
 
 #Draw supplemental Screening CDRs
