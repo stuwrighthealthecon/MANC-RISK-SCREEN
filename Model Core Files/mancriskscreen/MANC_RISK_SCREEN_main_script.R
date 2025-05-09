@@ -127,13 +127,13 @@ for (ii in 1:chunks) {
     
     #Assign women to risk groups based on 10yr risk if using risk-stratified approach  
     if(screen_strategy==1 | screen_strategy==9) {
-      splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk_true,risk_cutoffs_procas)
+      splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk_est,risk_cutoffs_procas)
     } else
       if(screen_strategy==2) {
-        splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk_true,risk_cutoffs_tert)
+        splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk_est,risk_cutoffs_tert)
       } else
         if(screen_strategy==7 | screen_strategy==8) {
-          splitsample$risk_group<-ifelse(splitsample$tenyrrisk_true<low_risk_cut,1,2)
+          splitsample$risk_group<-ifelse(splitsample$tenyrrisk_est<low_risk_cut,1,2)
         } }else{
           if(screen_strategy==1 | screen_strategy==9) {
             splitsample$risk_group<-1+findInterval(splitsample$tenyrrisk,risk_cutoffs_procas)
