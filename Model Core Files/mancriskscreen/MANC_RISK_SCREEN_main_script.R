@@ -1,3 +1,15 @@
+controls<-list("strategies"=c(0,1,2,3,4,9), #A vector of strategies to evaluate
+               "gensample"=TRUE, #Whether to generate a new sample to simulate
+               "MISCLASS"=FALSE, #whether to include risk misclassification in analysis
+               "PREVENTATIVE_DRUG"=FALSE,#whether to include chemoprevention in analysis
+               "supplemental_screening"=0, #whether to include supplemental screening
+               "PSA"=FALSE, #whether to conduct a probabilistic sensitivity analysis
+               "intervals"=FALSE, #whether to conduct a PSA with wide intervals for GAM estimations
+               "desired_cases"=10000, #apprximate number of cancer cases required in simulation
+               "chunks"=10, #number of chunks to divide analysis into
+               "mcruns"=1, #number of monte carlo runs in PSA/intervals
+               "numcores"=16) #set number of cores for parallel processing
+               
 DO_INSTALL <- FALSE
 
 if (DO_INSTALL){
@@ -10,8 +22,8 @@ if (DO_INSTALL){
   install.packages("iterators")
 }
 
-MISCLASS <- FALSE # Set to TRUE to include impact of errors in risk prediction in model
-PREVENTATIVE_DRUG <- FALSE # Set to TRUE to simulate preventative drugs
+MISCLASS <- controls$MISCLASS # Set to TRUE to include impact of errors in risk prediction in model
+PREVENTATIVE_DRUG <- controls$PREVENTATIVE_DRUG # Set to TRUE to simulate preventative drugs
 
 # Add specifiers for output files
 det_output_path <- "Deterministic results/"
@@ -59,38 +71,38 @@ tic()
 #5=5 yearly, 6=2 rounds at 50 and 60 (10 yearly), 7=Low risk (5 yearly),
 #8=Low risk (6 yearly),#9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategies<-c(0,1,2,3,4,9)
+screen_strategies<-unlist(controls$screen_strategies)
 for (r in 1:length(screen_strategies)){
 screen_strategy<-screen_strategies[r]
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
-supplemental_screening<-0
+supplemental_screening<-controls$supplemental_screening
 
 #Generate new sample? 1=YES, any other number NO
-gensample<-1
+gensample<-ifelse((controls$gensample==TRUE & r==1),1,0)
 
 #Deterministic (0) or Probabilistic Analysis (1)
-PSA=0
+PSA=ifelse(controls$PSA==TRUE,1,0)
 
 #Standard (0) or wide (1) distributions for PSA
 #Wide intervals recommended for generating data to predict GAM model
-intervals=0
+intervals=ifelse(controls$intervals==TRUE,1,0)
 
 #Set working directory
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Set loop numbers
-chunks<-10 #Number of chunks to split inum into for faster running time
+chunks<-controls$chunks #Number of chunks to split inum into for faster running time
 expected_prev <- .12
-desired_cases <- 300000
+desired_cases <- controls$desired_cases
 inum <- ceiling((desired_cases / expected_prev)) #Individual women to be sampled to give desired number of positive cancer cases
 inum <- chunks * ceiling(inum / chunks) # Make sure number of women is divisible by number of chunks
-mcruns<-1 #Monte Carlo runs used if PSA switched on
-seed<-set.seed(1) #Set seed for random draws
+mcruns<-controls$mcruns #Monte Carlo runs used if PSA switched on
+seed<-set.seed(controls$seed) #Set seed for random draws
 
 #Register number of cores for foreach loop
 closeAllConnections()
-numcores<-16
+numcores<-controls$numcores
 registerDoParallel(cores=numcores)
 
 #Load file containing required functions for the model
