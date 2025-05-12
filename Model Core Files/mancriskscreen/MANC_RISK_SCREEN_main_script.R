@@ -2,7 +2,6 @@ controls<-list("strategies"=c(0,1,2,3,4,9), #A vector of strategies to evaluate
                "gensample"=TRUE, #Whether to generate a new sample to simulate
                "MISCLASS"=FALSE, #whether to include risk misclassification in analysis
                "PREVENTATIVE_DRUG"=FALSE,#whether to include chemoprevention in analysis
-               "supplemental_screening"=0, #whether to include supplemental screening
                "PSA"=FALSE, #whether to conduct a probabilistic sensitivity analysis
                "intervals"=FALSE, #whether to conduct a PSA with wide intervals for GAM estimations
                "desired_cases"=10000, #apprximate number of cancer cases required in simulation
@@ -71,12 +70,12 @@ tic()
 #5=5 yearly, 6=2 rounds at 50 and 60 (10 yearly), 7=Low risk (5 yearly),
 #8=Low risk (6 yearly),#9=Fully stratified screening programmes
 #Other num=no screening
-screen_strategies<-unlist(controls$screen_strategies)
+screen_strategies<-unlist(controls$strategies)
 for (r in 1:length(screen_strategies)){
 screen_strategy<-screen_strategies[r]
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
-supplemental_screening<-controls$supplemental_screening
+supplemental_screening<-0
 
 #Generate new sample? 1=YES, any other number NO
 gensample<-ifelse((controls$gensample==TRUE & r==1),1,0)
