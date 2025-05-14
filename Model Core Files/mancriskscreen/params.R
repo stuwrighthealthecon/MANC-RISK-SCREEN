@@ -1,3 +1,5 @@
+# Global option for whether to use corrected age-at-detection distribution
+CORRECT_BC_AGE <- TRUE
 
 #Screening uptake
 uptakefirstscreen<-0.625 #Uptake for the first screen
@@ -33,8 +35,22 @@ gamma_survival_2<-exp(-3.808) #Exponential distribution scale parameter stage 2
 gamma_survival_3<-exp(-2.731) #Exponential distribution scale parameter stage 3
 gamma_stage <- c(gamma_survival_1,gamma_survival_2,gamma_survival_3)
 
+# Expected population prevalence for doing Bayes correction
+expected_prev <- .12
+
 #Read in distribution of cancer incidence by age
-Incidence_Mortality<-read.csv("Data/Incidence_Mortality_ONS2.csv")
+Incidence_Mortality <- if (CORRECT_BC_AGE){
+  read.csv("Data/Incidence_Mortality_ONS2.csv") %>%
+  mutate(BC_age =
+           expected_prev * Cond.on.getting.BC..prob.of.getting.cancer.at.age.t /
+           (surv/surv[1])) %>%
+  mutate(BC_age =
+           replace(BC_age,
+                   age == 100,
+                   1-sum(BC_age[1:100])))
+  }else{
+  read.csv("Data/Incidence_Mortality_ONS2.csv") %>%
+    mutate(BC_age = Cond.on.getting.BC..prob.of.getting.cancer.at.age.t)}
 
 #Set metastatic cancer probabilities by age
 metastatic_prob <- data.frame(c(25,35,45,55,65,75,85),
@@ -117,7 +133,7 @@ dropout_sigma <- dropout_ests$Adherence$vcov %>% as.matrix()
 # Fit a Weibull distribution to data in Incidence_Mortality. Drug acts to change scale parameter.
 weibull_fit <- sample(Incidence_Mortality$age,
                       size=100000,
-                      prob=Incidence_Mortality$Cond.on.getting.BC..prob.of.getting.cancer.at.age.t,
+                      prob=Incidence_Mortality$BC_age,
                       replace=TRUE) %>% fitdistr("weibull",lower=c(0,0))
 inc_scale <- weibull_fit$estimate["scale"]
 inc_shape <- weibull_fit$estimate["shape"]
