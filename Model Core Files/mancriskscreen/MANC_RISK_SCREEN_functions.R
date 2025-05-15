@@ -62,7 +62,13 @@ cmp_set_screen_times<-cmpfun(set_screen_times)
 Incidence_function <- function(risk_data){
   
   #Sample an incidence time (based on vector of probabilities of getting cancer at age t conditional on getting cancer and surviving to age t)
-  incidence_time_1 <- sample(x = Incidence_Mortality$age[start_age:101],size = 1,prob = Incidence_Mortality$BC_age[start_age:101])
+  incidence_age_dist <- Incidence_Mortality %>%
+    mutate(BC_age = ifelse(age < risk_data$life_expectancy,
+                           BC_age,
+                           0.)) %>%
+    select(BC_age)
+  incidence_age_dist <- incidence_age_dist / sum(incidence_age_dist)
+  incidence_time_1 <- sample(x = Incidence_Mortality$age[start_age:101],size = 1,prob = incidence_age_dist$BC_age[start_age:101])
   
   #Add within year time (i.e. months)
   incidence_time <- incidence_time_1+ dqrunif(1,0,1)
@@ -108,9 +114,15 @@ Adjusted_incidence_function <- function(risk_data,
   }
   
   #Sample an incidence time (based on vector of probabilities of getting cancer at age t conditional on getting cancer and surviving to age t)
+  incidence_age_dist <- drug_IM %>%
+    mutate(BC_age = ifelse(age < risk_data$life_expectancy,
+                           BC_age,
+                           0.)) %>%
+    select(BC_age)
+  incidence_age_dist <- incidence_age_dist / sum(incidence_age_dist)
   incidence_time_1 <- sample(x = drug_IM$age[start_age:101],
                              size = 1,
-                             prob = drug_IM$BC_age[start_age:101])
+                             prob = incidence_age_dist$BC_age[start_age:101])
   
   #Add within year time (i.e. months)
   incidence_time <- incidence_time_1+ dqrunif(1,0,1)
@@ -136,7 +148,13 @@ cmp_adj_incidence_function<-cmpfun(Adjusted_incidence_function)
 Drug_adj_incidence_function <- function(risk_data, drug_mortality){
   
   #Sample an incidence time (based on vector of probabilities of getting cancer at age t conditional on getting cancer and surviving to age t)
-  incidence_time_1 <- sample(x = drug_mortality$age[start_age:101],size = 1,prob = drug_mortality$BC_age[start_age:101])
+  incidence_age_dist <- drug_mortality %>%
+    mutate(BC_age = ifelse(age < risk_data$life_expectancy,
+                           BC_age,
+                           0.)) %>%
+    select(BC_age)
+  incidence_age_dist <- incidence_age_dist / sum(incidence_age_dist)
+  incidence_time_1 <- sample(x = drug_mortality$age[start_age:101],size = 1,prob = incidence_age_dist$BC_age[start_age:101])
   
   #Placeholder
   detect_mode==1
