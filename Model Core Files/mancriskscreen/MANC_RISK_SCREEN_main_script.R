@@ -1,10 +1,10 @@
-controls<-list("strategies"=c(0,1,2,3,4,9), #A vector of strategies to evaluate
+controls<-list("strategies"=c(3), #A vector of strategies to evaluate
                "gensample"=TRUE, #Whether to generate a new sample to simulate
                "MISCLASS"=FALSE, #whether to include risk misclassification in analysis
                "PREVENTATIVE_DRUG"=FALSE,#whether to include chemoprevention in analysis
                "PSA"=FALSE, #whether to conduct a probabilistic sensitivity analysis
                "intervals"=FALSE, #whether to conduct a PSA with wide intervals for GAM estimations
-               "desired_cases"=100000, #apprximate number of cancer cases required in simulation
+               "desired_cases"=1200000, #apprximate number of cancer cases required in simulation
                "chunks"=10, #number of chunks to divide analysis into
                "mcruns"=1, #number of monte carlo runs in PSA/intervals
                "numcores"=16) #set number of cores for parallel processing
@@ -313,6 +313,7 @@ for (ii in 1:chunks) {
           #or a formula is applied to determine the age at screen 
           #detection
           CD_age <- ca_incidence_i[1]
+          cancer_diagnostic[8]<-CD_age
           
           #Calculate tumour genesis age
           t_gen <- ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(CD_size/2)^3))^0.25-1))/(0.25*grow_rate_i)) #Calculate time to get to clinical detection size
