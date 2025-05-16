@@ -1,10 +1,10 @@
-controls<-list("strategies"=c(0,1,2,3,4,9), #A vector of strategies to evaluate
+controls<-list("strategies"=c(3), #A vector of strategies to evaluate
                "gensample"=TRUE, #Whether to generate a new sample to simulate
                "MISCLASS"=FALSE, #whether to include risk misclassification in analysis
                "PREVENTATIVE_DRUG"=FALSE,#whether to include chemoprevention in analysis
                "PSA"=FALSE, #whether to conduct a probabilistic sensitivity analysis
                "intervals"=FALSE, #whether to conduct a PSA with wide intervals for GAM estimations
-               "desired_cases"=300000, #apprximate number of cancer cases required in simulation
+               "desired_cases"=1200000, #apprximate number of cancer cases required in simulation
                "chunks"=10, #number of chunks to divide analysis into
                "mcruns"=1, #number of monte carlo runs in PSA/intervals
                "numcores"=16) #set number of cores for parallel processing
@@ -313,12 +313,13 @@ for (ii in 1:chunks) {
           #or a formula is applied to determine the age at screen 
           #detection
           CD_age <- ca_incidence_i[1]
+          cancer_diagnostic[8]<-CD_age
           
           #Calculate tumour genesis age
           t_gen <- ((log((Vm/Vc)^0.25-1)-log((Vm/((4/3)*pi*(CD_size/2)^3))^0.25-1))/(0.25*grow_rate_i)) #Calculate time to get to clinical detection size
           gen_age <- CD_age - t_gen
           
-          #If cancer occurs after age of death, re-draw age of death
+          # #If cancer occurs after age of death, re-draw age of death
           if(Mort_age <= CD_age){Mort_age <-qweibull(
             p = dqrunif(n = 1,min = pweibull(
               q = CD_age,shape = acmmortality_wb_a,scale = acmmortality_wb_b),max = 1),
@@ -446,7 +447,7 @@ for (ii in 1:chunks) {
           }         
           
           #Record age of death and stage of cancer
-          cancer_diagnostic[9] <- c(Ca_mort_age)
+          cancer_diagnostic[9] <- min(c(Ca_mort_age), c(Mort_age))
           cancer_diagnostic[2] <- c(stage_cat) 
           
         }else{age <- age + Next_event_time #Update age if no cancer
@@ -502,7 +503,7 @@ for (ii in 1:chunks) {
                risk_data$growth_rate,
                LY_counter,
                cancer_diagnostic[2:3],
-               Ca_mort_age,cancer_diagnostic[10]))}else{
+               min(c(Ca_mort_age), c(Mort_age)),cancer_diagnostic[10]))}else{
         #If PSA then record outputs + monte carlo draws
         return(as.numeric(c(QALY_counter,
                             costs,

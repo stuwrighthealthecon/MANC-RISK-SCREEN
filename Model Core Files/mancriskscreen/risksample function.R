@@ -574,9 +574,9 @@ get_drug_adj_IM <- function(ind_from_risksample,
     new_weibull_scale <- inc_scale / hazard_ratio
     
     
-    drug_IM$Cond.on.getting.BC..prob.of.getting.cancer.at.age.t <- dweibull(Incidence_Mortality$age,
-                                                                            shape=inc_shape,
-                                                                            scale=new_weibull_scale)
+    drug_IM$BC_age <- dweibull(Incidence_Mortality$age,
+                               shape=inc_shape,
+                               scale=new_weibull_scale)
   }
   else{
     time_taking_drug <- 0

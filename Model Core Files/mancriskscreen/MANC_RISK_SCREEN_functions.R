@@ -62,7 +62,13 @@ cmp_set_screen_times<-cmpfun(set_screen_times)
 Incidence_function <- function(risk_data){
   
   #Sample an incidence time (based on vector of probabilities of getting cancer at age t conditional on getting cancer and surviving to age t)
-  incidence_time_1 <- sample(x = Incidence_Mortality[,1][start_age:101],size = 1,prob = Incidence_Mortality[,2][start_age:101])
+  incidence_age_dist <- Incidence_Mortality %>%
+    mutate(BC_age = ifelse(age < risk_data$life_expectancy,
+                           BC_age,
+                           0.)) %>%
+    select(BC_age)
+  incidence_age_dist <- incidence_age_dist / sum(incidence_age_dist)
+  incidence_time_1 <- sample(x = Incidence_Mortality$age[start_age:101],size = 1,prob = incidence_age_dist$BC_age[start_age:101])
   
   #Add within year time (i.e. months)
   incidence_time <- incidence_time_1+ dqrunif(1,0,1)
@@ -99,18 +105,24 @@ Adjusted_incidence_function <- function(risk_data,
     new_weibull_scale <- inc_scale / hazard_ratio
     
     
-    drug_IM$Cond.on.getting.BC..prob.of.getting.cancer.at.age.t <- dweibull(Incidence_Mortality$age,
-                                                                            shape=inc_shape,
-                                                                            scale=new_weibull_scale)
+    drug_IM$BC_age <- dweibull(Incidence_Mortality$age,
+                               shape=inc_shape,
+                               scale=new_weibull_scale)
   }
   else{
     time_taking_drug <- 0
   }
   
   #Sample an incidence time (based on vector of probabilities of getting cancer at age t conditional on getting cancer and surviving to age t)
-  incidence_time_1 <- sample(x = drug_IM[,1][start_age:101],
+  incidence_age_dist <- drug_IM %>%
+    mutate(BC_age = ifelse(age < risk_data$life_expectancy,
+                           BC_age,
+                           0.)) %>%
+    select(BC_age)
+  incidence_age_dist <- incidence_age_dist / sum(incidence_age_dist)
+  incidence_time_1 <- sample(x = drug_IM$age[start_age:101],
                              size = 1,
-                             prob = drug_IM[,2][start_age:101])
+                             prob = incidence_age_dist$BC_age[start_age:101])
   
   #Add within year time (i.e. months)
   incidence_time <- incidence_time_1+ dqrunif(1,0,1)
@@ -136,7 +148,13 @@ cmp_adj_incidence_function<-cmpfun(Adjusted_incidence_function)
 Drug_adj_incidence_function <- function(risk_data, drug_mortality){
   
   #Sample an incidence time (based on vector of probabilities of getting cancer at age t conditional on getting cancer and surviving to age t)
-  incidence_time_1 <- sample(x = drug_mortality[,1][start_age:101],size = 1,prob = drug_mortality[,2][start_age:101])
+  incidence_age_dist <- drug_mortality %>%
+    mutate(BC_age = ifelse(age < risk_data$life_expectancy,
+                           BC_age,
+                           0.)) %>%
+    select(BC_age)
+  incidence_age_dist <- incidence_age_dist / sum(incidence_age_dist)
+  incidence_time_1 <- sample(x = drug_mortality$age[start_age:101],size = 1,prob = incidence_age_dist$BC_age[start_age:101])
   
   #Placeholder
   detect_mode==1
@@ -238,7 +256,7 @@ Ca_survival_time <- function(stage_cat, Mort_age,age,ca_incidence_age){
     
     #Adjust for additional mortality at ages above 65
     if (ca_incidence_age > 65){
-      survival_time <- -(log(x = dqrunif(1,0,1))/((Incidence_Mortality[min((floor(ca_incidence_age)+1),100),5]/Incidence_Mortality[66,5])*gamma_stage[stage_cat]))
+      survival_time <- -(log(x = dqrunif(1,0,1))/((Incidence_Mortality$X10year.mort.prob[min((floor(ca_incidence_age)+1),100)]/Incidence_Mortality$X10year.mort.prob[66])*gamma_stage[stage_cat]))
     }
     
     #Data are for 10-year survival, after 10 years assume that pop mortality rates apply
