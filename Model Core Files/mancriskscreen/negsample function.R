@@ -99,7 +99,7 @@ for (i in 1:length(screen_times)){
   negsample[,7+i]<-negsample[,7+i]*(negsample$cost_screen+
                                       (recall_rate*cost_follow_up)+
                                       (recall_rate*biopsy_rate*cost_biop)*
-                                      ((1/((1+discount_cost)^(screen_times[i]-screen_startage-0.5)))))
+                                      ((1/((1+discount_cost)^(screen_times[i]-screen_startage)))))
 }
 
 negsample <- negsample %>%
@@ -110,7 +110,7 @@ negsample <- negsample %>%
 
 negsample$screencost<-rowSums(negsample[8:length(negsample[1,])])
 negsample$riskcost<-rep(negsample$cost_strat,length=nrow(negsample))*
-  ((1/((1+discount_cost)^((screen_times[negsample$first_case]-rep(screen_startage-0.5,length(nrow(negsample))))))))
+  ((1/((1+discount_cost)^((screen_times[negsample$first_case]-rep(screen_startage,length(nrow(negsample))))))))
 negsample$screencost<-negsample$screencost+negsample$riskcost
 
 #Create QALY vector
@@ -121,7 +121,7 @@ qalylookup<-data.frame("age"=seq(from=screen_startage,to=100,by=1),
 
 #Fill in utility values for each age with discounting
 for (i in 1:length(qalylookup$qalyweight)){
-  qalylookup$qalyweight[i]<-utility_ages[match((ceiling((screen_startage-1)+i)),utility_ages[,1]),2]*(1/(1+discount_health)^(i-0.5))
+  qalylookup$qalyweight[i]<-utility_ages[match((ceiling((screen_startage-1)+i)),utility_ages[,1]),2]*(1/(1+discount_health)^(i))
 }
 
 #Calculate cumulative QALYs for round ages
@@ -226,7 +226,7 @@ for (i in 1:length(screen_times)){
   negsample[,7+i]<-negsample[,7+i]*(negsample$cost_screen+
                                       (recall_rate*cost_follow_up)+
                                       (recall_rate*biopsy_rate*cost_biop)*
-                                      ((1/((1+discount_cost)^(screen_times[i]-screen_startage-0.5)))))
+                                      ((1/((1+discount_cost)^(screen_times[i]-screen_startage)))))
 }
 negsample$screencost<-rowSums(negsample[8:length(negsample[1,])])
 
@@ -239,7 +239,7 @@ qalylookup<-data.frame("age"=seq(from=screen_startage,to=100,by=1),
 
 #Fill in utility values for each age with discounting
 for (i in 1:length(qalylookup$qalyweight)){
-  qalylookup$qalyweight[i]<-utility_ages[match((ceiling((screen_startage-1)+i)),utility_ages[,1]),2]*(1/(1+discount_health)^(i-0.5))
+  qalylookup$qalyweight[i]<-utility_ages[match((ceiling((screen_startage-1)+i)),utility_ages[,1]),2]*(1/(1+discount_health)^(i))
 }
 
 #Calculate cumulative QALYs for round ages
@@ -310,7 +310,7 @@ save(results,file = paste(det_output_path,
     
     #Fill in utility values for each age with discounting
     for (i in 1:length(qalylookup$qalyweight)){
-      qalylookup$qalyweight[i]<-utility_ages[match((ceiling((screen_startage-1)+i)),utility_ages[,1]),2]*(1/(1+discount_health)^(i-0.5))
+      qalylookup$qalyweight[i]<-utility_ages[match((ceiling((screen_startage-1)+i)),utility_ages[,1]),2]*(1/(1+discount_health)^(i))
     }
     
     #Calculate cumulative QALYs for round ages

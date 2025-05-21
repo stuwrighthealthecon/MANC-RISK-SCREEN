@@ -345,7 +345,7 @@ for (ii in 1:chunks) {
         Next_event_time <- Event_list[Event_place] #The time to nearest event
         
         #Calculate current discount rate
-        current_discount<-(1/((1+discount_cost)^((Next_event_time+age-screen_startage)-0.5)))
+        current_discount<-(1/((1+discount_cost)^((Next_event_time+age-screen_startage))))
         
         #Open screening event
         if(Event_place == 1){
