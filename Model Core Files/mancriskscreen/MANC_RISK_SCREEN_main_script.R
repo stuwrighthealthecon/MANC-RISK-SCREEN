@@ -7,9 +7,10 @@ controls<-list("strategies"=c(3), #A vector of strategies to evaluate
                "desired_cases"=1200000, #apprximate number of cancer cases required in simulation
                "chunks"=10, #number of chunks to divide analysis into
                "mcruns"=1, #number of monte carlo runs in PSA/intervals
-               "numcores"=16) #set number of cores for parallel processing
+               "numcores"=16,
+               "install"=FALSE) #set number of cores for parallel processing
                
-DO_INSTALL <- FALSE
+DO_INSTALL <- controls$install
 
 if (DO_INSTALL){
   #Install required packages
