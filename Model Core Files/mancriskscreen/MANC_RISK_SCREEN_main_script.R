@@ -1,6 +1,6 @@
 controls<-list("strategies"=c(0,1,2,3,4,9), #A vector of strategies to evaluate
                "gensample"=TRUE, #Whether to generate a new sample to simulate
-               "MISCLASS"=TRUE, #whether to include risk misclassification in analysis
+               "MISCLASS"=FALSE, #whether to include risk misclassification in analysis
                "PREVENTATIVE_DRUG"=FALSE,#whether to include chemoprevention in analysis
                "PSA"=FALSE, #whether to conduct a probabilistic sensitivity analysis
                "intervals"=FALSE, #whether to conduct a PSA with wide intervals for GAM estimations
