@@ -14,9 +14,6 @@ Model Core Files/mancriskscreen/Analysis/Summary results_PSAresults_strat_3.csv
 Model Core Files/mancriskscreen/Analysis/Summary results_PSAresults_strat_4.csv
 Model Core Files/mancriskscreen/Analysis/Summary results_PSAresults_strat_9.csv
 Model Core Files/mancriskscreen/Analysis/Summary results_Detresults_strat_4.csv
-
-.DS_Store
-.Rproj*
 Model Core Files/mancriskscreen/Analysis/Summary results_Detresults_strat_4.csv
 Model Core Files/mancriskscreen/Analysis/Summary results_Detresults_strat_0.csv
 Model Core Files/mancriskscreen/Analysis/Summary results_Detresults_strat_1.csv
@@ -107,7 +104,6 @@ Model Core Files/mancriskscreen/Deterministic results with misclass/Determ_9_6.R
 Model Core Files/mancriskscreen/Deterministic results with misclass/Determ_9_7.Rdata
 Model Core Files/mancriskscreen/Deterministic results with misclass/Determ_9_8.Rdata
 Model Core Files/mancriskscreen/Deterministic results with misclass/Determ_9_9.Rdata
-Model Core Files/mancriskscreen/MANC_RISK_SCREEN_main_script.R
 Model Core Files/mancriskscreen/Risksamplewithmisclass/possample_1.Rdata
 Model Core Files/mancriskscreen/Risksamplewithmisclass/possample_10.Rdata
 Model Core Files/mancriskscreen/Risksamplewithmisclass/possample_2.Rdata
