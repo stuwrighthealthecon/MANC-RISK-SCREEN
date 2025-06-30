@@ -1,5 +1,9 @@
 create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
 
+  #Remove existing samples to avoid errors
+  do.call(file.remove, list(list.files("Risksamplewithmisclass/", full.names = TRUE)))
+  do.call(file.remove, list(list.files("Risksample/", full.names = TRUE)))
+  
   #Import synthetic dataset derived from PROCAS2 study
   risk_mat<-read.csv("Data/synthetic_risk_data.csv")[,2:4]
   colnames(risk_mat)<-c("VBD","tenyrrisk","liferisk")
