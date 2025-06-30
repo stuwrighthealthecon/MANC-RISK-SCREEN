@@ -6,7 +6,7 @@ controls<-list("strategies"=c(0,1,2,3,4,9), #A vector of strategies to evaluate
                "intervals"=TRUE, #whether to conduct a PSA with wide intervals for GAM estimations
                "desired_cases"=1, #apprximate number of cancer cases required in simulation
                "chunks"=10, #number of chunks to divide analysis into
-               "mcruns"=30000, #number of monte carlo runs in PSA/intervals
+               "mcruns"=10000, #number of monte carlo runs in PSA/intervals
                "numcores"=16,
                "install"=FALSE) #set number of cores for parallel processing
         
