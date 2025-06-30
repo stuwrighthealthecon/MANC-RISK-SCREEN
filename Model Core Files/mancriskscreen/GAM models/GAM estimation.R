@@ -2,33 +2,13 @@ library("parallel")
 library("mgcv")
 library("tidyverse")
 
-#Load PSA results for each strategy
-screen_strategies<-c(0,1,2,3,4,9)
-screen_strategy<-0
-load(paste("PSA results/PSA_",screen_strategy,"_",1,".Rdata",sep = ""))
-results<-results %>% filter(results[,4]>50 | results[,4]==0)
-results<-results[-c(3:4)]
-psaresults<-results
+alternatives<-c(0,1,2,3,4,9)
 
-for (i in 2:10){
-  #name of saved files needed
-  load(paste("PSA results/PSA_",screen_strategy,"_",i,".Rdata",sep = ""))
-  results<-results %>% filter(results[,4]>50 | results[,4]==0)
-  results<-results[-c(3:4)]
-  psaresults<-rbind(psaresults,results)
-}
+filenames<-list.files(psa_output_path,full.names = TRUE)
+alldata<-lapply(filenames,function(x){get(load(x,.GlobalEnv))})
+alldata<-do.call("rbind",alldata)
 
-for (j in 2:6){
-screen_strategy<-screen_strategies[j]
-
-for (i in 1:10){
-  #name of saved files needed
-  load(paste("PSA results/PSA_",screen_strategy,"_",i,".Rdata",sep = ""))
-  results<-results %>% filter(results[,4]>50 | results[,4]==0)
-  results<-results[-c(3:4)]
- psaresults<-rbind(psaresults,results)
-}
-}
+psaresults<-alldata
 
 #Replace alternative name with string
 psaresults$alternative[psaresults$alternative==0]<-"No Screening"
@@ -41,18 +21,15 @@ psaresults$alternative[psaresults$alternative==9]<-"Risk-3"
 psaresults$alternative<-as.factor(psaresults$alternative)
 
 #Slim down psaresults and garbage clean to save space
-psaresults<-psaresults[-c(3:4)]
-psaresults<-psaresults[-c(4:5)]
-psaresults<-psaresults[-c(16:17)]
-rm(results)
+psaresults<-psaresults[-c(3,4,5,6,8,9)]
+rm(results,alldata)
 gc()
 
 #Save combined psaresults as backup
 save(psaresults,file = paste("PSA results/PSA_","psaresults",".Rdata",sep = "")) 
 
 #Remove cost variables for QALY GAM
-psaresults<-psaresults[-c(22:26)]
-psaresults<-psaresults[-c(18:19)]
+psaresults<-psaresults[-c(20,21,24:29)]
 gc()
 
 #Estimate QALY GAM
@@ -85,7 +62,7 @@ saveRDS(modQ,file="GAM models/QALYmodelslim.RDS")
 load(paste("PSA results/PSA_psaresults",".Rdata",sep = ""))
 
 #Remove QoL data from psaresults
-psaresults<-psaresults[-c(20:21)]
+psaresults<-psaresults[-c(22:23)]
 gc()
 
 #Estimate cost GAM

@@ -42,7 +42,9 @@ negsample<-data.frame("risk_group"=negsample$risk_group,
                       "interval_change"=negsample$interval_change,
                       "life_expectancy"=negsample$life_expectancy,
                       "cost_screen"=ifelse(PSA==1,negsample$PSA_costscreen,c(cost_screen)),
-                      "cost_strat"=ifelse(PSA==1,negsample$PSA_cost_strat,c(cost_strat)))
+                      "cost_strat"=ifelse(PSA==1,negsample$PSA_cost_strat,c(cost_strat)),
+                      "cost_follow_up"=ifelse(PSA==1,negsample$PSA_cost_follow_up,c(cost_follow_up)),
+                      "cost_biop"=ifelse(PSA==1,negsample$PSA_cost_biop,c(cost_biop)))
 
 
 negsample$risk_group<-negsample$risk_group*negsample$interval_change
@@ -97,8 +99,8 @@ negsample$total_screens<-rowSums(negsample[8:length(negsample[1,])])
 #Calculate screening cost
 for (i in 1:length(screen_times)){
   negsample[,7+i]<-negsample[,7+i]*(negsample$cost_screen+
-                                      (recall_rate*cost_follow_up)+
-                                      (recall_rate*biopsy_rate*cost_biop)*
+                                      (recall_rate*negsample$cost_follow_up)+
+                                      (recall_rate*biopsy_rate*negsample$cost_biop)*
                                       ((1/((1+discount_cost)^(screen_times[i]-screen_startage)))))
 }
 
@@ -174,15 +176,17 @@ save(results,file = paste(det_output_path,
 }
 
   if(screen_strategy>2 & screen_strategy<7){
-  negsample<-data.frame("risk_group"=negsample$risk_group,
-                        "MRI_screen"=negsample$MRI_screen,
-                        "US_screen"=negsample$US_screen,
-                        "risk_predicted"=negsample$risk_predicted,
-                        "feedback"=negsample$feedback,
-                        "interval_change"=negsample$interval_change,
-                        "life_expectancy"=negsample$life_expectancy,
-                        "cost_screen"=ifelse(PSA==1,negsample$PSA_costscreen,c(cost_screen)),
-                        "cost_strat"=ifelse(PSA==1,negsample$PSA_cost_strat,c(cost_strat)))
+    negsample<-data.frame("risk_group"=negsample$risk_group,
+                          "MRI_screen"=negsample$MRI_screen,
+                          "US_screen"=negsample$US_screen,
+                          "risk_predicted"=negsample$risk_predicted,
+                          "feedback"=negsample$feedback,
+                          "interval_change"=negsample$interval_change,
+                          "life_expectancy"=negsample$life_expectancy,
+                          "cost_screen"=ifelse(PSA==1,negsample$PSA_costscreen,c(cost_screen)),
+                          "cost_strat"=ifelse(PSA==1,negsample$PSA_cost_strat,c(cost_strat)),
+                          "cost_follow_up"=ifelse(PSA==1,negsample$PSA_cost_follow_up,c(cost_follow_up)),
+                          "cost_biop"=ifelse(PSA==1,negsample$PSA_cost_biop,c(cost_biop)))
 
 #Set screen times
 if(screen_strategy==3){
@@ -224,8 +228,8 @@ negsample$total_screens<-rowSums(negsample[8:length(negsample[1,])])
 #Calculate screening cost
 for (i in 1:length(screen_times)){
   negsample[,7+i]<-negsample[,7+i]*(negsample$cost_screen+
-                                      (recall_rate*cost_follow_up)+
-                                      (recall_rate*biopsy_rate*cost_biop)*
+                                      (recall_rate*negsample$cost_follow_up)+
+                                      (recall_rate*biopsy_rate*negsample$cost_biop)*
                                       ((1/((1+discount_cost)^(screen_times[i]-screen_startage)))))
 }
 negsample$screencost<-rowSums(negsample[8:length(negsample[1,])])
@@ -289,15 +293,17 @@ save(results,file = paste(det_output_path,
 
   }
   if (screen_strategy==0 | screen_strategy>9){
-  negsample<-data.frame("risk_group"=negsample$risk_group,
-                        "MRI_screen"=negsample$MRI_screen,
-                        "US_screen"=negsample$US_screen,
-                        "risk_predicted"=negsample$risk_predicted,
-                        "feedback"=negsample$feedback,
-                        "interval_change"=negsample$interval_change,
-                        "life_expectancy"=negsample$life_expectancy,
-                        "cost_screen"=ifelse(PSA==1,negsample$PSA_costscreen,c(cost_screen)),
-                        "cost_strat"=ifelse(PSA==1,negsample$PSA_cost_strat,c(cost_strat)))
+    negsample<-data.frame("risk_group"=negsample$risk_group,
+                          "MRI_screen"=negsample$MRI_screen,
+                          "US_screen"=negsample$US_screen,
+                          "risk_predicted"=negsample$risk_predicted,
+                          "feedback"=negsample$feedback,
+                          "interval_change"=negsample$interval_change,
+                          "life_expectancy"=negsample$life_expectancy,
+                          "cost_screen"=ifelse(PSA==1,negsample$PSA_costscreen,c(cost_screen)),
+                          "cost_strat"=ifelse(PSA==1,negsample$PSA_cost_strat,c(cost_strat)),
+                          "cost_follow_up"=ifelse(PSA==1,negsample$PSA_cost_follow_up,c(cost_follow_up)),
+                          "cost_biop"=ifelse(PSA==1,negsample$PSA_cost_biop,c(cost_biop)))
   
     negsample$screencost<-rep(0,length=nrow(negsample))
     negsample$total_screens<-rep(0,length=nrow(negsample))
