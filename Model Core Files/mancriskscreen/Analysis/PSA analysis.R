@@ -16,19 +16,21 @@ alternative<-c(0,1,2,3,4,9)
 wtp<-seq(from=0,to=100000,by=1000)
 
 #Load GAMs
-modQ<-readRDS("QALYmodelslim.RDS")
-modC<-readRDS("costmodelslim.RDS")
+modQ<-readRDS("GAM models/QALYmodelslim.RDS")
+modC<-readRDS("GAM models/costmodelslim.RDS")
 
 #Draw stage I to III survival parameters
-survmvn<-data.frame(c(-5.46208,-5.2077,-5.8016),
-                    c(-3.8163,-3.75901,-3.8811),
-                    c(-2.72264,-2.66053,-2.78617))
+survmvn<-data.frame(c(-5.6178,-5.2857,-6.1138),
+                    c(-3.8083,-3.7400,-3.8704),
+                    c(-2.7311,-2.6687,-2.7963))
 survcovmat<-cov(survmvn)
 survmeans<-c(survmvn[1,1],survmvn[1,2],survmvn[1,3])
 PSA_gamma_survival<-mvrnorm(mcruns,survmeans,survcovmat)
 
 # Draw Metatstatic survival parameters
-metmvn<-data.frame(c(-1.78723,-1.67922,-1.89434),c(-1.38762,-1.33512,-1.49956),c(-1.01051,-0.93338,-1.08304))
+metmvn<-data.frame(c(-1.78723,-1.67922,-1.89434),
+                   c(-1.38762,-1.33512,-1.49956),
+                   c(-1.01051,-0.93338,-1.08304))
 metmat<-cov(metmvn)
 metmeans<-c(metmvn[1,1],metmvn[1,2],metmvn[1,3])
 PSA_meta_survival<-mvrnorm(mcruns,metmeans,metmat)
@@ -38,7 +40,7 @@ PSA_beta1 <- rnorm(mcruns,1.47,0.1)
 PSA_beta2 <- rnorm(mcruns,6.51,0.5)
 
 #Draw Mammography sensitivity by volpara density grade from PREVENTICON
-PSA_Sen_VDG <- data.frame(rbeta(mcruns,96,16),rbeta(mcruns,298,86),rbeta(mcruns,212,93),rbeta(mcruns,61,39))
+PSA_Sen_VDG <- data.frame(rbeta(mcruns,48,16),rbeta(mcruns,208,75),rbeta(mcruns,113,76),rbeta(mcruns,40,38))
 Sen_VDG_av <- 0.757
 
 #Draw supplemental Screening CDRs
@@ -50,7 +52,7 @@ PSA_log_norm_mean <- rnorm(mcruns,1.07,0.09)
 PSA_log_norm_sd <- rnorm(mcruns,1.31,0.11)
 
 #Draw costs
-PSA_cost_strat<-(rlnorm(mcruns,2.13387381,0.06349671)*1.0272)
+PSA_cost_strat<-(rlnorm(mcruns,1.8826894,0.1015175))
 PSA_costvar<-rnorm(mcruns,0,0.1020408)
 PSA_costscreen<-rnorm(mcruns,0,0.1020408)
 PSA_cost_follow_up<-rnorm(mcruns,0,0.1020408)
