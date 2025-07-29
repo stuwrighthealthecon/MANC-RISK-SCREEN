@@ -3,9 +3,9 @@
 # and use Gaussian processes to estimate corrected life risks from these
 # corrected 10-year risks.
 
-EXPLORE_GPS <- FALSE # Set to true to look at a few alternative targets for fitting in the Gaussian process section
-
 PRINT_RMSES <- FALSE # Set to true to print each RMSE calculated during the beta distribution calibration stage - this can be useful for doing diagnostics
+
+SHOW_PLOTS <- FALSE # Set to true to generate plots of intermediate results
 
 SAVE_OUTPUTS <- FALSE # Set to true to overwrite existing sample with misclassification
 
@@ -67,7 +67,8 @@ supp_data[, c("N", "E", "O", "O_E")] <- supp_data[, c("N", "E", "O", "O_E")] %>%
   sapply(as.numeric)
 
 supp_data <- supp_data %>%
-  filter(grepl("density", Model_age))
+  filter(grepl("density", Model_age)) %>%
+  filter(grepl("<50y", Model_age)|grepl("50-59y", Model_age))
 
 #### Do least-squares beta regression systematically for each age/model combination
 
@@ -194,7 +195,7 @@ for (m in unique(supp_data$Model_age)){
 }
 
 if (SAVE_OUTPUTS){
-  save(beta_fits_df, file="fitted_risk_distributions_update.csv")
+  save(beta_fits_df, file="fitted_risk_distributions.csv")
 }
 
 
@@ -203,153 +204,60 @@ if (SAVE_OUTPUTS){
 risk_mat<-read.csv("mancriskscreen/Data/synthetic_risk_data.csv") %>% dplyr::select(-"X")
 
 risk_mat$syn.X10yr <- .01 * risk_mat$syn.X10yr # Rescale to numbers rather than percentages
-risk_mat$syn.life <- .01 * risk_mat$syn.life
 
-# Inspect visually:
-
-p <- ggplot(risk_mat, aes(x=syn.X10yr, y=syn.life)) +
-  geom_point() +
-  xlab("Ten year estimated risk") +
-  ylab("Lifetime estimated risk")
-p
-
-# Try splitting up by age:
-risk_mat <- risk_mat %>% mutate(age_grp=case_when(syn.Age<50 ~ "<50",
-                                                  syn.Age>=50 & syn.Age<60 ~ "50-60",
-                                                  syn.Age>=60 ~ "60+"))
-p <- ggplot(risk_mat, aes(x=syn.X10yr, y=syn.life, colour=age_grp)) +
-  geom_point(alpha=.2) +
-  xlab("Ten year estimated risk") +
-  ylab("Lifetime estimated risk") +
-  scale_color_discrete()
-p
-
-# Should see obvious difference in relationship, so need to include age in regression model
-
+# Relationship between 10 year and lifetime risk is different in different age
+# groups, so need to include age in regression model
 risk_mat$bin.10yr <- risk_mat$syn.X10yr %>% cut(breaks=seq(from=0, to=1, by=.001))
 
 # Needs to be age stratified, so try first on 50-60 group (main group of interest)
-
 smpl <- risk_mat[which(risk_mat$age_grp=="50-60"),] %>%
   slice_sample(by=bin.10yr, n=1)
 
-# Simple version:
-x <- smpl$syn.X10yr
-y <- smpl$syn.life
-kern <- Matern52$new(0)
-gp <- GauPro(x, y, kernel=kern)
-ypred <- gp$predict(seq(0.,.3,.01), se=T) %>%
-  mutate(upper = mean + 2 * se,
-         lower = mean - 2 * se,
-         xval = seq(0.,.3,.01))
-p <- ggplot(smpl, aes(syn.X10yr, syn.life)) +
-  geom_point() +
-  geom_line(data = ypred, aes(x=xval, y=mean), colour="red") +
-  geom_line(data = ypred, aes(x=xval, y=upper), colour="blue") +
-  geom_line(data = ypred, aes(x=xval, y=lower), colour="blue") +
-  labs(title = "GP fit for 50-60y subgroup")
-print(p)
-
-# Last point is a bit of an outlier, try retraining without:
+# Highest risk individual seems to cause overfitting in 50-59y group, so fit a
+# GP with it removed:
 smpl_order <- smpl$syn.X10yr %>% order() %>% head(-1) # Order samples by x value and drop last one
 x_short <- x[smpl_order]
 y_short <- y[smpl_order]
 kern <- Matern52$new(0)
-gp_short <- GauPro(x_short, y_short, kernel=kern)
-ypred <- gp_short$predict(seq(0.,.3,.01), se=T) %>%
-  mutate(upper = mean + 2 * se,
-         lower = mean - 2 * se,
-         xval = seq(0.,.3,.01))
-p <- ggplot(smpl, aes(syn.X10yr, syn.life)) +
-  geom_point() +
-  geom_line(data = ypred, aes(x=xval, y=mean), colour="red") +
-  geom_line(data = ypred, aes(x=xval, y=upper), colour="blue") +
-  geom_line(data = ypred, aes(x=xval, y=lower), colour="blue") +
-  labs(title = "GP fit for 50-60y subgroup with final datapoint removed")
-print(p)
+gp_50_60 <- GauPro(x_short, y_short, kernel=kern)
+if (SHOW_PLOTS){
+  ypred <- gp_50_60$predict(seq(0.,.3,.01), se=T) %>%
+    mutate(upper = mean + 2 * se,
+           lower = mean - 2 * se,
+           xval = seq(0.,.3,.01))
+  p <- ggplot(smpl, aes(syn.X10yr, syn.life)) +
+    geom_point() +
+    geom_line(data = ypred, aes(x=xval, y=mean), colour="red") +
+    geom_line(data = ypred, aes(x=xval, y=upper), colour="blue") +
+    geom_line(data = ypred, aes(x=xval, y=lower), colour="blue") +
+    labs(title = "GP fit for 50-60y subgroup with final datapoint removed")
+  print(p)
+}
 
-# Rename to reflect age group
-gp_50_60 <- gp_short
-
-# Now do other age bands:
-
-smpl <- risk_mat[which(risk_mat$age_grp=="<50"),] %>%
-  slice_sample(by=bin.10yr, n=1)
-
-x <- smpl$syn.X10yr
-y <- smpl$syn.life
-kern <- Matern52$new(0)
-gp_u50 <- GauPro(x, y, kernel=kern)
-ypred <- gp_u50$predict(seq(0.,.3,.01), se=T) %>%
-  mutate(upper = mean + 2 * se,
-         lower = mean - 2 * se,
-         xval = seq(0.,.3,.01))
-p <- ggplot(smpl, aes(syn.X10yr, syn.life)) +
-  geom_point() +
-  geom_line(data = ypred, aes(x=xval, y=mean), colour="red") +
-  geom_line(data = ypred, aes(x=xval, y=upper), colour="blue") +
-  geom_line(data = ypred, aes(x=xval, y=lower), colour="blue") +
-  labs(title = "GP fit for <50y subgroup")
-print(p)
-
-# Actually looks like it's points with >25% 10yr risk causing trouble, so this
-# might be a better rule to use if we ever do this with new risk data
-
+# Now do <50y group
+# Including points with >25% 10yr risk causes overfitting, so we leave these out
+# of the training data
 smpl <- smpl %>% filter(syn.X10yr<=25)
 x <- smpl$syn.X10yr
 y <- smpl$syn.life
 kern <- Matern52$new(0)
 gp_u50 <- GauPro(x, y, kernel=kern)
-ypred <- gp_u50$predict(seq(0.,.3,.01), se=T) %>%
-  mutate(upper = mean + 2 * se,
-         lower = mean - 2 * se,
-         xval = seq(0.,.3,.01))
-p <- ggplot(smpl, aes(syn.X10yr, syn.life)) +
-  geom_point() +
-  geom_line(data = ypred, aes(x=xval, y=mean), colour="red") +
-  geom_line(data = ypred, aes(x=xval, y=upper), colour="blue") +
-  geom_line(data = ypred, aes(x=xval, y=lower), colour="blue") +
-  labs(title = "GP fit for <50y subgroup with all 10yr risks >25% removed")
-print(p)
+
+if (SHOW_PLOTS){
+  ypred <- gp_u50$predict(seq(0.,.3,.01), se=T) %>%
+    mutate(upper = mean + 2 * se,
+           lower = mean - 2 * se,
+           xval = seq(0.,.3,.01))
+  p <- ggplot(smpl, aes(syn.X10yr, syn.life)) +
+    geom_point() +
+    geom_line(data = ypred, aes(x=xval, y=mean), colour="red") +
+    geom_line(data = ypred, aes(x=xval, y=upper), colour="blue") +
+    geom_line(data = ypred, aes(x=xval, y=lower), colour="blue") +
+    labs(title = "GP fit for <50y subgroup with all 10yr risks >25% removed")
+  print(p)
+}
 
 gp_list <- c(gp_u50, gp_50_60)
-
-#### In this optional section we look at transformations of the data to improve the GP fit.
-# Note that the code below this section will still use gp_short, the Gaussian process
-# fit to the raw risk data with the final datapoint removed, to generate synthetic
-# lifetime risks.
-
-if (EXPLORE_GPS){
-
-# Version that estimates log(y-x)
-
-x <- smpl$syn.X10yr
-y <- (smpl$syn.life - smpl$syn.X10yr) %>% log()
-gp <- GauPro(x, y, kernel=Exponential$new(0))
-
-# Try plotting risk prediction:
-
-ypred <- function(z){z + (gp$predict(z) %>% exp())}
-yse <- function(z){exp(gp$predict(z) + 0.5*gp$predict(z, se=T)$se^2) * sqrt(exp(gp$predict(z, se=T)$se^2) - 1)}
-plot(x, smpl$syn.life)
-curve(ypred(x), add=T, col=2)
-curve(ypred(x)+2*yse(x), add=T, col=4)
-curve(ypred(x)-2*yse(x), add=T, col=4)
-
-# Alternative: estimate log(dy/dx)
-smpl_order <- smpl$syn.X10yr %>% order()
-x <- smpl$syn.X10yr[smpl_order][2:length(smpl_order)]
-y <- diff(smpl$syn.life[smpl_order]) / diff(smpl$syn.X10yr[smpl_order])
-
-x <- x[which(y>0)]
-y <- y[which(y>0)]
-gp <- GauPro(x, log(y), kernel=Exponential$new(0))
-plot(x, y)
-yse <- function(z){exp(gp$predict(z) + 0.5*gp$predict(z, se=T)$se^2) * sqrt(exp(gp$predict(z, se=T)$se^2) - 1)}
-curve(exp(gp$predict(x)), add=T, col=2)
-curve(exp(gp$predict(x))+yse(x), add=T, col=4)
-curve(exp(gp$predict(x)+ 1.1*min(y))-yse(x), add=T, col=4)
-}
 
 #### Now add "true" risks to risk_mat, assuming we're working with prediction
 # with density.
@@ -388,31 +296,12 @@ risk_mat_with_mc <- risk_mat %>%
                                                                  syn.Age))
 # The next plot should indicate that there's one problematic case where 10 year
 # risk gets mapped to 1:
-ggplot(risk_mat_with_mc, aes(syn.X10yr, syn.X10yr.true, col=age_grp)) +
-  geom_point() +
-  geom_abline() +
-  labs(title = "10 year risk correction")
-
-# Quick exploration of mapping between risks:
-
-beta_match_df <- data.frame(X = seq(0,1,.0001)) %>%
-  mutate(Ye_u50 = pbeta(X,
-            bf_dens_only$alpha_e[1],
-            bf_dens_only$beta_e[1]),
-         Yo_u50 = pbeta(X,
-            bf_dens_only$alpha_o[1],
-            bf_dens_only$beta_o[1]),
-         Ye_5060 = pbeta(X,
-            bf_dens_only$alpha_e[2],
-            bf_dens_only$beta_e[2]),
-         Yo_5060 = pbeta(X,
-            bf_dens_only$alpha_o[2],
-            bf_dens_only$beta_o[2]))
-beta_match_plt <- ggplot(beta_match_df) +
-  geom_line(aes(x = Ye_u50, y = Yo_u50), colour = 'red') +
-  geom_line(aes(x = Ye_5060, y = Yo_5060), colour = 'blue') +
-  labs(x = "Predicted risk", y= "Corrected risk")
-print(beta_match_plt)
+if (SHOW_PLOTS){
+  ggplot(risk_mat_with_mc, aes(syn.X10yr, syn.X10yr.true, col=age_grp)) +
+    geom_point() +
+    geom_abline() +
+    labs(title = "10 year risk correction")
+  }
 
 # Should see that problematic cases are all ones with high risk
 problem_cases <- risk_mat_with_mc %>% filter(syn.X10yr.true==1)
@@ -429,11 +318,13 @@ lmodel <- lm(linint_df$syn.X10yr.true ~ linint_df$syn.X10yr)
 problem_locs <- which(risk_mat_with_mc$syn.X10yr.true==1)
 risk_mat_with_mc$syn.X10yr.true[problem_locs] <- problem_cases$syn.X10yr * lmodel$coefficients[2]
 
-# Should look more reasonable now
-ggplot(risk_mat_with_mc, aes(syn.X10yr, syn.X10yr.true, col=age_grp)) +
-  geom_point() +
-  geom_abline() +
-  labs(title = "10 year risk correction with outlier handled by linear extrapolation")
+if (SHOW_PLOTS){
+  # Should look more reasonable now
+  ggplot(risk_mat_with_mc, aes(syn.X10yr, syn.X10yr.true, col=age_grp)) +
+    geom_point() +
+    geom_abline() +
+    labs(title = "10 year risk correction with outlier handled by linear extrapolation")
+}
 
 # Now add life risks:
 
@@ -448,15 +339,17 @@ risk_mat_with_mc <- risk_mat_with_mc %>%
                     mutate(age_grp_idx = ifelse(age_grp=="<50",1,2)) %>%
                     mutate(syn.life.true = get_liferisk(age_grp_idx, syn.X10yr.true))
 
-# Check life risk plots:
-ggplot(risk_mat_with_mc, aes(syn.life, syn.life.true, col=age_grp)) +
-  geom_point() +
-  geom_abline() +
-  labs("Lifetime risk correction")
-risk_mat_with_mc <- risk_mat_with_mc %>%
-                    dplyr::select(-age_grp) %>%
-                    dplyr::select(-age_grp_idx) %>%
-                    dplyr::select(-bin.10yr)
+if (SHOW_PLOTS){
+  # Check life risk plots:
+  ggplot(risk_mat_with_mc, aes(syn.life, syn.life.true, col=age_grp)) +
+    geom_point() +
+    geom_abline() +
+    labs("Lifetime risk correction")
+  risk_mat_with_mc <- risk_mat_with_mc %>%
+                      dplyr::select(-age_grp) %>%
+                      dplyr::select(-age_grp_idx) %>%
+                      dplyr::select(-bin.10yr)
+}
 
 # Rescale to percentages for consistency before saving
 risk_mat_with_mc[, c(2, 3, 5, 6)] <- 100 * risk_mat_with_mc[, c(2, 3, 5, 6)]
