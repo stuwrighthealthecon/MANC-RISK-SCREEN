@@ -1,15 +1,15 @@
 controls<-list("strategies"=c(0,1,2,3,4,9), #A vector of strategies to evaluate
                "gensample"=TRUE, #Whether to generate a new sample to simulate
-               "MISCLASS"=FALSE, #whether to include risk misclassification in analysis
+               "MISCLASS"=TRUE, #whether to include risk misclassification in analysis
                "PREVENTATIVE_DRUG"=FALSE,#whether to include chemoprevention in analysis
-               "PSA"=FALSE, #whether to conduct a probabilistic sensitivity analysis
-               "intervals"=FALSE, #whether to conduct a PSA with wide intervals for GAM estimations
-               "desired_cases"=250000, #apprximate number of cancer cases required in simulation
+               "PSA"=TRUE, #whether to conduct a probabilistic sensitivity analysis
+               "intervals"=TRUE, #whether to conduct a PSA with wide intervals for GAM estimations
+               "desired_cases"=1, #apprximate number of cancer cases required in simulation
                "chunks"=10, #number of chunks to divide analysis into
-               "mcruns"=1, #number of monte carlo runs in PSA/intervals
+               "mcruns"=10000, #number of monte carlo runs in PSA/intervals
                "numcores"=16,
                "install"=FALSE) #set number of cores for parallel processing
-             
+        
 DO_INSTALL <- controls$install
 
 if (DO_INSTALL){
@@ -27,7 +27,7 @@ PREVENTATIVE_DRUG <- controls$PREVENTATIVE_DRUG # Set to TRUE to simulate preven
 
 # Add specifiers for output files
 det_output_path <- "Deterministic results/"
-psa_output_path <- "PSA results/"
+psa_output_path <-"PSA results/"
 if (MISCLASS & PREVENTATIVE_DRUG){
   dir.create("Deterministic results/misclassification_and_preventative_drug",
              showWarnings = FALSE)

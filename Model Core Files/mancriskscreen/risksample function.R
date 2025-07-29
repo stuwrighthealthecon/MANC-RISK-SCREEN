@@ -1,5 +1,9 @@
 create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
 
+  #Remove existing samples to avoid errors
+  do.call(file.remove, list(list.files("Risksamplewithmisclass/", full.names = TRUE)))
+  do.call(file.remove, list(list.files("Risksample/", full.names = TRUE)))
+  
   #Import synthetic dataset derived from PROCAS2 study
   risk_mat<-read.csv("Data/synthetic_risk_data.csv")[,2:4]
   colnames(risk_mat)<-c("VBD","tenyrrisk","liferisk")
@@ -362,8 +366,8 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
       #Draw Mammography sensitivity by volpara density grade from PREVENTICON
       PSA_Sen_VDG <- data.frame(rbeta(mcruns,PSA_Sen_VDG1[1],PSA_Sen_VDG1[2]),
                                 rbeta(mcruns,PSA_Sen_VDG2[1],PSA_Sen_VDG2[2]),
-                                rbeta(mcruns,PSA_Sen_VDG3[1],PSA_Sen_VDG3[3]),
-                                rbeta(mcruns,PSA_Sen_VDG4[1],PSA_Sen_VDG4[4]))
+                                rbeta(mcruns,PSA_Sen_VDG3[1],PSA_Sen_VDG3[2]),
+                                rbeta(mcruns,PSA_Sen_VDG4[1],PSA_Sen_VDG4[2]))
       
       #Draw supplemental Screening CDRs
       PSA_MRI_cdr <- rbeta(mcruns,PSA_MRI_cdr[1],PSA_MRI_cdr[2]) #CDR for MRI in Mammo negative women (incremental)
@@ -417,8 +421,8 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
       #Mammography sensitivity by volpara density grade from PREVENTICON
       PSA_Sen_VDG <- data.frame(rbeta(mcruns,PSA_Sen_VDG1[1],PSA_Sen_VDG1[2]),
                                 rbeta(mcruns,PSA_Sen_VDG2[1],PSA_Sen_VDG2[2]),
-                                rbeta(mcruns,PSA_Sen_VDG3[1],PSA_Sen_VDG3[3]),
-                                rbeta(mcruns,PSA_Sen_VDG4[1],PSA_Sen_VDG4[4]))
+                                rbeta(mcruns,PSA_Sen_VDG3[1],PSA_Sen_VDG3[2]),
+                                rbeta(mcruns,PSA_Sen_VDG4[1],PSA_Sen_VDG4[2]))
       
       #Supplemental Screening
       PSA_MRI_cdr <- rbeta(mcruns,PSA_MRI_cdr[1],PSA_MRI_cdr[2]) #CDR for MRI in Mammo negative women (incremental)

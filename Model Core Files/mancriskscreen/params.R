@@ -330,8 +330,6 @@ tblLookup <- tblPred %>%
   arrange(Stage, Age, Yr) %>%
   ungroup()
 
-
-
 #######################Utility Weights#########################################
 
 #Set age adjusted utility values
