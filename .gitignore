@@ -142,3 +142,6 @@ Model Core Files/mancriskscreen/GAM models/QALYmodelslim.RDS
 Model Core Files/mancriskscreen/GAM models/QALYmodelslim.RDS
 Model Core Files/mancriskscreen/PSA results/misclassification/PSA_0_3.Rdata
 Model Core Files/mancriskscreen/.Rhistory
+
+*.DS_Store*
+.Rproj.*
