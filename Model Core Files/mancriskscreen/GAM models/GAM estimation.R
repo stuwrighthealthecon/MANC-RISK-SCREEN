@@ -4,7 +4,7 @@ library("tidyverse")
 
 alternatives<-c(0,1,2,3,4,9)
 
-filenames<-list.files(psa_output_path,full.names = TRUE)
+filenames<-list.files("PSA results/misclassification",full.names = TRUE)
 alldata<-lapply(filenames,function(x){get(load(x,.GlobalEnv))})
 alldata<-do.call("rbind",alldata)
 
@@ -21,7 +21,7 @@ psaresults$alternative[psaresults$alternative==9]<-"Risk-3"
 psaresults$alternative<-as.factor(psaresults$alternative)
 
 #Slim down psaresults and garbage clean to save space
-psaresults<-psaresults[-c(3,4,5,6,8,9)]
+#psaresults<-psaresults[-c(3,4,5,6,8,9,10,11,12,13)]
 rm(results,alldata)
 gc()
 
@@ -29,11 +29,12 @@ gc()
 save(psaresults,file = paste("PSA results/PSA_","psaresults",".Rdata",sep = "")) 
 
 #Remove cost variables for QALY GAM
-psaresults<-psaresults[-c(20,21,24:29)]
+psaresults<-psaresults[-c(20,21,22,23,24,25,26,27,30,31,32,33,34,35)]
 gc()
 
 #Estimate QALY GAM
 modQ <- bam(data = psaresults,
+            discrete=TRUE,
             formula = QALY ~
               s(PSA_util_1to3, by = alternative, bs = "cr") +
               s(PSA_util_4, by = alternative, bs = "cr") +
@@ -63,10 +64,12 @@ load(paste("PSA results/PSA_psaresults",".Rdata",sep = ""))
 
 #Remove QoL data from psaresults
 psaresults<-psaresults[-c(22:23)]
+rm(modQ)
 gc()
 
 #Estimate cost GAM
 modC <- bam(data = psaresults,
+            discrete=TRUE,
             formula = Cost ~ 
               s(PSA_cost_strat, by = alternative, bs = "cr") +
               s(PSA_costvar, by = alternative, bs = "cr") +
@@ -92,4 +95,4 @@ summary(modC)
 
 #Slim down cost GAM and save
 modC[2:43]<-NULL
-saveRDS(modC,file="GAM models/costmodelslim.RDS")
+saveRDS(modC,file="GAM models/costmodelcan.RDS")

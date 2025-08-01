@@ -12,6 +12,7 @@ alldata<-do.call("rbind",alldata)
 
 output_df<-as.data.frame(matrix(nrow=6,ncol=4))
 
+
 #Assign names to strategies
 #Note-currently fixed to 6 strategies considered in final paper
 strategies<-c("No Screening","Risk-1","Risk-2","3 Yearly","2 Yearly","Risk-3")

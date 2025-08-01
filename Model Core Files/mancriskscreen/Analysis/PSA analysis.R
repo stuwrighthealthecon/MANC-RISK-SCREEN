@@ -7,7 +7,7 @@ library("MASS")
 library("patchwork")
 
 #Set number of PSA runs to estimate over
-mcruns<-1000000
+mcruns<-100000
 
 #Set alternatives
 alternative<-c(0,1,2,3,4,9)
@@ -53,12 +53,12 @@ PSA_log_norm_sd <- rnorm(mcruns,1.31,0.11)
 
 #Draw costs
 PSA_cost_strat<-(rlnorm(mcruns,1.8826894,0.1015175))
-PSA_costvar<-rnorm(mcruns,0,0.1020408)
-PSA_costscreen<-rnorm(mcruns,0,0.1020408)
-PSA_cost_follow_up<-rnorm(mcruns,0,0.1020408)
-PSA_cost_biop<-rnorm(mcruns,0,0.1020408)
-PSA_cost_US<-rnorm(mcruns,0,0.1020408)
-PSA_cost_MRI<-rnorm(mcruns,0,0.1020408)
+PSA_costvar<-rnorm(mcruns,0,0.05102041)
+PSA_costscreen<-rnorm(mcruns,0,0.05102041)
+PSA_cost_follow_up<-rnorm(mcruns,0,0.05102041)
+PSA_cost_biop<-rnorm(mcruns,0,0.05102041)
+PSA_cost_US<-rnorm(mcruns,0,0.05102041)
+PSA_cost_MRI<-rnorm(mcruns,0,0.05102041)
 
 #Generate utility draws
 utilmat<-data.frame(c(1-0.82,1-0.81,1-0.83),c(1-0.75,1-0.73,1-0.77))
