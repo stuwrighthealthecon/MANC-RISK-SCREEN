@@ -6,10 +6,10 @@ controls<-list("strategies"=c(0,1,2,3,4,9), #A vector of strategies to evaluate
                "intervals"=TRUE, #whether to conduct a PSA with wide intervals for GAM estimations
                "desired_cases"=1, #apprximate number of cancer cases required in simulation
                "chunks"=10, #number of chunks to divide analysis into
-               "mcruns"=10000, #number of monte carlo runs in PSA/intervals
+               "mcruns"=3000000, #number of monte carlo runs in PSA/intervals
                "numcores"=16,
                "install"=FALSE) #set number of cores for parallel processing
-        
+     
 DO_INSTALL <- controls$install
 
 if (DO_INSTALL){
@@ -95,8 +95,9 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 chunks<-controls$chunks #Number of chunks to split inum into for faster running time
 expected_prev <- .12
 desired_cases <- controls$desired_cases
-inum <- ceiling((desired_cases / expected_prev)) #Individual women to be sampled to give desired number of positive cancer cases
-inum <- chunks * ceiling(inum / chunks) # Make sure number of women is divisible by number of chunks
+inum <- 1
+ # ceiling((desired_cases / expected_prev)) #Individual women to be sampled to give desired number of positive cancer cases
+#inum <- chunks * ceiling(inum / chunks) # Make sure number of women is divisible by number of chunks
 mcruns<-controls$mcruns #Monte Carlo runs used if PSA switched on
 seed<-set.seed(controls$seed) #Set seed for random draws
 
@@ -504,7 +505,8 @@ for (ii in 1:chunks) {
                risk_data$growth_rate,
                LY_counter,
                cancer_diagnostic[2:3],
-               min(c(Ca_mort_age), c(Mort_age)),cancer_diagnostic[10]))}else{
+               min(c(Ca_mort_age), c(Mort_age)),
+               cancer_diagnostic[10]))}else{
         #If PSA then record outputs + monte carlo draws
         return(as.numeric(c(QALY_counter,
                             costs,
@@ -515,7 +517,10 @@ for (ii in 1:chunks) {
                             screen_strategy,
                             risk_data$growth_rate,
                             LY_counter,
-                            c(risk_data[15:41]))))
+                            cancer_diagnostic[2:3],
+                            min(c(Ca_mort_age), c(Mort_age)),
+                            cancer_diagnostic[10],
+                            c(risk_data[17:49]))))
       }
   }
   
@@ -537,11 +542,13 @@ for (ii in 1:chunks) {
   
   #If PSA add additional columns for Monte Carlo draws
   if(PSA==1){
-    names(results)[10:36]<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_survival_3",
+    names(results)[14:46]<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_survival_3",
                              "PSA_meta_survival_54","PSA_meta_survival_74","PSA_meta_survival_99",
                              "PSA_beta_1","PSA_beta_2",'PSA_VDG1_sen','PSA_VDG2_sen',
                              'PSA_VDG3_sen', 'PSA_VDG4_sen',"PSA_MRI_cdr","PSA_US_cdr",
-                             "PSA_log_norm_mean","PSA_log_norm_sd","PSA_cost_strat","PSA_costvar",
+                             "PSA_log_norm_mean","PSA_log_norm_sd","PSA_eff_ana","PSA_eff_tam",
+                             "PSA_dropout_ana","PSA_dropout_tam","PSA_uptake_1","PSA_uptake_2",
+                             "PSA_cost_strat","PSA_costvar",
                              "PSA_util_1to3","PSA_util_4","PSA_costscreen","PSA_cost_follow_up",
                              "PSA_cost_biop","PSA_cost_US","PSA_cost_MRI","PSA_cost_drug","mcid")
   }

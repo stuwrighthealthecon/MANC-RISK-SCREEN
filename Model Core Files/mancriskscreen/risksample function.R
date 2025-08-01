@@ -254,6 +254,7 @@ create_sample<-function(PSA=0,intervals=0,seed=1,screen_strategy){
   
   #Clean up redundant inputs
   rm(masterframe,risksample,PSA_all_p,risk_mat)
+  gc()
   
   #Save risk sample in chunks
     for(i in 1:chunks){
@@ -536,6 +537,7 @@ create_sample_with_misclass<-function(PSA=0,intervals=0,seed=1,screen_strategy){
     
     #Clean up redundant inputs
     rm(masterframe,risksample,PSA_all_p,risk_mat)
+    gc()
     
     #Save risk sample in chunks
       for(i in 1:chunks){

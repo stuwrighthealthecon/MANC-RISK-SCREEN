@@ -51,7 +51,7 @@ PSA_uptake_2<-c(.71, .1)
 #Draw costs
 PSA_cost_strat<-c(1.8826894,0.1015175)
 cost_inflator<-0.1
-cost_dist_sd<-(cost_inflator/1.96)^2
+cost_dist_sd<-0.05102041
 PSA_costvar<-c(0,cost_dist_sd)
 PSA_costscreen<-c(0,cost_dist_sd)
 PSA_cost_follow_up<-c(0,cost_dist_sd)
