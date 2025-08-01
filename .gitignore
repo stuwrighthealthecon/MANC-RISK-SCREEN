@@ -142,6 +142,97 @@ Model Core Files/mancriskscreen/GAM models/QALYmodelslim.RDS
 Model Core Files/mancriskscreen/GAM models/QALYmodelslim.RDS
 Model Core Files/mancriskscreen/PSA results/misclassification/PSA_0_3.Rdata
 Model Core Files/mancriskscreen/.Rhistory
+<<<<<<< Updated upstream
 
 *.DS_Store*
 .Rproj.*
+=======
+Model Core Files/mancriskscreen/PSA results/misclassification/Determ_9_1_negresults.Rdata
+Model Core Files/mancriskscreen/.Rhistory
+Model Core Files/mancriskscreen/Deterministic results/misclassification/Determ_0_negresults.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/Determ_0_negresults.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/Determ_1_1_negresults.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/Determ_1_2_negresults.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/Determ_1_3_negresults.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/Determ_1_4_negresults.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/Determ_1_5_negresults.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/Determ_2_1_negresults.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/Determ_2_2_negresults.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/Determ_2_3_negresults.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/Determ_3_negresults.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/Determ_4_negresults.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/Determ_9_2_negresults.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/Determ_9_3_negresults.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/Determ_9_4_negresults.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/Determ_9_5_negresults.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_0_1.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_0_10.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_0_2.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_0_3.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_0_4.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_0_5.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_0_6.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_0_7.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_0_8.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_0_9.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_1_1.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_1_10.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_1_2.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_1_3.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_1_4.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_1_5.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_1_6.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_1_7.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_1_8.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_1_9.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_2_1.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_2_10.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_2_2.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_2_3.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_2_4.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_2_5.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_2_6.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_2_7.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_2_8.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_2_9.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_3_1.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_3_10.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_3_2.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_3_3.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_3_4.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_3_5.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_3_6.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_3_7.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_3_8.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_3_9.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_4_1.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_4_10.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_4_2.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_4_3.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_4_4.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_4_5.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_4_6.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_4_7.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_4_8.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_4_9.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_9_1.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_9_10.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_9_2.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_9_3.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_9_4.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_9_5.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_9_6.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_9_7.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_9_8.Rdata
+Model Core Files/mancriskscreen/PSA results/misclassification/PSA_9_9.Rdata
+Model Core Files/mancriskscreen/PSA results/PSA_psaresults.Rdata
+Model Core Files/mancriskscreen/GAM models/QALYmodelslim.RDS
+Model Core Files/mancriskscreen/GAM models/costmodelslim.RDS
+Model Core Files/mancriskscreen/GAM models/costmodelslim.RDS
+Model Core Files/mancriskscreen/.RDataTmp
+>>>>>>> Stashed changes
+Model Core Files/mancriskscreen/GAM models/QALYmodelnocan.RDS
+Model Core Files/mancriskscreen/GAM models/QALYmodelcan.RDS
+Model Core Files/mancriskscreen/GAM models/costmodelnocan.RDS
+Model Core Files/mancriskscreen/GAM models/costmodelcan.RDS
+Model Core Files/mancriskscreen/.Rhistory
