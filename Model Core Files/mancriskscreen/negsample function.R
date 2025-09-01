@@ -66,7 +66,10 @@ if(PSA==1){
 }
 
 negsample$risk_group<-negsample$risk_group*negsample$interval_change
+
+if(PSA==1){
 savePSA$risk_group<-savePSA$risk_group*savePSA$interval_change
+}
 
 subsamples<-unique(negsample$risk_group)
 mastersample<-negsample
@@ -74,8 +77,9 @@ rm(negsample)
 
 for (ii in 1:length(subsamples)){
   negsample<-filter(mastersample,risk_group==subsamples[ii])
+  if(PSA==1){
 subPSA<-filter(savePSA,risk_group==subsamples[ii])
-subPSA<-subPSA[,-c(1:2)]
+subPSA<-subPSA[,-c(1:2)]}
   
 #Set screen times
 screen_times<-low_risk_screentimes
@@ -185,7 +189,9 @@ names(results) <- c('QALY',
 
 results$Cost[is.na(results$Cost)]<-0
 
+if(PSA==1){
 results<-cbind(results,subPSA)
+}
 
 save(results,file = paste(ifelse(PSA==0,det_output_path,psa_output_path),
                           screen_strategy,

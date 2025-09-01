@@ -6,10 +6,10 @@ controls<-list("strategies"=c(0,1,2,3,4,9), #A vector of strategies to evaluate
                "intervals"=TRUE, #whether to conduct a PSA with wide intervals for GAM estimations
                "desired_cases"=1, #apprximate number of cancer cases required in simulation
                "chunks"=10, #number of chunks to divide analysis into
-               "mcruns"=3000000, #number of monte carlo runs in PSA/intervals
+               "mcruns"=4000000, #number of monte carlo runs in PSA/intervals
                "numcores"=16,
                "install"=FALSE) #set number of cores for parallel processing
-     
+
 DO_INSTALL <- controls$install
 
 if (DO_INSTALL){
@@ -96,8 +96,8 @@ chunks<-controls$chunks #Number of chunks to split inum into for faster running 
 expected_prev <- .12
 desired_cases <- controls$desired_cases
 inum <- 1
- # ceiling((desired_cases / expected_prev)) #Individual women to be sampled to give desired number of positive cancer cases
-#inum <- chunks * ceiling(inum / chunks) # Make sure number of women is divisible by number of chunks
+  #ceiling((desired_cases / expected_prev)) #Individual women to be sampled to give desired number of positive cancer cases
+#inum <- ifelse(PSA==0,chunks * ceiling(inum / chunks),1) # Make sure number of women is divisible by number of chunks
 mcruns<-controls$mcruns #Monte Carlo runs used if PSA switched on
 seed<-set.seed(controls$seed) #Set seed for random draws
 
