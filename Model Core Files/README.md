@@ -1,4 +1,4 @@
-# Manchester-Breast-Cancer-Model
+# MANC-RISK-SCREEN
 
 This model was developed by Ewan Gray, Anna Donten, and Katherine Payne and validated by Stuart Wright, Gabriel Rogers, Katherine Payne, and Rob Hainsworth at the Manchester Centre for Health Economics. The model is currently maintained by Stuart Wright (stuart.j.wright@manchester.ac.uk)
 
