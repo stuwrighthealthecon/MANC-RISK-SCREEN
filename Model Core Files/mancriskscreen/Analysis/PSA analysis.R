@@ -7,17 +7,19 @@ library("MASS")
 library("patchwork")
 
 #Set number of PSA runs to estimate over
-mcruns<-100000
+mcruns<-1000000
 
 #Set alternatives
 alternative<-c(0,1,2,3,4,9)
 
 #Set wtp thresholds to estimate over
-wtp<-seq(from=0,to=100000,by=1000)
+wtp<-seq(from=0,to=50000,by=1000)
 
 #Load GAMs
-modQ<-readRDS("GAM models/QALYmodelslim.RDS")
-modC<-readRDS("GAM models/costmodelslim.RDS")
+modQ<-readRDS("GAM models/QALYmodelcan.RDS")
+modQ2<-readRDS("GAM models/QALYmodelnocan.RDS")
+modC<-readRDS("GAM models/costmodelcan.RDS")
+modC2<-readRDS("GAM models/costmodelnocan.RDS")
 
 #Draw stage I to III survival parameters
 survmvn<-data.frame(c(-5.6178,-5.2857,-6.1138),
@@ -84,18 +86,30 @@ colnames(PSA_all_p)<-c("PSA_gamma_survival_1","PSA_gamma_survival_2","PSA_gamma_
 alt_names<-c("No Screening","Risk-1","Risk-2","3 yearly","2 yearly","Risk-3")
 
 #Create data.frames to estimate costs and QALYs
+output_costscan<-data.frame(matrix(nrow=mcruns,ncol=length(alternative)))
+output_costsnocan<-data.frame(matrix(nrow=mcruns,ncol=length(alternative)))
 output_costs<-data.frame(matrix(nrow=mcruns,ncol=length(alternative)))
+output_qalyscan<-data.frame(matrix(nrow=mcruns,ncol=length(alternative)))
+output_qalysnocan<-data.frame(matrix(nrow=mcruns,ncol=length(alternative)))
 output_qalys<-data.frame(matrix(nrow=mcruns,ncol=length(alternative)))
+colnames(output_costscan)<-alt_names
+colnames(output_costsnocan)<-alt_names
 colnames(output_costs)<-alt_names
+colnames(output_qalyscan)<-alt_names
+colnames(output_qalysnocan)<-alt_names
 colnames(output_qalys)<-alt_names
 
 #For each alternative
 for (i in 1:length(alternative)){
   PSA_all_p$alternative<-as.factor(alt_names[i])
-
-#Predict QALYs and Costs using GAMS
-output_qalys[,i]<-predict.bam(modQ,PSA_all_p)
-output_costs[,i]<-predict.bam(modC,PSA_all_p)
+  
+  #Predict QALYs and Costs using GAMS
+  output_qalyscan[,i]<-predict.bam(modQ,PSA_all_p)
+  output_costscan[,i]<-predict.bam(modC,PSA_all_p)
+  output_qalysnocan[,i]<-predict.bam(modQ2,PSA_all_p)
+  output_costsnocan[,i]<-predict.bam(modC2,PSA_all_p)
+  output_qalys[,i]<-(output_qalyscan[,i]*0.0934)+(output_qalysnocan[,i]*(1-0.0934))
+  output_costs[,i]<-(output_costscan[,i]*0.0934)+(output_costsnocan[,i]*(1-0.0934))
 }
 
 #Rename columns
@@ -106,7 +120,7 @@ colnames(output_qalys)<-alt_names
 #Produce PSA object
 psa_obj <- make_psa_obj(cost = output_costs,
                         effectiveness = output_qalys,
-                        parameters = PSA_all_p,
+                        parameters = PSA_all_p[1:25],
                         strategies = alt_names,
                         currency = "£")
 
@@ -128,6 +142,7 @@ icers <- calculate_icers(cost = psa_sum$meanCost,
                          strategies = psa_sum$Strategy)
 plot(icers,labels="all")
 
+
 #One-way sensitivity analysis for costs, effectiveness and net benefit
 sacost<-owsa(psa_obj,outcome="cost")
 owsa_tornado(sacost,return="plot")
@@ -145,9 +160,9 @@ owsa_opt_strat(sanb,return="plot",col="full",plot_const=FALSE)
 feasqalys<-output_qalys[-c(3,5)]
 feascosts<-output_costs[-c(3,5)]
 feas_psa_obj <- make_psa_obj(cost = feascosts,
-                        effectiveness = feasqalys,
-                        parameters = PSA_all_p,
-                        strategies = alt_names[-c(3,5)],
-                        currency = "£")
+                             effectiveness = feasqalys,
+                             parameters = PSA_all_p,
+                             strategies = alt_names[-c(3,5)],
+                             currency = "£")
 feas_ceac_obj<- ceac(wtp,feas_psa_obj)
 plot(feas_ceac_obj,frontier="FALSE",points="FALSE",xlab="Willingness to Pay (Thousand £ / QALY")
