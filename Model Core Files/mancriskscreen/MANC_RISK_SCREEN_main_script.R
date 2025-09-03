@@ -4,7 +4,7 @@ controls<-list("strategies"=c(0,1,2,3,4,9), #A vector of strategies to evaluate
                "PREVENTATIVE_DRUG"=FALSE,#whether to include chemoprevention in analysis
                "PSA"=FALSE, #whether to conduct a probabilistic sensitivity analysis
                "intervals"=FALSE, #whether to conduct a PSA with wide intervals for GAM estimations
-               "desired_cases"=300000, #apprximate number of cancer cases required in simulation
+               "desired_cases"=3000, #apprximate number of cancer cases required in simulation
                "chunks"=10, #number of chunks to divide analysis into
                "mcruns"=1, #number of monte carlo runs in PSA/intervals
                "numcores"=16,
@@ -577,56 +577,6 @@ for (ii in 1:chunks) {
 } #End i loop
 
 negsamplefn(screen_strategy,MISCLASS,PSA)
-
-#Create summarised results
-merged_result <- matrix(0,nrow = chunks,ncol = 7)
-if(PSA==0){
-  for (i in 1:chunks){
-    #Record average outputs for each chunk and save in an excel file
-    load(paste(det_output_path,
-               "Determ_",
-               screen_strategy,
-               "_",
-               i,
-               ".Rdata",
-               sep = ""))
-    results<-results %>% filter(results[,4]>50 | results[,4]==0)
-    merged_result[i,1] <- mean(results[,1])
-    merged_result[i,2] <- mean(results[,2])
-    merged_result[i,3] <- mean(results[,3]) 
-    merged_result[i,4] <- mean(results[,5])
-    merged_result[i,5] <- mean(results[,6])
-    merged_result[i,6] <- mean(results[,7])
-    merged_result[i,7] <- mean(results[,9])
-  }
-  write.csv(merged_result,file = paste("Analysis/Summary results_",
-                                       "Detresults_strat_",
-                                       screen_strategy,
-                                       ".csv",
-                                       sep=""))}else{
-    for (i in 1:chunks){
-      #Record average outputs for each chunk and save in an excel file
-      load(paste(psa_output_path, "PSA_",
-                 screen_strategy,
-                 "_",
-                 i,
-                 ".Rdata",
-                 sep = ""))
-      results<-results %>% filter(results[,4]>50 | results[,4]==0)
-      merged_result[i,1] <- mean(results[,1])
-      merged_result[i,2] <- mean(results[,2])
-      merged_result[i,3] <- mean(results[,3]) 
-      merged_result[i,4] <- mean(results[,5])
-      merged_result[i,5] <- mean(results[,6])
-      merged_result[i,6] <- mean(results[,7])
-      merged_result[i,7] <- mean(results[,9])
-    } 
-    write.csv(merged_result,file = paste("Analysis/Summary results_",
-                                         "PSAresults_strat_",
-                                         screen_strategy,
-                                         ".csv",
-                                         sep=""))
-  }
 
 toc()
 }
