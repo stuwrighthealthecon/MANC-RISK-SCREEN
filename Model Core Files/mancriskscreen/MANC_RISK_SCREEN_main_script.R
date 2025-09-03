@@ -2,11 +2,11 @@ controls<-list("strategies"=c(0,1,2,3,4,9), #A vector of strategies to evaluate
                "gensample"=TRUE, #Whether to generate a new sample to simulate
                "MISCLASS"=TRUE, #whether to include risk misclassification in analysis
                "PREVENTATIVE_DRUG"=FALSE,#whether to include chemoprevention in analysis
-               "PSA"=TRUE, #whether to conduct a probabilistic sensitivity analysis
-               "intervals"=TRUE, #whether to conduct a PSA with wide intervals for GAM estimations
-               "desired_cases"=1, #apprximate number of cancer cases required in simulation
+               "PSA"=FALSE, #whether to conduct a probabilistic sensitivity analysis
+               "intervals"=FALSE, #whether to conduct a PSA with wide intervals for GAM estimations
+               "desired_cases"=300000, #apprximate number of cancer cases required in simulation
                "chunks"=10, #number of chunks to divide analysis into
-               "mcruns"=4000000, #number of monte carlo runs in PSA/intervals
+               "mcruns"=1, #number of monte carlo runs in PSA/intervals
                "numcores"=16,
                "install"=FALSE) #set number of cores for parallel processing
 
@@ -95,9 +95,8 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 chunks<-controls$chunks #Number of chunks to split inum into for faster running time
 expected_prev <- .12
 desired_cases <- controls$desired_cases
-inum <- 1
-  #ceiling((desired_cases / expected_prev)) #Individual women to be sampled to give desired number of positive cancer cases
-#inum <- ifelse(PSA==0,chunks * ceiling(inum / chunks),1) # Make sure number of women is divisible by number of chunks
+inum <- ceiling((desired_cases / expected_prev)) #Individual women to be sampled to give desired number of positive cancer cases
+inum <- ifelse(PSA==0,chunks * ceiling(inum / chunks),1) # Make sure number of women is divisible by number of chunks or 1 for PSA
 mcruns<-controls$mcruns #Monte Carlo runs used if PSA switched on
 seed<-set.seed(controls$seed) #Set seed for random draws
 
@@ -631,5 +630,3 @@ if(PSA==0){
 
 toc()
 }
-
-
