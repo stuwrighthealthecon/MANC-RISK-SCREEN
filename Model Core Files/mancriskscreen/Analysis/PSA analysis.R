@@ -154,7 +154,9 @@ sanb<-owsa(psa_obj,outcome="nmb",wtp=20000)
 owsa_tornado(sanb,return="plot")
 
 #Plot chart of impact of changes in parameters on optimal strategy
-owsa_opt_strat(sanb,return="plot",col="full",plot_const=FALSE)
+owsa_opt_strat(sanb,params=c(unique(a$parameter))[c(1,2,3,5,6,7,8,9,10)],
+               return="plot",col="full")
+
 
 #Plot ceac omitting infeasible strategies (too high number of scans)
 feasqalys<-output_qalys[-c(3,5)]
