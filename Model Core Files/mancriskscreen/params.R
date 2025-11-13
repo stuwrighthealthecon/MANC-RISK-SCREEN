@@ -52,10 +52,11 @@ Incidence_Mortality <- if (CORRECT_BC_AGE){
   read.csv("Data/Incidence_Mortality_ONS2.csv") %>%
     mutate(BC_age = Cond.on.getting.BC..prob.of.getting.cancer.at.age.t)}
 
-#Set metastatic cancer probabilities by age
+#Set metastatic cancer probabilities by cancer size
 metastatic_prob <- data.frame(c(25,35,45,55,65,75,85),
                               c(0.046218154,0.086659039,0.109768116,0.127099924,
                                 0.142505975,0.159837783,1.73E-01))
+write.csv(metastatic_prob,"metaprob.csv")
 
 #Create matrix of probability of cancer stage by cancer size
 stage_by_size_mat<-data.frame("v1"=c(0.383,0.567,0.611,0.557,0,0),
@@ -80,6 +81,8 @@ Sen_VDG_av <- 0.666
 Mammo_cdr <- 4.2 #Cancer detection rate per 1000 high dense screens
 MRI_cdr <- 5 #CDR for MRI in Mammogram negative women (incremental)
 US_cdr <- 3 #CDR for US in Mammogram negative women (incremental)
+
+density_cutoff<-3
 
 #Set tumour growth rate parameters
 log_norm_mean <- 1.07
