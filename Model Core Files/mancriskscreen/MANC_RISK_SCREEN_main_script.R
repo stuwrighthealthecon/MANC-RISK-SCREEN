@@ -2,9 +2,10 @@ controls<-list("strategies"=c(0,1,2,3,4,9), #A vector of strategies to evaluate
                "gensample"=TRUE, #Whether to generate a new sample to simulate
                "MISCLASS"=TRUE, #whether to include risk misclassification in analysis
                "PREVENTATIVE_DRUG"=FALSE,#whether to include chemoprevention in analysis
+               "supplemental_screening"=TRUE, #whether supplemental screening is used for women with dense breasts
                "PSA"=FALSE, #whether to conduct a probabilistic sensitivity analysis
                "intervals"=FALSE, #whether to conduct a PSA with wide intervals for GAM estimations
-               "desired_cases"=3000, #apprximate number of cancer cases required in simulation
+               "desired_cases"=300, #apprximate number of cancer cases required in simulation
                "chunks"=10, #number of chunks to divide analysis into
                "mcruns"=1, #number of monte carlo runs in PSA/intervals
                "numcores"=16,
@@ -76,7 +77,7 @@ for (r in 1:length(screen_strategies)){
 screen_strategy<-screen_strategies[r]
 
 #Turn supplemental Screening (MRI and US) on (1) or off (0)
-supplemental_screening<-0
+supplemental_screening<-ifelse(controls$supplemental_screening==TRUE,1,0)
 
 #Generate new sample? 1=YES, any other number NO
 gensample<-ifelse((controls$gensample==TRUE & r==1),1,0)
@@ -177,10 +178,10 @@ for (ii in 1:chunks) {
   }
   
   #Assign women to supplemental screening if switched on and criteria met 
-  #if(supplemental_screening==1){
-    #for (i in 1:length(splitsample$MRI_screen)) {
-      #if(splitsample[i,"VDG"]>=density_cutoff & splitsample[i,"tenyearrisk"]>=8){splitsample[i,"MRI_screen"]<1}else
-        #if(splitsample[i,"VDG"]>=density_cutoff & splitsample[i,"tenyearrisk"]<8){splitsample[i,"US_screen"]<-1}}}
+  if(supplemental_screening==1){
+    for (i in 1:length(splitsample$MRI_screen)) {
+      if(splitsample[i,"VDG"]>=density_cutoff & splitsample[i,ifelse(MISCLASS==1,"tenyrrisk_true","tenyrrisk_est")]>=8){splitsample[i,"MRI_screen"]<1}else
+        if(splitsample[i,"VDG"]>=density_cutoff & splitsample[i,ifelse(MISCLASS==1,"tenyrrisk_true","tenyrrisk_est")]<8){splitsample[i,"US_screen"]<-1}}}
   
   #Create iterator for the data.frame of women to pass to parallel processors  
   itx<-iter(splitsample,by="row")
@@ -362,12 +363,12 @@ for (ii in 1:chunks) {
                 if(screen_count == length(screen_times)){lastscreen_count <- 1}
                 
                 #Add costs of supplemental screening if relevant
-                #if(risk_data$US_screen == 1){US_count <- US_count + 1
-                #costs <- costs + (cost_US*current_discount)
-                #US_costs<-US_costs+(cost_US*current_discount)}
-                #if(risk_data$MRI_screen == 1){MRI_count <- MRI_count + 1
-                #costs <- costs + (cost_MRI*current_discount)
-                #MRI_costs <- MRI_costs + (cost_MRI*current_discount)}
+                if(risk_data$US_screen == 1){US_count <- US_count + 1
+                costs <- costs + (cost_US*current_discount)
+                US_costs<-US_costs+(cost_US*current_discount)}
+                if(risk_data$MRI_screen == 1){MRI_count <- MRI_count + 1
+                costs <- costs + (cost_MRI*current_discount)
+                MRI_costs <- MRI_costs + (cost_MRI*current_discount)}
                   
                   #Determine if tumour is present at screen
                   t <- (age+Next_event_time) - gen_age
