@@ -117,8 +117,8 @@ low_risk_cut<-1.5 #Cut off in low risk only strategies
 ca_size_cut <- c(0.025, 5, 10, 15, 20, 30, 128) #Size cut-points for deciding stage
 
 ##########False Positive and Overdiagnosis parameters################
-recall_rate <- 0.031 #UK false-positive rate
-biopsy_rate <- 0.506 #Proporiton of referrals without cancer that have biopsy
+recall_rate <- 0.025 #UK false-positive rate
+biopsy_rate <- 0.506 #Proportion of referrals without cancer that have biopsy
 
 #### Drug data ####
 
