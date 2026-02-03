@@ -38,7 +38,19 @@ PSA_log_norm_sd <- c(1.31, 0.11)
 # Chemoprevention Drug parameters
 
 # First bring in log hazard ratios from networked analysis
-loghaz_ests <- readRDS("Data/PreventionOutputs.RDS")
+library(here)
+all_posterior_draws<- readRDS(here("Model Core Files/mancriskscreen/Data/posterior_outputs.rds"))
+all_posterior_draws[1]
+
+efficacy_ests <- all_posterior_draws[1,]
+head(efficacy_ests$post_HRs[[1]]$HR_Tam_v_Plac)
+head(efficacy_ests$post_HRs[[1]]$HR_Anas_v_Plac)
+
+dropout_ests <- all_posterior_draws[2,]
+head(dropout_ests$post_HRs[[1]]$HR_Tam_v_Plac)
+head(dropout_ests$post_HRs[[1]]$HR_Anas_v_Plac)
+
+## TODO 
 efficacy_ests <- loghaz_ests[1]
 dropout_ests <- loghaz_ests[4]
 
