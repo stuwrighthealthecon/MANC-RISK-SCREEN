@@ -18,49 +18,57 @@ library(purrr)
 library(tidyr)
 
 # Load in risk table from Brentnall 2018 supplement:
-supp_data <- pdf_data("coi180011supp1_prod.pdf")[[5]][-c(1:15), ] %>% mutate(x = round(x/3),        #reduce resolution to minimise inconsistent coordinates
-                                                                             y = round(y/3)) %>% 
-  arrange(y, x) %>%                        #sort in reading order
-  mutate(group = cumsum(!sapply(1:length(x), FUN=function(i){ # Gather nearby strings into same column (cutoff of 3 chosen by trial and error)
-    if (i==1){
-      return(TRUE)
-    }else{
-      return(
-        (y[i-1]==y[i])&((x[i]-x[i-1])<=3))
-    }
-  }
-  )
-  )
-  )%>%  #identify text with spaces and paste
+supp_data <- pdf_data("coi180011supp1_prod.pdf")[[5]][-c(1:15), ] %>%
+  mutate(
+    x = round(x / 3), #reduce resolution to minimise inconsistent coordinates
+    y = round(y / 3)
+  ) %>%
+  arrange(y, x) %>% #sort in reading order
+  mutate(
+    group = cumsum(
+      !sapply(1:length(x), FUN = function(i) {
+        # Gather nearby strings into same column (cutoff of 3 chosen by trial and error)
+        if (i == 1) {
+          return(TRUE)
+        } else {
+          return(
+            (y[i - 1] == y[i]) & ((x[i] - x[i - 1]) <= 3)
+          )
+        }
+      })
+    )
+  ) %>% #identify text with spaces and paste
   group_by(group) %>%
-  summarise(x = first(x),
-            y = first(y),
-            text = paste(text, collapse = " ")) %>% 
+  summarise(x = first(x), y = first(y), text = paste(text, collapse = " ")) %>%
   filter(!grepl('95%', text)) %>% # Remove column headings for 95% confidence intervals
   filter(!grepl('%)', text)) %>% # Remove percentage conversions for numbers
-  group_by(y) %>% 
-  mutate(colno = row_number()) %>%         #add column numbers for table data 
-  ungroup() %>% 
-  dplyr::select(text, colno, y) %>% 
+  group_by(y) %>%
+  mutate(colno = row_number()) %>% #add column numbers for table data
+  ungroup() %>%
+  dplyr::select(text, colno, y) %>%
   pivot_wider(names_from = colno, values_from = text) %>% #pivot into table format
   dplyr::select(-y) %>%
-  set_colnames(c("Risk_class",
-                 "N",
-                 "FU",
-                 "O",
-                 "E",
-                 "O_E",
-                 "O_E 95% CI",
-                 "IR",
-                 "IRR",
-                 "IRR 95% CI")) %>%
+  set_colnames(c(
+    "Risk_class",
+    "N",
+    "FU",
+    "O",
+    "E",
+    "O_E",
+    "O_E 95% CI",
+    "IR",
+    "IRR",
+    "IRR 95% CI"
+  )) %>%
   dplyr::select(1:10) %>%
   slice(-c(1, 44, 45, 46))
 model_idxs <- grep("Ty", supp_data$Risk_class)
-supp_data$Model_age <- sapply(1:nrow(supp_data), FUN = function(i){supp_data[model_idxs[ceiling(i/7)],] %>% # Add column specifying age group and risk class
+supp_data$Model_age <- sapply(1:nrow(supp_data), FUN = function(i) {
+  supp_data[model_idxs[ceiling(i / 7)], ] %>% # Add column specifying age group and risk class
     as.character() %>%
     discard(is.na) %>%
-    paste(collapse=" ")})
+    paste(collapse = " ")
+})
 supp_data <- supp_data[-c(model_idxs), ]
 
 supp_data[, c("N", "E", "O", "O_E")] <- supp_data[, c("N", "E", "O", "O_E")] %>%
@@ -68,72 +76,75 @@ supp_data[, c("N", "E", "O", "O_E")] <- supp_data[, c("N", "E", "O", "O_E")] %>%
 
 supp_data <- supp_data %>%
   filter(grepl("density", Model_age)) %>%
-  filter(grepl("<50y", Model_age)|grepl("50-59y", Model_age))
+  filter(grepl("<50y", Model_age) | grepl("50-59y", Model_age))
 
 #### Do least-squares beta regression systematically for each age/model combination
 
 n_classes <- supp_data$Model_age %>%
   unique() %>%
   length()
-beta_fits_df <- data.frame("obs_mean"=numeric(length=n_classes),
-                           "alpha_e"=numeric(length=n_classes),
-                           "beta_e"=numeric(length=n_classes),
-                           "mean_e"=numeric(length=n_classes),
-                           "alpha_o"=numeric(length=n_classes),
-                           "beta_o"=numeric(length=n_classes),
-                           "mean_o"=numeric(length=n_classes),
-                           row.names = unique(supp_data$Model_age))
+beta_fits_df <- data.frame(
+  "obs_mean" = numeric(length = n_classes),
+  "alpha_e" = numeric(length = n_classes),
+  "beta_e" = numeric(length = n_classes),
+  "mean_e" = numeric(length = n_classes),
+  "alpha_o" = numeric(length = n_classes),
+  "beta_o" = numeric(length = n_classes),
+  "mean_o" = numeric(length = n_classes),
+  row.names = unique(supp_data$Model_age)
+)
 
 risk_bds <- c(.02, .03, .05, .08, 1.)
-for (m in unique(supp_data$Model_age)){
+for (m in unique(supp_data$Model_age)) {
   print(m)
-  supp_data_m <- supp_data[which(supp_data$Model_age==m), ]
-  data_quantiles <- cumsum(supp_data_m$N[2:6])/ supp_data_m$N[1]
-  cohort_cumsum <- c(0,cumsum(supp_data_m$N[2:6]))
-  
+  supp_data_m <- supp_data[which(supp_data$Model_age == m), ]
+  data_quantiles <- cumsum(supp_data_m$N[2:6]) / supp_data_m$N[1]
+  cohort_cumsum <- c(0, cumsum(supp_data_m$N[2:6]))
+
   cases_df <- supp_data_m %>%
-    select(Risk_class,N,O,E)
-  
-  weight_calculator <- function(alpha, beta){
-    sapply(1:1000,
-           FUN=function(i){
-             risk_draw <- rbeta(supp_data_m$N[1],
-                                alpha,
-                                beta) %>% sort()
-             sapply(2:6,
-                    FUN = function(j){
-                      (rbernoulli(n = supp_data_m$N[j],
-                                  p = risk_draw[(cohort_cumsum[j-1]+1):cohort_cumsum[j]]) %>%
-                         which() %>%
-                         length())
-                    })
-           })
+    select(Risk_class, N, O, E)
+
+  weight_calculator <- function(alpha, beta) {
+    sapply(1:1000, FUN = function(i) {
+      risk_draw <- rbeta(supp_data_m$N[1], alpha, beta) %>% sort()
+      sapply(2:6, FUN = function(j) {
+        (rbernoulli(
+          n = supp_data_m$N[j],
+          p = risk_draw[(cohort_cumsum[j - 1] + 1):cohort_cumsum[j]]
+        ) %>%
+          which() %>%
+          length())
+      })
+    })
   }
-  
+
   # First do expected
   tenyr_risk <- c(supp_data_m$E[2:5] / supp_data_m$N[2:5], 1.)
-  exp_mean <- supp_data_m$E[which(supp_data_m$Risk_class=="Total")] / supp_data_m$N[which(supp_data_m$Risk_class=="Total")] 
+  exp_mean <- supp_data_m$E[which(supp_data_m$Risk_class == "Total")] /
+    supp_data_m$N[which(supp_data_m$Risk_class == "Total")]
 
-  alpha_0 <- supp_data_m$E[which(supp_data_m$Risk_class=="Total")]
-  beta_0 <- supp_data_m$N[which(supp_data_m$Risk_class=="Total")] - alpha_0
-  
-  get_cases_match_rmse <- function(alpha){
+  alpha_0 <- supp_data_m$E[which(supp_data_m$Risk_class == "Total")]
+  beta_0 <- supp_data_m$N[which(supp_data_m$Risk_class == "Total")] - alpha_0
+
+  get_cases_match_rmse <- function(alpha) {
     beta <- (alpha / exp_mean) - alpha
-    exp_weights <- sapply(1:100,
-                          FUN=function(i){
-                            risk_draw <- rbeta(supp_data_m$N[1],
-                                               alpha,
-                                               beta) %>% sort()
-                            sapply(2:6,
-                                   FUN = function(j){
-                                     (rbernoulli(n = supp_data_m$N[j],
-                                                 p = risk_draw[(cohort_cumsum[j-1]+1):cohort_cumsum[j]]) %>%
-                                        which() %>%
-                                        length())
-                                   })
-                          }) %>% rowMeans()
-    rmse <- ((1/length(exp_weights)) * (exp_weights - supp_data_m$E[2:6])^2) %>% sum() %>% sqrt()
-    if (PRINT_RMSES){
+    exp_weights <- sapply(1:100, FUN = function(i) {
+      risk_draw <- rbeta(supp_data_m$N[1], alpha, beta) %>% sort()
+      sapply(2:6, FUN = function(j) {
+        (rbernoulli(
+          n = supp_data_m$N[j],
+          p = risk_draw[(cohort_cumsum[j - 1] + 1):cohort_cumsum[j]]
+        ) %>%
+          which() %>%
+          length())
+      })
+    }) %>%
+      rowMeans()
+    rmse <- ((1 / length(exp_weights)) *
+      (exp_weights - supp_data_m$E[2:6])^2) %>%
+      sum() %>%
+      sqrt()
+    if (PRINT_RMSES) {
       print(rmse)
     }
     return(rmse)
@@ -141,77 +152,84 @@ for (m in unique(supp_data$Model_age)){
   par_estim_e <- optimize(get_cases_match_rmse, c(0, alpha_0))
   alpha_e <- par_estim_e$minimum
   beta_e <- (par_estim_e$minimum / exp_mean) - par_estim_e$minimum
-  
+
   exp_weights <- weight_calculator(alpha_e, beta_e)
   cases_df$E_case_match <- c(sum(rowMeans(exp_weights)), rowMeans(exp_weights))
-  
+
   # Now do observed cases
   tenyr_risk <- c(supp_data_m$O[2:5] / supp_data_m$N[2:5], 1)
-  obs_mean <- supp_data_m$O[which(supp_data_m$Risk_class=="Total")] / supp_data_m$N[which(supp_data_m$Risk_class=="Total")] 
-  get_beta_rmse_case_match_E <- function(alpha){
+  obs_mean <- supp_data_m$O[which(supp_data_m$Risk_class == "Total")] /
+    supp_data_m$N[which(supp_data_m$Risk_class == "Total")]
+  get_beta_rmse_case_match_E <- function(alpha) {
     beta <- (alpha / obs_mean) - alpha
-    obs_weights <- sapply(1:1000,
-                          FUN=function(i){
-                            risk_draw <- rbeta(supp_data_m$N[1],
-                                               alpha,
-                                               beta) %>% sort()
-                            sapply(2:6,
-                                   FUN = function(j){
-                                     (rbernoulli(n = supp_data_m$N[j],
-                                                 p = risk_draw[(cohort_cumsum[j-1]+1):cohort_cumsum[j]]) %>%
-                                        which() %>%
-                                        length())
-                                   })
-                          }) %>% rowMeans()
-    rmse <- ((1/length(obs_weights)) * (obs_weights - supp_data_m$O[2:6])^2) %>% sum() %>% sqrt()
-    if (PRINT_RMSES){
+    obs_weights <- sapply(1:1000, FUN = function(i) {
+      risk_draw <- rbeta(supp_data_m$N[1], alpha, beta) %>% sort()
+      sapply(2:6, FUN = function(j) {
+        (rbernoulli(
+          n = supp_data_m$N[j],
+          p = risk_draw[(cohort_cumsum[j - 1] + 1):cohort_cumsum[j]]
+        ) %>%
+          which() %>%
+          length())
+      })
+    }) %>%
+      rowMeans()
+    rmse <- ((1 / length(obs_weights)) *
+      (obs_weights - supp_data_m$O[2:6])^2) %>%
+      sum() %>%
+      sqrt()
+    if (PRINT_RMSES) {
       print(rmse)
     }
     return(rmse)
   }
-  alpha_0 <- (supp_data_m$O[which(supp_data_m$Risk_class=="Total")])
+  alpha_0 <- (supp_data_m$O[which(supp_data_m$Risk_class == "Total")])
   par_estim_o <- optimize(get_beta_rmse_case_match_E, c(0, alpha_0))
   alpha_o <- par_estim_o$minimum
   beta_o <- (par_estim_o$minimum / obs_mean) - par_estim_o$minimum
-  
+
   obs_weights <- weight_calculator(alpha_o, beta_o)
   cases_df$O_case_match <- c(sum(rowMeans(obs_weights)), rowMeans(obs_weights))
-  
+
   cases_df <- cases_df %>% relocate(O, .before = O_case_match)
-  
-  if (m==unique(supp_data$Model_age)[1]){
+
+  if (m == unique(supp_data$Model_age)[1]) {
     all_cases_df <- cases_df
-  }else{
+  } else {
     all_cases_df <- cbind(all_cases_df, cases_df)
   }
-  
-  beta_fits_df[m, ] <- c(alpha_0,
-                         alpha_e,
-                         beta_e,
-                         alpha_e / (alpha_e + beta_e),
-                         alpha_o,
-                         beta_o,
-                         alpha_o / (alpha_o + beta_o))
+
+  beta_fits_df[m, ] <- c(
+    alpha_0,
+    alpha_e,
+    beta_e,
+    alpha_e / (alpha_e + beta_e),
+    alpha_o,
+    beta_o,
+    alpha_o / (alpha_o + beta_o)
+  )
 }
 
-if (SAVE_OUTPUTS){
-  save(beta_fits_df, file="fitted_risk_distributions.csv")
+if (SAVE_OUTPUTS) {
+  save(beta_fits_df, file = "fitted_risk_distributions.csv")
 }
 
 
 #### Next problem: inferring life risk from ten year risk
 
-risk_mat<-read.csv("mancriskscreen/Data/synthetic_risk_data.csv") %>% dplyr::select(-"X")
+risk_mat <- read.csv("mancriskscreen/Data/synthetic_risk_data.csv") %>%
+  dplyr::select(-"X")
 
 risk_mat$syn.X10yr <- .01 * risk_mat$syn.X10yr # Rescale to numbers rather than percentages
 
 # Relationship between 10 year and lifetime risk is different in different age
 # groups, so need to include age in regression model
-risk_mat$bin.10yr <- risk_mat$syn.X10yr %>% cut(breaks=seq(from=0, to=1, by=.001))
+risk_mat$bin.10yr <- risk_mat$syn.X10yr %>%
+  cut(breaks = seq(from = 0, to = 1, by = .001))
 
 # Needs to be age stratified, so try first on 50-60 group (main group of interest)
-smpl <- risk_mat[which(risk_mat$age_grp=="50-60"),] %>%
-  slice_sample(by=bin.10yr, n=1)
+smpl <- risk_mat[which(risk_mat$age_grp == "50-60"), ] %>%
+  slice_sample(by = bin.10yr, n = 1)
 
 # Highest risk individual seems to cause overfitting in 50-59y group, so fit a
 # GP with it removed:
@@ -219,17 +237,19 @@ smpl_order <- smpl$syn.X10yr %>% order() %>% head(-1) # Order samples by x value
 x_short <- x[smpl_order]
 y_short <- y[smpl_order]
 kern <- Matern52$new(0)
-gp_50_60 <- GauPro(x_short, y_short, kernel=kern)
-if (SHOW_PLOTS){
-  ypred <- gp_50_60$predict(seq(0.,.3,.01), se=T) %>%
-    mutate(upper = mean + 2 * se,
-           lower = mean - 2 * se,
-           xval = seq(0.,.3,.01))
+gp_50_60 <- GauPro(x_short, y_short, kernel = kern)
+if (SHOW_PLOTS) {
+  ypred <- gp_50_60$predict(seq(0., .3, .01), se = T) %>%
+    mutate(
+      upper = mean + 2 * se,
+      lower = mean - 2 * se,
+      xval = seq(0., .3, .01)
+    )
   p <- ggplot(smpl, aes(syn.X10yr, syn.life)) +
     geom_point() +
-    geom_line(data = ypred, aes(x=xval, y=mean), colour="red") +
-    geom_line(data = ypred, aes(x=xval, y=upper), colour="blue") +
-    geom_line(data = ypred, aes(x=xval, y=lower), colour="blue") +
+    geom_line(data = ypred, aes(x = xval, y = mean), colour = "red") +
+    geom_line(data = ypred, aes(x = xval, y = upper), colour = "blue") +
+    geom_line(data = ypred, aes(x = xval, y = lower), colour = "blue") +
     labs(title = "GP fit for 50-60y subgroup with final datapoint removed")
   print(p)
 }
@@ -237,22 +257,24 @@ if (SHOW_PLOTS){
 # Now do <50y group
 # Including points with >25% 10yr risk causes overfitting, so we leave these out
 # of the training data
-smpl <- smpl %>% filter(syn.X10yr<=25)
+smpl <- smpl %>% filter(syn.X10yr <= 25)
 x <- smpl$syn.X10yr
 y <- smpl$syn.life
 kern <- Matern52$new(0)
-gp_u50 <- GauPro(x, y, kernel=kern)
+gp_u50 <- GauPro(x, y, kernel = kern)
 
-if (SHOW_PLOTS){
-  ypred <- gp_u50$predict(seq(0.,.3,.01), se=T) %>%
-    mutate(upper = mean + 2 * se,
-           lower = mean - 2 * se,
-           xval = seq(0.,.3,.01))
+if (SHOW_PLOTS) {
+  ypred <- gp_u50$predict(seq(0., .3, .01), se = T) %>%
+    mutate(
+      upper = mean + 2 * se,
+      lower = mean - 2 * se,
+      xval = seq(0., .3, .01)
+    )
   p <- ggplot(smpl, aes(syn.X10yr, syn.life)) +
     geom_point() +
-    geom_line(data = ypred, aes(x=xval, y=mean), colour="red") +
-    geom_line(data = ypred, aes(x=xval, y=upper), colour="blue") +
-    geom_line(data = ypred, aes(x=xval, y=lower), colour="blue") +
+    geom_line(data = ypred, aes(x = xval, y = mean), colour = "red") +
+    geom_line(data = ypred, aes(x = xval, y = upper), colour = "blue") +
+    geom_line(data = ypred, aes(x = xval, y = lower), colour = "blue") +
     labs(title = "GP fit for <50y subgroup with all 10yr risks >25% removed")
   print(p)
 }
@@ -261,28 +283,29 @@ gp_list <- c(gp_u50, gp_50_60)
 
 #### Now add "true" risks to risk_mat, assuming we're working with prediction
 # with density.
-# 
-bf_dens_only <- beta_fits_df[grep("density", rownames(beta_fits_df)),]
+#
+bf_dens_only <- beta_fits_df[grep("density", rownames(beta_fits_df)), ]
 supp_data_dens_only <- supp_data %>%
-                       filter(grepl("density", Model_age)) %>%
-                       filter(grepl("Total", Risk_class))
+  filter(grepl("density", Model_age)) %>%
+  filter(grepl("Total", Risk_class))
 cutoffs <- c(0, 50, 60)
 
 # Function to correct 10 year risk by mapping between clibrated beta distributions
-true_risk_from_syn <- function(syn_risk, age){
-  
-  age_class <- which(cutoffs<age)  %>% max()
-  
-  beta_pars_e <- c(bf_dens_only$alpha_e[age_class],
-                   bf_dens_only$beta_e[age_class])
-  beta_pars_o <- c(bf_dens_only$alpha_o[age_class],
-                   bf_dens_only$beta_o[age_class])
-  
+true_risk_from_syn <- function(syn_risk, age) {
+  age_class <- which(cutoffs < age) %>% max()
+
+  beta_pars_e <- c(
+    bf_dens_only$alpha_e[age_class],
+    bf_dens_only$beta_e[age_class]
+  )
+  beta_pars_o <- c(
+    bf_dens_only$alpha_o[age_class],
+    bf_dens_only$beta_o[age_class]
+  )
+
   # Get individual's position in estimated risk distribution
-  quantile <- pbeta(syn_risk,
-                    beta_pars_e[1],
-                    beta_pars_e[2])
-  
+  quantile <- pbeta(syn_risk, beta_pars_e[1], beta_pars_e[2])
+
   # Get risk at same position in observed risk distribution:
   true_risk <- qbeta(quantile, beta_pars_o[1], beta_pars_o[2])
   return(true_risk)
@@ -292,43 +315,45 @@ true_risk_from_syn_v <- Vectorize(true_risk_from_syn)
 
 # Create copy of risk_mat with misclassification
 risk_mat_with_mc <- risk_mat %>%
-                    mutate(syn.X10yr.true = true_risk_from_syn_v(syn.X10yr,
-                                                                 syn.Age))
+  mutate(syn.X10yr.true = true_risk_from_syn_v(syn.X10yr, syn.Age))
 # The next plot should indicate that there's one problematic case where 10 year
 # risk gets mapped to 1:
-if (SHOW_PLOTS){
-  ggplot(risk_mat_with_mc, aes(syn.X10yr, syn.X10yr.true, col=age_grp)) +
+if (SHOW_PLOTS) {
+  ggplot(risk_mat_with_mc, aes(syn.X10yr, syn.X10yr.true, col = age_grp)) +
     geom_point() +
     geom_abline() +
     labs(title = "10 year risk correction")
-  }
+}
 
 # Should see that problematic cases are all ones with high risk
-problem_cases <- risk_mat_with_mc %>% filter(syn.X10yr.true==1)
+problem_cases <- risk_mat_with_mc %>% filter(syn.X10yr.true == 1)
 print(problem_cases$syn.X10yr)
 
 # Try switching to linear interpolation for these given plots look close to linear:
 linint_df <- risk_mat_with_mc %>%
-            filter(age_grp=="50-60") %>%
-            dplyr::select(syn.X10yr, syn.X10yr.true) %>%
-            filter(!syn.X10yr.true==1)
+  filter(age_grp == "50-60") %>%
+  dplyr::select(syn.X10yr, syn.X10yr.true) %>%
+  filter(!syn.X10yr.true == 1)
 lmodel <- lm(linint_df$syn.X10yr.true ~ linint_df$syn.X10yr)
 
 # Try replacing problem cases with linear extrapolated values:
-problem_locs <- which(risk_mat_with_mc$syn.X10yr.true==1)
-risk_mat_with_mc$syn.X10yr.true[problem_locs] <- problem_cases$syn.X10yr * lmodel$coefficients[2]
+problem_locs <- which(risk_mat_with_mc$syn.X10yr.true == 1)
+risk_mat_with_mc$syn.X10yr.true[problem_locs] <- problem_cases$syn.X10yr *
+  lmodel$coefficients[2]
 
-if (SHOW_PLOTS){
+if (SHOW_PLOTS) {
   # Should look more reasonable now
-  ggplot(risk_mat_with_mc, aes(syn.X10yr, syn.X10yr.true, col=age_grp)) +
+  ggplot(risk_mat_with_mc, aes(syn.X10yr, syn.X10yr.true, col = age_grp)) +
     geom_point() +
     geom_abline() +
-    labs(title = "10 year risk correction with outlier handled by linear extrapolation")
+    labs(
+      title = "10 year risk correction with outlier handled by linear extrapolation"
+    )
 }
 
 # Now add life risks:
 
-get_liferisk <- function(age_grp_idx, syn.X10yr){
+get_liferisk <- function(age_grp_idx, syn.X10yr) {
   gp_i <- gp_list[[age_grp_idx]]
   return(gp_i$predict(syn.X10yr))
 }
@@ -336,24 +361,24 @@ get_liferisk <- function(age_grp_idx, syn.X10yr){
 get_liferisk <- Vectorize(get_liferisk)
 
 risk_mat_with_mc <- risk_mat_with_mc %>%
-                    mutate(age_grp_idx = ifelse(age_grp=="<50",1,2)) %>%
-                    mutate(syn.life.true = get_liferisk(age_grp_idx, syn.X10yr.true))
+  mutate(age_grp_idx = ifelse(age_grp == "<50", 1, 2)) %>%
+  mutate(syn.life.true = get_liferisk(age_grp_idx, syn.X10yr.true))
 
-if (SHOW_PLOTS){
+if (SHOW_PLOTS) {
   # Check life risk plots:
-  ggplot(risk_mat_with_mc, aes(syn.life, syn.life.true, col=age_grp)) +
+  ggplot(risk_mat_with_mc, aes(syn.life, syn.life.true, col = age_grp)) +
     geom_point() +
     geom_abline() +
     labs("Lifetime risk correction")
   risk_mat_with_mc <- risk_mat_with_mc %>%
-                      dplyr::select(-age_grp) %>%
-                      dplyr::select(-age_grp_idx) %>%
-                      dplyr::select(-bin.10yr)
+    dplyr::select(-age_grp) %>%
+    dplyr::select(-age_grp_idx) %>%
+    dplyr::select(-bin.10yr)
 }
 
 # Rescale to percentages for consistency before saving
 risk_mat_with_mc[, c(2, 3, 5, 6)] <- 100 * risk_mat_with_mc[, c(2, 3, 5, 6)]
 
-if (SAVE_OUTPUTS){
+if (SAVE_OUTPUTS) {
   write.csv(risk_mat_with_mc, "synthetic_risk_data_with_misclassification.csv")
 }
