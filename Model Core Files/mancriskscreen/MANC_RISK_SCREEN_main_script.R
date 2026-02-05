@@ -1,15 +1,15 @@
 controls <- list(
-  "strategies" = c(3), #A vector of strategies to evaluate
+  "strategies" = c(0,1,2,3,4,9), #A vector of strategies to evaluate
   "gensample" = TRUE, #Whether to generate a new sample to simulate
   "MISCLASS" = TRUE, #whether to include risk misclassification in analysis
   "PREVENTATIVE_DRUG" = FALSE, #whether to include chemoprevention in analysis
   "supplemental_screening" = FALSE, #whether supplemental screening is used for women with dense breasts
   "PSA" = FALSE, #whether to conduct a probabilistic sensitivity analysis
   "intervals" = FALSE, #whether to conduct a PSA with wide intervals for GAM estimations
-  "desired_cases" = 300, #apprximate number of cancer cases required in simulation
-  "chunks" = 10, #number of chunks to divide analysis into
+  "desired_cases" = 3000, #apprximate number of cancer cases required in simulation
+  "chunks" = 1, #number of chunks to divide analysis into
   "mcruns" = 1, #number of monte carlo runs in PSA/intervals
-  "numcores" = 8,
+  "numcores" = 16,
   "install" = FALSE
 ) #set number of cores for parallel processing
 
@@ -137,99 +137,107 @@ for (r in 1:length(screen_strategies)) {
   }
   ################Outer Individual sampling loop##############################
 
-  #Set loop to divide i loop into a number of sub-loops in case of simulation break
-  for (ii in 1:chunks) {
-    start_time <- Sys.time()
-    if (MISCLASS) {
-      load(paste(
-        "Risksamplewithmisclass/",
-        sample_fname,
-        ii,
-        ".Rdata",
-        sep = ""
-      ))
-    } else {
-      load(paste("Risksample/", sample_fname, ii, ".Rdata", sep = ""))
-    }
-    prefix <- paste("^", "X", ii, ".", sep = "")
-    names(splitsample) <- sub(prefix, "", names(splitsample))
-
-    if (MISCLASS) {
-      #Assign women to risk groups based on 10yr risk if using risk-stratified approach
-      if (screen_strategy == 1 | screen_strategy == 9) {
-        splitsample$risk_group <- 1 +
-          findInterval(splitsample$tenyrrisk_est, risk_cutoffs_procas)
-      } else if (screen_strategy == 2) {
-        splitsample$risk_group <- 1 +
-          findInterval(splitsample$tenyrrisk_est, risk_cutoffs_tert)
-      } else if (screen_strategy == 7 | screen_strategy == 8) {
-        splitsample$risk_group <- ifelse(
-          splitsample$tenyrrisk_est < low_risk_cut,
-          1,
-          2
-        )
-      }
-    } else {
-      if (screen_strategy == 1 | screen_strategy == 9) {
-        splitsample$risk_group <- 1 +
-          findInterval(splitsample$tenyrrisk, risk_cutoffs_procas)
-      } else if (screen_strategy == 2) {
-        splitsample$risk_group <- 1 +
-          findInterval(splitsample$tenyrrisk, risk_cutoffs_tert)
-      } else if (screen_strategy == 7 | screen_strategy == 8) {
-        splitsample$risk_group <- ifelse(
-          splitsample$tenyrrisk < low_risk_cut,
-          1,
-          2
-        )
-      }
-    }
-
-    if (PREVENTATIVE_DRUG) {
-      # # Add extra fields for drug:
-      nsample <- nrow(splitsample)
-      # Use 1, 2 coding for menopause status to match indexing for drug efficacy/uptake
-      splitsample$starting_menses_status <- ifelse(
-        dqrunif(nsample, 0, 1) < prob_premen,
+  start_time <- Sys.time()
+  if (MISCLASS) {
+    load(paste(
+      "Risksamplewithmisclass/",
+      sample_fname,
+      1,
+      ".Rdata",
+      sep = ""
+    ))
+  } else {
+    load(paste("Risksample/", sample_fname, 1, ".Rdata", sep = ""))
+  }
+  prefix <- paste("^", "X", 1, ".", sep = "")
+  names(splitsample) <- sub(prefix, "", names(splitsample))
+  
+  if (MISCLASS) {
+    #Assign women to risk groups based on 10yr risk if using risk-stratified approach
+    if (screen_strategy == 1 | screen_strategy == 9) {
+      splitsample$risk_group <- 1 +
+        findInterval(splitsample$tenyrrisk_est, risk_cutoffs_procas)
+    } else if (screen_strategy == 2) {
+      splitsample$risk_group <- 1 +
+        findInterval(splitsample$tenyrrisk_est, risk_cutoffs_tert)
+    } else if (screen_strategy == 7 | screen_strategy == 8) {
+      splitsample$risk_group <- ifelse(
+        splitsample$tenyrrisk_est < low_risk_cut,
         1,
         2
       )
-      splitsample$takes_drug <- logical(nsample)
-      splitsample$time_taking_drug <- numeric(nsample)
-
-      if (PSA == 1) {
-        # Redraw effects for PSA, assuming Monte Carlo draws of parameters are the same for each individual
-        drug_matrix_list <- redraw_drug_pars(splitsample[1, ])
-        risk_red <- drug_matrix_list[[1]]
-        uptake <- drug_matrix_list[[2]]
-        persistence <- drug_matrix_list[[3]]
+    }
+  } else {
+    if (screen_strategy == 1 | screen_strategy == 9) {
+      splitsample$risk_group <- 1 +
+        findInterval(splitsample$tenyrrisk, risk_cutoffs_procas)
+    } else if (screen_strategy == 2) {
+      splitsample$risk_group <- 1 +
+        findInterval(splitsample$tenyrrisk, risk_cutoffs_tert)
+    } else if (screen_strategy == 7 | screen_strategy == 8) {
+      splitsample$risk_group <- ifelse(
+        splitsample$tenyrrisk < low_risk_cut,
+        1,
+        2
+      )
+    }
+  }
+  
+  risk_groups<-unique(splitsample$risk_group)
+  
+  if (PREVENTATIVE_DRUG) {
+    # # Add extra fields for drug:
+    nsample <- nrow(splitsample)
+    # Use 1, 2 coding for menopause status to match indexing for drug efficacy/uptake
+    splitsample$starting_menses_status <- ifelse(
+      dqrunif(nsample, 0, 1) < prob_premen,
+      1,
+      2
+    )
+    splitsample$takes_drug <- logical(nsample)
+    splitsample$time_taking_drug <- numeric(nsample)
+    
+    if (PSA == 1) {
+      # Redraw effects for PSA, assuming Monte Carlo draws of parameters are the same for each individual
+      drug_matrix_list <- redraw_drug_pars(splitsample[1, ])
+      risk_red <- drug_matrix_list[[1]]
+      uptake <- drug_matrix_list[[2]]
+      persistence <- drug_matrix_list[[3]]
+    }
+  }
+  
+  #Assign women to supplemental screening if switched on and criteria met
+  if (supplemental_screening == 1) {
+    for (i in 1:length(splitsample$MRI_screen)) {
+      if (
+        splitsample[i, "VDG"] >= density_cutoff &
+        splitsample[
+          i,
+          ifelse(MISCLASS == 1, "tenyrrisk_true", "tenyrrisk_est")
+        ] >=
+        8
+      ) {
+        splitsample[i, "MRI_screen"] < 1
+      } else if (
+        splitsample[i, "VDG"] >= density_cutoff &
+        splitsample[
+          i,
+          ifelse(MISCLASS == 1, "tenyrrisk_true", "tenyrrisk_est")
+        ] <
+        8
+      ) {
+        splitsample[i, "US_screen"] <- 1
       }
     }
+  }
+  
+  splitmaster<-splitsample
+  
+  #Set loop to divide i loop into a number of sub-loops in case of simulation break
+  for (ii in 1:length(risk_groups)) {
 
-    #Assign women to supplemental screening if switched on and criteria met
-    if (supplemental_screening == 1) {
-      for (i in 1:length(splitsample$MRI_screen)) {
-        if (
-          splitsample[i, "VDG"] >= density_cutoff &
-            splitsample[
-              i,
-              ifelse(MISCLASS == 1, "tenyrrisk_true", "tenyrrisk_est")
-            ] >=
-              8
-        ) {
-          splitsample[i, "MRI_screen"] < 1
-        } else if (
-          splitsample[i, "VDG"] >= density_cutoff &
-            splitsample[
-              i,
-              ifelse(MISCLASS == 1, "tenyrrisk_true", "tenyrrisk_est")
-            ] <
-              8
-        ) {
-          splitsample[i, "US_screen"] <- 1
-        }
-      }
-    }
+    splitsample<-splitmaster %>% 
+      filter(risk_group==risk_groups[ii])
 
     #Create iterator for the data.frame of women to pass to parallel processors
     itx <- iter(splitsample, by = "row")
