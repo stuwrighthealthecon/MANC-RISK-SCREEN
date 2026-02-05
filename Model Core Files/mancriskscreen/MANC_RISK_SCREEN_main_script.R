@@ -1,12 +1,12 @@
 controls <- list(
-  "strategies" = c(0, 1, 2, 3, 4, 9), #A vector of strategies to evaluate
+  "strategies" = c(3), #A vector of strategies to evaluate
   "gensample" = TRUE, #Whether to generate a new sample to simulate
   "MISCLASS" = TRUE, #whether to include risk misclassification in analysis
   "PREVENTATIVE_DRUG" = FALSE, #whether to include chemoprevention in analysis
   "supplemental_screening" = FALSE, #whether supplemental screening is used for women with dense breasts
   "PSA" = FALSE, #whether to conduct a probabilistic sensitivity analysis
   "intervals" = FALSE, #whether to conduct a PSA with wide intervals for GAM estimations
-  "desired_cases" = 3000, #apprximate number of cancer cases required in simulation
+  "desired_cases" = 300, #apprximate number of cancer cases required in simulation
   "chunks" = 10, #number of chunks to divide analysis into
   "mcruns" = 1, #number of monte carlo runs in PSA/intervals
   "numcores" = 8,
@@ -23,6 +23,7 @@ if (DO_INSTALL) {
   install.packages("compiler")
   install.packages("tidyverse")
   install.packages("iterators")
+  install.packages("here")
 }
 
 MISCLASS <- controls$MISCLASS # Set to TRUE to include impact of errors in risk prediction in model
@@ -70,6 +71,7 @@ library("compiler")
 library("tidyverse")
 library("iterators")
 library("tictoc")
+library("here")
 
 #####Choose screening programme and related parameters##########
 tic()
@@ -97,9 +99,6 @@ for (r in 1:length(screen_strategies)) {
   #Standard (0) or wide (1) distributions for PSA
   #Wide intervals recommended for generating data to predict GAM model
   intervals = ifelse(controls$intervals == TRUE, 1, 0)
-
-  #Set working directory
-  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
   #Set loop numbers
   chunks <- controls$chunks #Number of chunks to split inum into for faster running time
