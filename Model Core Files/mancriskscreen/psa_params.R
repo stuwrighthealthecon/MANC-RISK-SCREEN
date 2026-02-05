@@ -1,35 +1,39 @@
 #Stage I to III survival parameters
-survmvn<-data.frame(c(-5.6178,-5.2857,-6.1138),
-                    c(-3.8083,-3.7400,-3.8704),
-                    c(-2.7311,-2.6687,-2.7963))
-survcovmat<-cov(survmvn)
-survmeans<-c(survmvn[1,1],survmvn[1,2],survmvn[1,3])
+survmvn <- data.frame(
+  c(-5.6178, -5.2857, -6.1138),
+  c(-3.8083, -3.7400, -3.8704),
+  c(-2.7311, -2.6687, -2.7963)
+)
+survcovmat <- cov(survmvn)
+survmeans <- c(survmvn[1, 1], survmvn[1, 2], survmvn[1, 3])
 
 #Metastatic survival parameters
-metmvn<-data.frame(c(-1.78723,-1.67922,-1.89434),
-                   c(-1.38762,-1.33512,-1.49956),
-                   c(-1.01051,-0.93338,-1.08304))
-metmat<-cov(metmvn)
-metmeans<-c(metmvn[1,1],metmvn[1,2],metmvn[1,3])
+metmvn <- data.frame(
+  c(-1.78723, -1.67922, -1.89434),
+  c(-1.38762, -1.33512, -1.49956),
+  c(-1.01051, -0.93338, -1.08304)
+)
+metmat <- cov(metmvn)
+metmeans <- c(metmvn[1, 1], metmvn[1, 2], metmvn[1, 3])
 
 #Draw Mammography with sensitivity conditional on tumour diameter parameters W-F
-PSA_beta1<-c(1.47,0.1)
-PSA_beta2<-c(6.51,0.5)
+PSA_beta1 <- c(1.47, 0.1)
+PSA_beta2 <- c(6.51, 0.5)
 
 #Sensitivity by VDG group
-PSA_Sen_VDG1<-c(48,16)
-PSA_Sen_VDG2<-c(208,75)
-PSA_Sen_VDG3<-c(113,76)
-PSA_Sen_VDG4<-c(40,38)
-Sen_VDG_av<- 0.757
+PSA_Sen_VDG1 <- c(48, 16)
+PSA_Sen_VDG2 <- c(208, 75)
+PSA_Sen_VDG3 <- c(113, 76)
+PSA_Sen_VDG4 <- c(40, 38)
+Sen_VDG_av <- 0.757
 
 #Draw supplemental Screening CDRs
-PSA_MRI_cdr<-c(99.495,19799.5)
-PSA_US_cdr<-c(35.89,11927)
+PSA_MRI_cdr <- c(99.495, 19799.5)
+PSA_US_cdr <- c(35.89, 11927)
 
 #Draw tumour growth rate parameters
-PSA_log_norm_mean <- c(1.07,0.09)
-PSA_log_norm_sd <- c(1.31,0.11)
+PSA_log_norm_mean <- c(1.07, 0.09)
+PSA_log_norm_sd <- c(1.31, 0.11)
 
 # Chemoprevention Drug parameters
 
@@ -57,23 +61,26 @@ dropout_mu <- dropout_ests$Adherence$means %>% as.numeric()
 dropout_sigma <- dropout_ests$Adherence$vcov %>% as.matrix()
 
 #Drug uptake parameters
-PSA_uptake_1<-c(.71, .1)
-PSA_uptake_2<-c(.71, .1)
+PSA_uptake_1 <- c(.71, .1)
+PSA_uptake_2 <- c(.71, .1)
 
 #Draw costs
-PSA_cost_strat<-c(1.8826894,0.1015175)
-cost_inflator<-0.1
-cost_dist_sd<-0.05102041
-PSA_costvar<-c(0,cost_dist_sd)
-PSA_costscreen<-c(0,cost_dist_sd)
-PSA_cost_follow_up<-c(0,cost_dist_sd)
-PSA_cost_biop<-c(0,cost_dist_sd)
-PSA_cost_US<-c(0,cost_dist_sd)
-PSA_cost_MRI<-c(0,cost_dist_sd)
-PSA_cost_drug<-c(0,cost_dist_sd)
+PSA_cost_strat <- c(1.8826894, 0.1015175)
+cost_inflator <- 0.1
+cost_dist_sd <- 0.05102041
+PSA_costvar <- c(0, cost_dist_sd)
+PSA_costscreen <- c(0, cost_dist_sd)
+PSA_cost_follow_up <- c(0, cost_dist_sd)
+PSA_cost_biop <- c(0, cost_dist_sd)
+PSA_cost_US <- c(0, cost_dist_sd)
+PSA_cost_MRI <- c(0, cost_dist_sd)
+PSA_cost_drug <- c(0, cost_dist_sd)
 
 #Generate utility draws
-utilmat<-data.frame(c(1-0.82,1-0.81,1-0.83),c(1-0.75,1-0.73,1-0.77))
-lnutilmat<-log(utilmat)
-covutil<-cov(lnutilmat)
-utilmeans<-c(log(1-0.82),log(1-0.75))
+utilmat <- data.frame(
+  c(1 - 0.82, 1 - 0.81, 1 - 0.83),
+  c(1 - 0.75, 1 - 0.73, 1 - 0.77)
+)
+lnutilmat <- log(utilmat)
+covutil <- cov(lnutilmat)
+utilmeans <- c(log(1 - 0.82), log(1 - 0.75))
