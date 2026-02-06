@@ -238,6 +238,71 @@ for (r in 1:length(screen_strategies)) {
 
     splitsample<-splitmaster %>% 
       filter(risk_group==risk_groups[ii])
+    
+    screen_times <- c(999)
+    if (screen_strategy == 1) {
+      if (splitsample$risk_group[1] < 4) {
+        screen_times <- low_risk_screentimes
+      } else if (splitsample$risk_group[1] > 3 & splitsample$risk_group[1] < 5) {
+        screen_times <- med_risk_screentimes
+      } else if (splitsample$risk_group[1] > 4) {
+        screen_times <- high_risk_screentimes
+      }
+    }
+    if (screen_strategy == 2) {
+      if (splitsample$risk_group[1] == 1) {
+        screen_times <- low_risk_screentimes
+      } else if (splitsample$risk_group[1] == 2) {
+        screen_times <- med_risk_screentimes
+      } else if (splitsample$risk_group[1] == 3) {
+        screen_times <- high_risk_screentimes
+      }
+    }
+    if (screen_strategy == 3) {
+      screen_times <- low_risk_screentimes
+    }
+    if (screen_strategy == 4) {
+      screen_times <- med_risk_screentimes
+    }
+    if (screen_strategy == 5) {
+      screen_times <- seq(screen_startage, screen_startage + (5 * 4), 5)
+    }
+    if (screen_strategy == 6) {
+      screen_times <- seq(screen_startage, screen_startage + 10, 10)
+    }
+    if (screen_strategy == 7) {
+      if (splitsample$risk_group[1] == 1) {
+        screen_times <- seq(screen_startage, screen_startage + (5 * 4), 5)
+      }
+      if (splitsample$risk_group[1] == 2) {
+        screen_times <- low_risk_screentimes
+      }
+    } else if (screen_strategy == 7) {
+      screen_times <- low_risk_screentimes
+    }
+    if (screen_strategy == 8) {
+      if (splitsample$risk_group[1] == 1) {
+        screen_times <- seq(screen_startage, screen_startage + (6 * 3), 6)
+      }
+      if (splitsample$risk_group[1] == 2) {
+        screen_times <- low_risk_screentimes
+      }
+    } else if (screen_strategy == 8) {
+      screen_times <- low_risk_screentimes
+    }
+    if (screen_strategy == 9) {
+      if (splitsample$risk_group[1] == 1) {
+        screen_times <- seq(screen_startage, screen_startage + (5 * 4), 5)
+      } else if (splitsample$risk_group[1] == 2 | splitsample$risk_group[1] == 3) {
+        screen_times <- low_risk_screentimes
+      } else if (splitsample$risk_group[1] == 4) {
+        screen_times <- med_risk_screentimes
+      } else if (splitsample$risk_group[1] == 5) {
+        screen_times <- high_risk_screentimes
+      }
+    } else if (screen_strategy == 9) {
+      screen_times <- low_risk_screentimes
+    }
 
     #Create iterator for the data.frame of women to pass to parallel processors
     itx <- iter(splitsample, by = "row")

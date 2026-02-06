@@ -7,75 +7,7 @@ fnLookupBase <- function(iStage, iAge, iLE) {
 }
 
 ############################Set Screen Times####################################
-set_screen_times <- function(risk_data, screen_strategy) {
-  screen_times <- c(999)
-  if (screen_strategy == 1 & risk_data$interval_change == 1) {
-    if (risk_data$risk_group < 4) {
-      screen_times <- low_risk_screentimes
-    } else if (risk_data$risk_group > 3 & risk_data$risk_group < 5) {
-      screen_times <- med_risk_screentimes
-    } else if (risk_data$risk_group > 4) {
-      screen_times <- high_risk_screentimes
-    }
-  } else if (screen_strategy == 1 & risk_data$interval_change == 0) {
-    screen_times <- low_risk_screentimes
-  }
-  if (screen_strategy == 2 & risk_data$interval_change == 1) {
-    if (risk_data$risk_group == 1) {
-      screen_times <- low_risk_screentimes
-    } else if (risk_data$risk_group == 2) {
-      screen_times <- med_risk_screentimes
-    } else if (risk_data$risk_group == 3) {
-      screen_times <- high_risk_screentimes
-    }
-  } else if (screen_strategy == 1 & risk_data$interval_change == 0) {
-    screen_times <- low_risk_screentimes
-  }
-  if (screen_strategy == 3) {
-    screen_times <- low_risk_screentimes
-  }
-  if (screen_strategy == 4) {
-    screen_times <- med_risk_screentimes
-  }
-  if (screen_strategy == 5) {
-    screen_times <- seq(screen_startage, screen_startage + (5 * 4), 5)
-  }
-  if (screen_strategy == 6) {
-    screen_times <- seq(screen_startage, screen_startage + 10, 10)
-  }
-  if (screen_strategy == 7 & risk_data$interval_change == 1) {
-    if (risk_data$risk_group == 1) {
-      screen_times <- seq(screen_startage, screen_startage + (5 * 4), 5)
-    }
-    if (risk_data$risk_group == 2) {
-      screen_times <- low_risk_screentimes
-    }
-  } else if (screen_strategy == 7 & risk_data$interval_change == 0) {
-    screen_times <- low_risk_screentimes
-  }
-  if (screen_strategy == 8 & risk_data$interval_change == 1) {
-    if (risk_data$risk_group == 1) {
-      screen_times <- seq(screen_startage, screen_startage + (6 * 3), 6)
-    }
-    if (risk_data$risk_group == 2) {
-      screen_times <- low_risk_screentimes
-    }
-  } else if (screen_strategy == 8 & risk_data$interval_change == 0) {
-    screen_times <- low_risk_screentimes
-  }
-  if (screen_strategy == 9 & risk_data$interval_change == 1) {
-    if (risk_data$risk_group == 1) {
-      screen_times <- seq(screen_startage, screen_startage + (5 * 4), 5)
-    } else if (risk_data$risk_group == 2 | risk_data$risk_group == 3) {
-      screen_times <- low_risk_screentimes
-    } else if (risk_data$risk_group == 4) {
-      screen_times <- med_risk_screentimes
-    } else if (risk_data$risk_group == 5) {
-      screen_times <- high_risk_screentimes
-    }
-  } else if (screen_strategy == 9 & risk_data$interval_change == 0) {
-    screen_times <- low_risk_screentimes
-  }
+set_screen_times <- function(risk_data, screen_times) {
 
   att_screen_times <- rep(0, length(screen_times))
   att_screen_times[1] <- rbinom(1, 1, uptakefirstscreen)
