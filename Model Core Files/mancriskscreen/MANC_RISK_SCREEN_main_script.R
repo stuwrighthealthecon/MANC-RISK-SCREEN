@@ -132,6 +132,8 @@ for (r in 1:length(screen_strategies)) {
       cmp_create_sample(PSA, intervals, seed, screen_strategy)
     }
   }
+  
+  splitmaster<-risksample
   ################Outer Individual sampling loop##############################
 
   start_time <- Sys.time()
@@ -300,7 +302,26 @@ for (r in 1:length(screen_strategies)) {
     } else if (screen_strategy == 9) {
       screen_times <- low_risk_screentimes
     }
-
+    
+    #Add blank columns for potential screen times
+      risksample[,(ncol(splitmaster) + 1):(ncol(splitmaster)+1+length(screen_times))] <- numeric(length(nrow(risksample)))
+      ncol(splitmaster)+1+length(screen_times)
+      #Draw attendance at first screen
+      risksample[,17] <- rbinom(
+        nrow(risksample),
+        1,
+        uptakefirstscreen
+      )
+      
+      #Loop through remaining screens conditional on previous attendance
+      for (i in 1:(length(screen_times) - 1)) {
+        risksample[, 18 + i] <- ifelse(
+          rowSums(risksample[18:(17+ i)]) >= 1,
+          rbinom(length(risksample$risk_group), 1, uptakeotherscreen),
+          rbinom(length(risksample$risk_group), 1, uptakenoscreen)
+        )
+      }
+      
     #Create iterator for the data.frame of women to pass to parallel processors
     itx <- iter(risksample, by = "row")
 
