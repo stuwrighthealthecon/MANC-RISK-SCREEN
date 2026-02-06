@@ -19,10 +19,11 @@ set_screen_times <- function(risk_data, screen_times) {
     }
   }
 
-  screen_times <- att_screen_times * screen_times
-  screen_times <- screen_times[!screen_times == 0]
+  p_screen_times <- att_screen_times * screen_times
+  p_screen_times <- p_screen_times[!p_screen_times == 0]
+  if(length(p_screen_times)==0){p_screen_times<-c(999)}
 
-  return(screen_times)
+  return(p_screen_times)
 }
 cmp_set_screen_times <- cmpfun(set_screen_times)
 

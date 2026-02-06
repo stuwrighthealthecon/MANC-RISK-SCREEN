@@ -7,7 +7,6 @@ controls <- list(
   "PSA" = FALSE, #whether to conduct a probabilistic sensitivity analysis
   "intervals" = FALSE, #whether to conduct a PSA with wide intervals for GAM estimations
   "desired_cases" = 3000, #apprximate number of cancer cases required in simulation
-  "chunks" = 1, #number of chunks to divide analysis into
   "mcruns" = 1, #number of monte carlo runs in PSA/intervals
   "numcores" = 16,
   "install" = FALSE
@@ -61,7 +60,7 @@ if (MISCLASS & PREVENTATIVE_DRUG) {
   }
 }
 
-sample_fname <- "possample_"
+sample_fname <- "possample"
 
 #Run required packages
 library("doParallel")
@@ -101,11 +100,9 @@ for (r in 1:length(screen_strategies)) {
   intervals = ifelse(controls$intervals == TRUE, 1, 0)
 
   #Set loop numbers
-  chunks <- controls$chunks #Number of chunks to split inum into for faster running time
   expected_prev <- .12
   desired_cases <- controls$desired_cases
   inum <- ceiling((desired_cases / expected_prev)) #Individual women to be sampled to give desired number of positive cancer cases
-  inum <- ifelse(PSA == 0, chunks * ceiling(inum / chunks), 1) # Make sure number of women is divisible by number of chunks or 1 for PSA
   mcruns <- controls$mcruns #Monte Carlo runs used if PSA switched on
   seed <- set.seed(controls$seed) #Set seed for random draws
 
@@ -138,68 +135,68 @@ for (r in 1:length(screen_strategies)) {
   ################Outer Individual sampling loop##############################
 
   start_time <- Sys.time()
+  
   if (MISCLASS) {
     load(paste(
       "Risksamplewithmisclass/",
       sample_fname,
-      1,
       ".Rdata",
       sep = ""
     ))
   } else {
-    load(paste("Risksample/", sample_fname, 1, ".Rdata", sep = ""))
+    load(paste("Risksample/", sample_fname, ".Rdata", sep = ""))
   }
   prefix <- paste("^", "X", 1, ".", sep = "")
-  names(splitsample) <- sub(prefix, "", names(splitsample))
+  names(risksample) <- sub(prefix, "", names(risksample))
   
   if (MISCLASS) {
     #Assign women to risk groups based on 10yr risk if using risk-stratified approach
     if (screen_strategy == 1 | screen_strategy == 9) {
-      splitsample$risk_group <- 1 +
-        findInterval(splitsample$tenyrrisk_est, risk_cutoffs_procas)
+      risksample$risk_group <- 1 +
+        findInterval(risksample$tenyrrisk_est, risk_cutoffs_procas)
     } else if (screen_strategy == 2) {
-      splitsample$risk_group <- 1 +
-        findInterval(splitsample$tenyrrisk_est, risk_cutoffs_tert)
+      risksample$risk_group <- 1 +
+        findInterval(risksample$tenyrrisk_est, risk_cutoffs_tert)
     } else if (screen_strategy == 7 | screen_strategy == 8) {
-      splitsample$risk_group <- ifelse(
-        splitsample$tenyrrisk_est < low_risk_cut,
+      risksample$risk_group <- ifelse(
+        risksample$tenyrrisk_est < low_risk_cut,
         1,
         2
       )
     }
   } else {
     if (screen_strategy == 1 | screen_strategy == 9) {
-      splitsample$risk_group <- 1 +
-        findInterval(splitsample$tenyrrisk, risk_cutoffs_procas)
+      risksample$risk_group <- 1 +
+        findInterval(risksample$tenyrrisk, risk_cutoffs_procas)
     } else if (screen_strategy == 2) {
-      splitsample$risk_group <- 1 +
-        findInterval(splitsample$tenyrrisk, risk_cutoffs_tert)
+      risksample$risk_group <- 1 +
+        findInterval(risksample$tenyrrisk, risk_cutoffs_tert)
     } else if (screen_strategy == 7 | screen_strategy == 8) {
-      splitsample$risk_group <- ifelse(
-        splitsample$tenyrrisk < low_risk_cut,
+      risksample$risk_group <- ifelse(
+        risksample$tenyrrisk < low_risk_cut,
         1,
         2
       )
     }
   }
   
-  risk_groups<-unique(splitsample$risk_group)
+  risk_groups<-unique(risksample$risk_group)
   
   if (PREVENTATIVE_DRUG) {
     # # Add extra fields for drug:
-    nsample <- nrow(splitsample)
+    nsample <- nrow(risksample)
     # Use 1, 2 coding for menopause status to match indexing for drug efficacy/uptake
-    splitsample$starting_menses_status <- ifelse(
+    risksample$starting_menses_status <- ifelse(
       dqrunif(nsample, 0, 1) < prob_premen,
       1,
       2
     )
-    splitsample$takes_drug <- logical(nsample)
-    splitsample$time_taking_drug <- numeric(nsample)
+    risksample$takes_drug <- logical(nsample)
+    risksample$time_taking_drug <- numeric(nsample)
     
     if (PSA == 1) {
       # Redraw effects for PSA, assuming Monte Carlo draws of parameters are the same for each individual
-      drug_matrix_list <- redraw_drug_pars(splitsample[1, ])
+      drug_matrix_list <- redraw_drug_pars(risksample[1, ])
       risk_red <- drug_matrix_list[[1]]
       uptake <- drug_matrix_list[[2]]
       persistence <- drug_matrix_list[[3]]
@@ -208,53 +205,53 @@ for (r in 1:length(screen_strategies)) {
   
   #Assign women to supplemental screening if switched on and criteria met
   if (supplemental_screening == 1) {
-    for (i in 1:length(splitsample$MRI_screen)) {
+    for (i in 1:length(risksample$MRI_screen)) {
       if (
-        splitsample[i, "VDG"] >= density_cutoff &
-        splitsample[
+        risksample[i, "VDG"] >= density_cutoff &
+        risksample[
           i,
           ifelse(MISCLASS == 1, "tenyrrisk_true", "tenyrrisk_est")
         ] >=
         8
       ) {
-        splitsample[i, "MRI_screen"] < 1
+        risksample[i, "MRI_screen"] < 1
       } else if (
-        splitsample[i, "VDG"] >= density_cutoff &
-        splitsample[
+        risksample[i, "VDG"] >= density_cutoff &
+        risksample[
           i,
           ifelse(MISCLASS == 1, "tenyrrisk_true", "tenyrrisk_est")
         ] <
         8
       ) {
-        splitsample[i, "US_screen"] <- 1
+        risksample[i, "US_screen"] <- 1
       }
     }
   }
   
-  splitmaster<-splitsample
+  splitmaster<-risksample
   
   #Set loop to divide i loop into a number of sub-loops in case of simulation break
   for (ii in 1:length(risk_groups)) {
 
-    splitsample<-splitmaster %>% 
+    risksample<-splitmaster %>% 
       filter(risk_group==risk_groups[ii])
     
     screen_times <- c(999)
     if (screen_strategy == 1) {
-      if (splitsample$risk_group[1] < 4) {
+      if (risksample$risk_group[1] < 4) {
         screen_times <- low_risk_screentimes
-      } else if (splitsample$risk_group[1] > 3 & splitsample$risk_group[1] < 5) {
+      } else if (risksample$risk_group[1] > 3 & risksample$risk_group[1] < 5) {
         screen_times <- med_risk_screentimes
-      } else if (splitsample$risk_group[1] > 4) {
+      } else if (risksample$risk_group[1] > 4) {
         screen_times <- high_risk_screentimes
       }
     }
     if (screen_strategy == 2) {
-      if (splitsample$risk_group[1] == 1) {
+      if (risksample$risk_group[1] == 1) {
         screen_times <- low_risk_screentimes
-      } else if (splitsample$risk_group[1] == 2) {
+      } else if (risksample$risk_group[1] == 2) {
         screen_times <- med_risk_screentimes
-      } else if (splitsample$risk_group[1] == 3) {
+      } else if (risksample$risk_group[1] == 3) {
         screen_times <- high_risk_screentimes
       }
     }
@@ -271,33 +268,33 @@ for (r in 1:length(screen_strategies)) {
       screen_times <- seq(screen_startage, screen_startage + 10, 10)
     }
     if (screen_strategy == 7) {
-      if (splitsample$risk_group[1] == 1) {
+      if (risksample$risk_group[1] == 1) {
         screen_times <- seq(screen_startage, screen_startage + (5 * 4), 5)
       }
-      if (splitsample$risk_group[1] == 2) {
+      if (risksample$risk_group[1] == 2) {
         screen_times <- low_risk_screentimes
       }
     } else if (screen_strategy == 7) {
       screen_times <- low_risk_screentimes
     }
     if (screen_strategy == 8) {
-      if (splitsample$risk_group[1] == 1) {
+      if (risksample$risk_group[1] == 1) {
         screen_times <- seq(screen_startage, screen_startage + (6 * 3), 6)
       }
-      if (splitsample$risk_group[1] == 2) {
+      if (risksample$risk_group[1] == 2) {
         screen_times <- low_risk_screentimes
       }
     } else if (screen_strategy == 8) {
       screen_times <- low_risk_screentimes
     }
     if (screen_strategy == 9) {
-      if (splitsample$risk_group[1] == 1) {
+      if (risksample$risk_group[1] == 1) {
         screen_times <- seq(screen_startage, screen_startage + (5 * 4), 5)
-      } else if (splitsample$risk_group[1] == 2 | splitsample$risk_group[1] == 3) {
+      } else if (risksample$risk_group[1] == 2 | risksample$risk_group[1] == 3) {
         screen_times <- low_risk_screentimes
-      } else if (splitsample$risk_group[1] == 4) {
+      } else if (risksample$risk_group[1] == 4) {
         screen_times <- med_risk_screentimes
-      } else if (splitsample$risk_group[1] == 5) {
+      } else if (risksample$risk_group[1] == 5) {
         screen_times <- high_risk_screentimes
       }
     } else if (screen_strategy == 9) {
@@ -305,7 +302,7 @@ for (r in 1:length(screen_strategies)) {
     }
 
     #Create iterator for the data.frame of women to pass to parallel processors
-    itx <- iter(splitsample, by = "row")
+    itx <- iter(risksample, by = "row")
 
     #Open i loop: Simulating individual women through the strategy
     results <- foreach(
@@ -318,7 +315,7 @@ for (r in 1:length(screen_strategies)) {
         cancer_diagnostic <- rep(0, 10)
 
         #Select an individual woman from the data.frame
-        risk_data <- as.data.frame(i)
+        risk_data <-as.data.frame(i)
 
         #If PSA switched on, replace base case parameter values with Monte Carlo draws
         if (PSA == 1) {
@@ -390,7 +387,7 @@ for (r in 1:length(screen_strategies)) {
         ############################## Set Screen times###############################
 
         #Assign screening intervals based on strategy and risk group
-        screen_times <- cmp_set_screen_times(risk_data, screen_strategy)
+        p_screen_times <- cmp_set_screen_times(risk_data, screen_times)
 
         ##########################Set counters at i loop level#########################
 
@@ -493,7 +490,7 @@ for (r in 1:length(screen_strategies)) {
 
         cancer_diagnostic[7] <- c(Mort_age)
 
-        Time_to_screen <- screen_times[1] - age #Select the current next screen age and subtract age
+        Time_to_screen <- p_screen_times[1] - age #Select the current next screen age and subtract age
         Time_to_death <- Mort_age - age #Time to death from current age
         Time_to_CD <- CD_age - age #Time to clinical detection
 
@@ -535,7 +532,7 @@ for (r in 1:length(screen_strategies)) {
             ) {
               costs <- costs + (cost_strat * current_discount)
             }
-            if (screen_count == length(screen_times)) {
+            if (screen_count == length(p_screen_times)) {
               lastscreen_count <- 1
             }
 
@@ -589,7 +586,7 @@ for (r in 1:length(screen_strategies)) {
                 sdfirst_cancer <- 1
               } #ca detected in first screen
               if (
-                screen_result[1] == 1 && screen_count == length(screen_times)
+                screen_result[1] == 1 && screen_count == length(p_screen_times)
               ) {
                 sdlast_cancer <- 1
               } #ca detected on last screen
@@ -695,8 +692,8 @@ for (r in 1:length(screen_strategies)) {
           }
 
           #Update times for next event
-          if (screen_count + missed_screen < length(screen_times)) {
-            Time_to_screen <- screen_times[screen_count + 1] - age
+          if (screen_count + missed_screen < length(p_screen_times)) {
+            Time_to_screen <- p_screen_times[screen_count + 1] - age
           } else {
             Time_to_screen <- 101
           } #when screen times runs out set time to age 101
@@ -875,15 +872,10 @@ for (r in 1:length(screen_strategies)) {
         )
       )
     }
-
-    #Print simulation progress
-    print(paste(100 * ii / chunks, "%"))
-    time.now <- Sys.time()
-    elapsed <- as.numeric(difftime(time.now, start_time, units = "secs"))
-    cat("Chunk", ii, "took", elapsed, "seconds.\n")
   } #End i loop
 
   negsamplefn(screen_strategy, MISCLASS, PSA)
 
-  toc()
+ print(paste("Strategy ",r," Complete")) 
 }
+toc()
