@@ -6,7 +6,7 @@ controls <- list(
   "supplemental_screening" = FALSE, #whether supplemental screening is used for women with dense breasts
   "PSA" = FALSE, #whether to conduct a probabilistic sensitivity analysis
   "intervals" = FALSE, #whether to conduct a PSA with wide intervals for GAM estimations
-  "desired_cases" = 3000, #apprximate number of cancer cases required in simulation
+  "desired_cases" = 30000, #apprximate number of cancer cases required in simulation
   "mcruns" = 1, #number of monte carlo runs in PSA/intervals
   "numcores" = 16,
   "install" = FALSE
@@ -133,7 +133,6 @@ for (r in 1:length(screen_strategies)) {
     }
   }
   
-  splitmaster<-risksample
   ################Outer Individual sampling loop##############################
 
   start_time <- Sys.time()
@@ -303,25 +302,28 @@ for (r in 1:length(screen_strategies)) {
       screen_times <- low_risk_screentimes
     }
     
+    if(length(screen_times)>1){
     #Add blank columns for potential screen times
-      risksample[,(ncol(splitmaster) + 1):(ncol(splitmaster)+1+length(screen_times))] <- numeric(length(nrow(risksample)))
-      ncol(splitmaster)+1+length(screen_times)
+    risksample[paste0("screen_",seq_len(length(screen_times)))]<-0
+ 
       #Draw attendance at first screen
-      risksample[,17] <- rbinom(
+      risksample[,"screen_1"] <- rbinom(
         nrow(risksample),
         1,
         uptakefirstscreen
       )
-      
+ 
       #Loop through remaining screens conditional on previous attendance
       for (i in 1:(length(screen_times) - 1)) {
-        risksample[, 18 + i] <- ifelse(
-          rowSums(risksample[18:(17+ i)]) >= 1,
+        idx <- match(paste0("screen_1"), names(risksample))
+        risksample[, idx+i] <- ifelse(
+          rowSums(risksample[idx:(idx+(i-1))]) >= 1,
           rbinom(length(risksample$risk_group), 1, uptakeotherscreen),
           rbinom(length(risksample$risk_group), 1, uptakenoscreen)
         )
       }
-      
+    }else{risksample$screen_1<-999}
+    
     #Create iterator for the data.frame of women to pass to parallel processors
     itx <- iter(risksample, by = "row")
 
@@ -408,8 +410,11 @@ for (r in 1:length(screen_strategies)) {
         ############################## Set Screen times###############################
 
         #Assign screening intervals based on strategy and risk group
-        p_screen_times <- cmp_set_screen_times(risk_data, screen_times)
-
+        p_screen_times <- unlist(tail(as.vector(risk_data), length(screen_times)))
+        p_screen_times<-p_screen_times*screen_times
+        p_screen_times <- p_screen_times[!p_screen_times == 0]
+        if(length(p_screen_times)==0){p_screen_times<-c(999)}
+      
         ##########################Set counters at i loop level#########################
 
         screen_count <- 0 #Screens attended
@@ -900,3 +905,4 @@ for (r in 1:length(screen_strategies)) {
  print(paste("Strategy ",r," Complete")) 
 }
 toc()
+

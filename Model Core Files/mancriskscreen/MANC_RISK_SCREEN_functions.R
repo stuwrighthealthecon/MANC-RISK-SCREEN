@@ -6,27 +6,6 @@ fnLookupBase <- function(iStage, iAge, iLE) {
   ])
 }
 
-############################Set Screen Times####################################
-set_screen_times <- function(risk_data, screen_times) {
-
-  att_screen_times <- rep(0, length(screen_times))
-  att_screen_times[1] <- rbinom(1, 1, uptakefirstscreen)
-  for (i in 2:length(att_screen_times)) {
-    att_screen_times[i] <- if (sum(att_screen_times[1:(i - 1)]) > 0) {
-      rbinom(1, 1, uptakeotherscreen)
-    } else {
-      rbinom(1, 1, uptakenoscreen)
-    }
-  }
-
-  p_screen_times <- att_screen_times * screen_times
-  p_screen_times <- p_screen_times[!p_screen_times == 0]
-  if(length(p_screen_times)==0){p_screen_times<-c(999)}
-
-  return(p_screen_times)
-}
-cmp_set_screen_times <- cmpfun(set_screen_times)
-
 ############Function for determining when a cancer occurs#######################
 Incidence_function <- function(risk_data) {
   #Sample an incidence time (based on vector of probabilities of getting cancer at age t conditional on getting cancer and surviving to age t)
