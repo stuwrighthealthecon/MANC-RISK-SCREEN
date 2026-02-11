@@ -1,5 +1,5 @@
 controls <- list(
-  "strategies" = c(0,1,2,3,4,9), #A vector of strategies to evaluate
+  "strategies" = c(3), #A vector of strategies to evaluate
   "gensample" = TRUE, #Whether to generate a new sample to simulate
   "MISCLASS" = TRUE, #whether to include risk misclassification in analysis
   "PREVENTATIVE_DRUG" = FALSE, #whether to include chemoprevention in analysis
@@ -229,7 +229,8 @@ for (r in 1:length(screen_strategies)) {
     }
   }
   
-  splitmaster<-risksample
+  
+  splitmaster<-subset(risksample,select=-c(VBD,cancer,feedback))
   
   #Set loop to divide i loop into a number of sub-loops in case of simulation break
   for (ii in 1:length(risk_groups)) {
