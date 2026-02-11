@@ -18,7 +18,7 @@ library(purrr)
 library(tidyr)
 
 # Load in risk table from Brentnall 2018 supplement:
-supp_data <- pdf_data("coi180011supp1_prod.pdf")[[5]][-c(1:15), ] %>%
+supp_data <- pdf_data("Documentation/Source misclassification data.pdf")[[5]][-c(1:15), ] %>%
   mutate(
     x = round(x / 3), #reduce resolution to minimise inconsistent coordinates
     y = round(y / 3)
