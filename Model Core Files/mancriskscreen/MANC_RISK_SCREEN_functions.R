@@ -22,9 +22,6 @@ Incidence_function <- function(risk_data) {
   #Add within year time (i.e. months)
   incidence_time <- incidence_time_1 + dqrunif(1, 0, 1)
 
-  #First determine if screen detected or clinical detected in current data
-  detect_mode <- 1 #Clinically detected
-
   #Determine size at detection - as number of tumour doublings in diameter from a 0.25mm diameter
   clin_detect_size_g <- risk_data$clinical_detect_size
   clin_detect_size_g <- start_size * 2^clin_detect_size_g
@@ -32,7 +29,6 @@ Incidence_function <- function(risk_data) {
 
   result <- c(
     incidence_time,
-    detect_mode,
     ca_size_incidence,
     clin_detect_size_g
   )

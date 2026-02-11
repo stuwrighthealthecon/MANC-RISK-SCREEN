@@ -1,12 +1,12 @@
 controls <- list(
-  "strategies" = c(3), #A vector of strategies to evaluate
+  "strategies" = c(0,1,2,3,4,9), #A vector of strategies to evaluate
   "gensample" = TRUE, #Whether to generate a new sample to simulate
   "MISCLASS" = TRUE, #whether to include risk misclassification in analysis
   "PREVENTATIVE_DRUG" = FALSE, #whether to include chemoprevention in analysis
   "supplemental_screening" = FALSE, #whether supplemental screening is used for women with dense breasts
   "PSA" = FALSE, #whether to conduct a probabilistic sensitivity analysis
   "intervals" = FALSE, #whether to conduct a PSA with wide intervals for GAM estimations
-  "desired_cases" = 30000, #apprximate number of cancer cases required in simulation
+  "desired_cases" = 3000, #apprximate number of cancer cases required in simulation
   "mcruns" = 1, #number of monte carlo runs in PSA/intervals
   "numcores" = 16,
   "install" = FALSE
@@ -411,7 +411,7 @@ for (r in 1:length(screen_strategies)) {
         ############################## Set Screen times###############################
 
         #Assign screening intervals based on strategy and risk group
-        p_screen_times <- unlist(tail(as.vector(risk_data), length(screen_times)))
+        p_screen_times <- unlist(risk_data[match(paste0("screen_1"), names(risksample)):match(paste0("screen_",length(screen_times)), names(risksample))])
         p_screen_times<-p_screen_times*screen_times
         p_screen_times <- p_screen_times[!p_screen_times == 0]
         if(length(p_screen_times)==0){p_screen_times<-c(999)}
@@ -478,7 +478,7 @@ for (r in 1:length(screen_strategies)) {
         ca_incidence_age <- ca_incidence_i[1]
 
         #Determine size at clinical detection age
-        CD_size <- ca_incidence_i[4] #tumour diameter at CD
+        CD_size <- ca_incidence_i[3] #tumour diameter at CD
 
         #The detection age is either the age at clinical detection
         #or a formula is applied to determine the age at screen
