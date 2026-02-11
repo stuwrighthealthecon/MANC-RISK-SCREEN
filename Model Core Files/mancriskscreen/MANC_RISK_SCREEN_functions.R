@@ -25,11 +25,9 @@ Incidence_function <- function(risk_data) {
   #Determine size at detection - as number of tumour doublings in diameter from a 0.25mm diameter
   clin_detect_size_g <- risk_data$clinical_detect_size
   clin_detect_size_g <- start_size * 2^clin_detect_size_g
-  ca_size_incidence <- clin_detect_size_g
 
   result <- c(
     incidence_time,
-    ca_size_incidence,
     clin_detect_size_g
   )
   return(result)

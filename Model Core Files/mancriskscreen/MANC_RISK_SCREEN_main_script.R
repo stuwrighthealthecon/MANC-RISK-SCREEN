@@ -478,7 +478,7 @@ for (r in 1:length(screen_strategies)) {
         ca_incidence_age <- ca_incidence_i[1]
 
         #Determine size at clinical detection age
-        CD_size <- ca_incidence_i[3] #tumour diameter at CD
+        CD_size <- ca_incidence_i[2] #tumour diameter at CD
 
         #The detection age is either the age at clinical detection
         #or a formula is applied to determine the age at screen
