@@ -229,8 +229,8 @@ for (r in 1:length(screen_strategies)) {
     }
   }
   
-  
-  splitmaster<-subset(risksample,select=-c(VBD,cancer,feedback))
+  if(MISCLASS){splitmaster<-subset(risksample,select=-c(VBD,cancer,feedback,liferisk_est,liferisk_true))
+  }else{splitmaster<-subset(risksample,select=-c(VBD,cancer,feedback,liferisk))}
   
   #Set loop to divide i loop into a number of sub-loops in case of simulation break
   for (ii in 1:length(risk_groups)) {
