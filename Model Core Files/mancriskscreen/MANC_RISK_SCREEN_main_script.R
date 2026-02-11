@@ -460,7 +460,7 @@ for (r in 1:length(screen_strategies)) {
           )
 
           # Calculate cost of drug course based on time taking
-          time_taking_drug <- ca_incidence_i[[5]]
+          time_taking_drug <- ca_incidence_i[[3]]
           if (cost_in_full_courses) {
             prop_drug_admin <- 1.
           } else {
