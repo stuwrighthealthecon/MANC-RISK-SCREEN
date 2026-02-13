@@ -99,34 +99,6 @@ Adjusted_incidence_function <- function(
 }
 cmp_adj_incidence_function <- cmpfun(Adjusted_incidence_function)
 
-############Function for determining when a cancer occurs with drug-adjusted mortality as input#######################
-Drug_adj_incidence_function <- function(risk_data, drug_mortality) {
-  #Sample an incidence time (based on vector of probabilities of getting cancer at age t conditional on getting cancer and surviving to age t)
-  incidence_age_dist <- drug_mortality %>%
-    mutate(BC_age = ifelse(age < risk_data$life_expectancy, BC_age, 0.)) %>%
-    select(BC_age)
-  incidence_age_dist <- incidence_age_dist / sum(incidence_age_dist)
-  incidence_time_1 <- sample(
-    x = drug_mortality$age[start_age:101],
-    size = 1,
-    prob = incidence_age_dist$BC_age[start_age:101]
-  )
-
-  #Add within year time (i.e. months)
-  incidence_time <- incidence_time_1 + dqrunif(1, 0, 1)
-
-  #Determine size at detection - as number of tumour doublings in diameter from a 0.25mm diameter
-  clin_detect_size_g <- risk_data$clinical_detect_size
-  clin_detect_size_g <- start_size * 2^clin_detect_size_g
-
-  result <- c(
-    incidence_time,
-    clin_detect_size_g
-  )
-  return(result)
-}
-cmp_drug_adj_incidence_function <- cmpfun(Incidence_function)
-
 ########################stage calculator#######################################
 
 stage_by_size <- function(Ca_size) {
