@@ -1,12 +1,12 @@
 controls <- list(
-  "strategies" = c(0,1,2,3,4,9), #A vector of strategies to evaluate
+  "strategies" = c(3), #A vector of strategies to evaluate
   "gensample" = TRUE, #Whether to generate a new sample to simulate
   "MISCLASS" = TRUE, #whether to include risk misclassification in analysis
-  "PREVENTATIVE_DRUG" = TRUE, #whether to include chemoprevention in analysis
+  "PREVENTATIVE_DRUG" = FALSE, #whether to include chemoprevention in analysis
   "supplemental_screening" = FALSE, #whether supplemental screening is used for women with dense breasts
   "PSA" = FALSE, #whether to conduct a probabilistic sensitivity analysis
   "intervals" = FALSE, #whether to conduct a PSA with wide intervals for GAM estimations
-  "desired_cases" = 3000, #apprximate number of cancer cases required in simulation
+  "desired_cases" = 30000, #apprximate number of cancer cases required in simulation
   "mcruns" = 1, #number of monte carlo runs in PSA/intervals
   "numcores" = 16,
   "install" = FALSE
@@ -171,6 +171,12 @@ for (r in 1:length(screen_strategies)) {
   
   #Determine size of cancer at diagnosis
   risksample$clin_detect_size_g <- start_size * 2^risksample$clinical_detect_size
+  
+  #Calculate tumour genesis age
+  t_gen <- ((log((Vm / Vc)^0.25 - 1) -
+               log((Vm / ((4 / 3) * pi * (risksample$clin_detect_size_g / 2)^3))^0.25 - 1)) /
+              (0.25 * risksample$growth_rate)) #Calculate time to get to clinical detection size
+  risksample$genage <- risksample$ca_incidence - t_gen
   
   if (MISCLASS) {
     #Assign women to risk groups based on 10yr risk if using risk-stratified approach
@@ -522,7 +528,7 @@ for (r in 1:length(screen_strategies)) {
         #Determine cancer growth rate
         grow_rate_i <- risk_data$growth_rate
 
-        # Do incididence time based on whether patient takes preventative drug
+        # Do cost based on whether patient takes preventative drug
         if (PREVENTATIVE_DRUG & risk_data$risk_group != 0) {
 
           # Calculate cost of drug course based on time taking
@@ -548,12 +554,6 @@ for (r in 1:length(screen_strategies)) {
         #detection
         CD_age <- risk_data$ca_incidence
         cancer_diagnostic[8] <- CD_age
-
-        #Calculate tumour genesis age
-        t_gen <- ((log((Vm / Vc)^0.25 - 1) -
-          log((Vm / ((4 / 3) * pi * (CD_size / 2)^3))^0.25 - 1)) /
-          (0.25 * grow_rate_i)) #Calculate time to get to clinical detection size
-        gen_age <- CD_age - t_gen
 
         # #If cancer occurs after age of death, re-draw age of death
         if (Mort_age <= CD_age) {
@@ -639,7 +639,7 @@ for (r in 1:length(screen_strategies)) {
             }
 
             #Determine if tumour is present at screen
-            t <- (age + Next_event_time) - gen_age
+            t <- (age + Next_event_time) - risk_data$genage
             if (t > 0) {
               #Determine size of tumour
               Ca_size <- Vm /
@@ -969,4 +969,5 @@ for (r in 1:length(screen_strategies)) {
  print(paste("Strategy ",r," Complete")) 
 }
 toc()
+
 
