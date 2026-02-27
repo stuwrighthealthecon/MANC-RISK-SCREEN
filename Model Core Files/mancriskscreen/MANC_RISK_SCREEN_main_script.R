@@ -2,7 +2,7 @@ controls <- list(
   "strategies" = c(0,1,2,3,4,9), #A vector of strategies to evaluate
   "gensample" = TRUE, #Whether to generate a new sample to simulate
   "MISCLASS" = TRUE, #whether to include risk misclassification in analysis
-  "PREVENTATIVE_DRUG" = FALSE, #whether to include chemoprevention in analysis
+  "PREVENTATIVE_DRUG" = TRUE, #whether to include chemoprevention in analysis
   "supplemental_screening" = FALSE, #whether supplemental screening is used for women with dense breasts
   "PSA" = FALSE, #whether to conduct a probabilistic sensitivity analysis
   "intervals" = FALSE, #whether to conduct a PSA with wide intervals for GAM estimations
@@ -261,6 +261,56 @@ for (r in 1:length(screen_strategies)) {
     risksample<-splitmaster %>% 
       filter(risk_group==risk_groups[ii])
     
+    
+    if (PREVENTATIVE_DRUG & risksample$risk_group[1] != 0){
+      
+      drug_IM <- Incidence_Mortality
+      
+      idx <- cbind(risksample$risk_group, risksample$starting_menses_status)
+      uptake_probs <- uptake[idx]
+      risksample$uptake<-dqrunif(nrow(risksample), 0, 1) < uptake_probs
+      
+      risksample$time_taking_drug <- risksample$uptake*pmin(
+        rexp(nrow(risksample), rate = persistence[idx]),
+        course_length
+      )
+      
+      risksample$weibullrisk <- (1 -
+                                   risk_red[idx]) *
+        risksample$time_taking_drug *
+        log(1 / completion_prob[risksample$starting_menses_status])
+      risksample$weibullrisk <- inc_scale / risksample$weibullrisk
+      
+      ages <- drug_IM$age[start_age:101]
+      n <- nrow(risksample)
+      
+      # Matrix of weibull densities: rows = ages, cols = individuals
+      prob_matrix <- outer(
+        ages,
+        risksample$weibullrisk,
+        FUN = function(age, scale) dweibull(age, shape = inc_shape, scale = scale)
+      )
+      
+      # Transpose to n x ages for consistency with earlier vectorised code
+      prob_matrix <- t(prob_matrix)
+      
+      # Zero out ages >= life_expectancy for each individual
+      age_mask <- outer(risksample$life_expectancy, ages, FUN = ">")
+      prob_matrix <- prob_matrix * age_mask
+      
+      # Normalise each row
+      row_sums <- rowSums(prob_matrix)
+      prob_matrix <- prob_matrix / row_sums
+      
+      # Inverse CDF sampling
+      cum_probs <- t(apply(prob_matrix, 1, cumsum))
+      u <- dqrunif(n, 0, 1)
+      col_indices <- rowSums(cum_probs < u) + 1L
+      col_indices <- pmin(col_indices, length(ages))
+      
+      risksample$ca_incidence <- ifelse(risksample$time_taking_drug>0, ages[col_indices] + dqrunif(n, 0, 1), risksample$ca_incidence) 
+    }
+    
     screen_times <- c(999)
     if (screen_strategy == 1) {
       if (risksample$risk_group[1] < 4) {
@@ -474,16 +524,9 @@ for (r in 1:length(screen_strategies)) {
 
         # Do incididence time based on whether patient takes preventative drug
         if (PREVENTATIVE_DRUG & risk_data$risk_group != 0) {
-          #Determine when the cancer would be clinically diagnosed
-          ca_incidence_i <- cmp_adj_incidence_function(
-            risk_data,
-            uptake,
-            persistence,
-            risk_red
-          )
 
           # Calculate cost of drug course based on time taking
-          time_taking_drug <- ca_incidence_i[[3]]
+          time_taking_drug <- risk_data$time_taking_drug
           if (cost_in_full_courses) {
             prop_drug_admin <- 1.
           } else {
