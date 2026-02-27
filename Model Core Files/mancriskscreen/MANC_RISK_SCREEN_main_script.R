@@ -71,6 +71,7 @@ library("tidyverse")
 library("iterators")
 library("tictoc")
 library("here")
+library("purrr")
 
 #####Choose screening programme and related parameters##########
 tic()
@@ -150,6 +151,27 @@ for (r in 1:length(screen_strategies)) {
   prefix <- paste("^", "X", 1, ".", sep = "")
   names(risksample) <- sub(prefix, "", names(risksample))
   
+  #Assign cancer size at diagnosis
+  risksample$ca_incidence <- map_dbl(risksample$life_expectancy, function(le) {
+    incidence_age_dist <- Incidence_Mortality %>%
+      mutate(BC_age = ifelse(age < le, BC_age, 0.)) %>%
+      select(BC_age)
+    
+    incidence_age_dist <- incidence_age_dist / sum(incidence_age_dist)
+    
+    sample(
+      x = Incidence_Mortality$age[start_age:101],
+      size = 1,
+      prob = incidence_age_dist$BC_age[start_age:101]
+    )
+  })
+  
+  #Add error for month of diagnosis
+  risksample$ca_incidence<-risksample$ca_incidence+dqrunif(nrow(risksample), 0, 1)
+  
+  #Determine size of cancer at diagnosis
+  risksample$clin_detect_size_g <- start_size * 2^risksample$clinical_detect_size
+  
   if (MISCLASS) {
     #Assign women to risk groups based on 10yr risk if using risk-stratified approach
     if (screen_strategy == 1 | screen_strategy == 9) {
@@ -228,6 +250,7 @@ for (r in 1:length(screen_strategies)) {
       }
     }
   }
+
   
   if(MISCLASS){splitmaster<-subset(risksample,select=-c(VBD,cancer,feedback,liferisk_est,liferisk_true,tenyrrisk_est,tenyrrisk_true))
   }else{splitmaster<-subset(risksample,select=-c(VBD,cancer,feedback,liferisk,tenyrrisk))}
@@ -471,19 +494,16 @@ for (r in 1:length(screen_strategies)) {
             prop_drug_admin * cost_drug[risk_data$starting_menses_status]
           drug_costs <- drug_costs +
             prop_drug_admin * cost_drug[risk_data$starting_menses_status]
-        } else {
-          #Determine when the cancer would be clinically diagnosed
-          ca_incidence_i <- cmp_incidence_function(risk_data)
-        }
-        ca_incidence_age <- ca_incidence_i[1]
+        } 
+        ca_incidence_age <- risk_data$ca_incidence
 
         #Determine size at clinical detection age
-        CD_size <- ca_incidence_i[2] #tumour diameter at CD
+        CD_size <- risk_data$clin_detect_size_g #tumour diameter at CD
 
         #The detection age is either the age at clinical detection
         #or a formula is applied to determine the age at screen
         #detection
-        CD_age <- ca_incidence_i[1]
+        CD_age <- risk_data$ca_incidence
         cancer_diagnostic[8] <- CD_age
 
         #Calculate tumour genesis age

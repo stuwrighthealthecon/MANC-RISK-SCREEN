@@ -5,7 +5,6 @@ alldata <- lapply(filenames, function(x) {
 alldata <- do.call("rbind", alldata)
 
 #Remove women with cancer diagnosed before age 50
-alldata <- alldata %>% filter(alldata[, 4] > 50 | alldata[, 4] == 0)
 detresults <- alldata
 
 screendet <- detresults %>% filter(detresults$`screen detected` == 1)
