@@ -6,7 +6,7 @@ controls <- list(
   "supplemental_screening" = FALSE, #whether supplemental screening is used for women with dense breasts
   "PSA" = FALSE, #whether to conduct a probabilistic sensitivity analysis
   "intervals" = FALSE, #whether to conduct a PSA with wide intervals for GAM estimations
-  "desired_cases" = 30000, #apprximate number of cancer cases required in simulation
+  "desired_cases" = 3000, #apprximate number of cancer cases required in simulation
   "mcruns" = 1, #number of monte carlo runs in PSA/intervals
   "numcores" = 16,
   "install" = FALSE
@@ -317,6 +317,14 @@ for (r in 1:length(screen_strategies)) {
       risksample$ca_incidence <- ifelse(risksample$time_taking_drug>0, ages[col_indices] + dqrunif(n, 0, 1), risksample$ca_incidence) 
     }
     
+    # #If cancer occurs after age of death, take the month jitter off of cancer occurance to get it in the right time
+    ifelse(risksample$life_expectancy <= risksample$ca_incidence,
+           risksample$ca_incidence<-floor(risksample$ca_incidence),
+          risksample$life_expectancy<-risksample$life_expectancy)
+    ifelse(risksample$life_expectancy >= time_horizon,
+      risksample$life_expectancy <- 99.99,
+      risksample$life_expectancy<-risksample$life_expectancy)
+    
     screen_times <- c(999)
     if (screen_strategy == 1) {
       if (risksample$risk_group[1] < 4) {
@@ -554,29 +562,6 @@ for (r in 1:length(screen_strategies)) {
         #detection
         CD_age <- risk_data$ca_incidence
         cancer_diagnostic[8] <- CD_age
-
-        # #If cancer occurs after age of death, re-draw age of death
-        if (Mort_age <= CD_age) {
-          Mort_age <- qweibull(
-            p = dqrunif(
-              n = 1,
-              min = pweibull(
-                q = CD_age,
-                shape = acmmortality_wb_a,
-                scale = acmmortality_wb_b
-              ),
-              max = 1
-            ),
-            shape = acmmortality_wb_a,
-            scale = acmmortality_wb_b
-          )
-        }
-        if (Mort_age >= time_horizon) {
-          Mort_age <- 99.99
-        }
-        if (CD_age >= Mort_age) {
-          CD_age <- (Mort_age - 0.01)
-        }
 
         cancer_diagnostic[7] <- c(Mort_age)
 
