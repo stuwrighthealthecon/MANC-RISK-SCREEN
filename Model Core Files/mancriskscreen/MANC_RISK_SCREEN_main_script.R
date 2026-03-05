@@ -8,22 +8,23 @@ controls <- list(
   "intervals" = FALSE, #whether to conduct a PSA with wide intervals for GAM estimations
   "desired_cases" = 3000, #apprximate number of cancer cases required in simulation
   "mcruns" = 1, #number of monte carlo runs in PSA/intervals
-  "numcores" = 16,
-  "install" = FALSE
+  "numcores" = 16
 ) #set number of cores for parallel processing
 
-DO_INSTALL <- controls$install
+if (!require("pacman", quietly = TRUE)) install.packages("pacman")
 
-if (DO_INSTALL) {
-  #Install required packages
-  install.packages("doParallel")
-  install.packages("MASS")
-  install.packages("dqrng")
-  install.packages("compiler")
-  install.packages("tidyverse")
-  install.packages("iterators")
-  install.packages("here")
-}
+#Install/load required packages
+pacman::p_load(
+  doParallel,
+  MASS,
+  dqrng,
+  compiler,
+  tidyverse,
+  iterators,
+  here,
+  purr,
+  tictoc
+)
 
 MISCLASS <- controls$MISCLASS # Set to TRUE to include impact of errors in risk prediction in model
 PREVENTATIVE_DRUG <- controls$PREVENTATIVE_DRUG # Set to TRUE to simulate preventative drugs
@@ -61,17 +62,6 @@ if (MISCLASS & PREVENTATIVE_DRUG) {
 }
 
 sample_fname <- "possample"
-
-#Run required packages
-library("doParallel")
-library("MASS")
-library("dqrng")
-library("compiler")
-library("tidyverse")
-library("iterators")
-library("tictoc")
-library("here")
-library("purrr")
 
 #####Choose screening programme and related parameters##########
 tic()
