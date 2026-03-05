@@ -1,13 +1,13 @@
 controls <- list(
-  "strategies" = c(3), #A vector of strategies to evaluate
+  "strategies" = c(0,1,2,3,4,9), #A vector of strategies to evaluate
   "gensample" = TRUE, #Whether to generate a new sample to simulate
   "MISCLASS" = TRUE, #whether to include risk misclassification in analysis
   "PREVENTATIVE_DRUG" = FALSE, #whether to include chemoprevention in analysis
   "supplemental_screening" = FALSE, #whether supplemental screening is used for women with dense breasts
-  "PSA" = FALSE, #whether to conduct a probabilistic sensitivity analysis
+  "PSA" = TRUE, #whether to conduct a probabilistic sensitivity analysis
   "intervals" = FALSE, #whether to conduct a PSA with wide intervals for GAM estimations
-  "desired_cases" = 3000, #apprximate number of cancer cases required in simulation
-  "mcruns" = 1, #number of monte carlo runs in PSA/intervals
+  "desired_cases" = 30, #apprximate number of cancer cases required in simulation
+  "mcruns" = 100, #number of monte carlo runs in PSA/intervals
   "numcores" = 16
 ) #set number of cores for parallel processing
 
@@ -451,8 +451,7 @@ for (r in 1:length(screen_strategies)) {
           MRI_cdr <- risk_data$PSA_MRI_cdr
           US_cdr <- risk_data$PSA_US_cdr
 
-          risk_data$growth_rate <- risk_data$cancer *
-            qlnorm(
+          risk_data$growth_rate <- qlnorm(
               dqrunif(1, 0, 1),
               meanlog = log_norm_mean,
               sdlog = sqrt(log_norm_sd)
@@ -847,7 +846,7 @@ for (r in 1:length(screen_strategies)) {
             cancer_diagnostic[2:3],
             min(c(Ca_mort_age), c(Mort_age)),
             cancer_diagnostic[10],
-            c(risk_data[17:49])
+            c(risk_data[10:42])
           )))
         }
       }

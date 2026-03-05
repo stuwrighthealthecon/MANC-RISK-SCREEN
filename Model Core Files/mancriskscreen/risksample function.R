@@ -318,19 +318,19 @@ create_sample <- function(PSA = 0, intervals = 0, seed = 1, screen_strategy) {
     colnames(masterframe)[15:47] <- colnames(PSA_all_p)
 
     #Split the dataframe into chunks for easier computation
-    masterframe <- masterframe %>% filter(masterframe$life_expectancy >= 50)
+    risksample <- masterframe %>% filter(masterframe$life_expectancy >= screen_startage)
 
     negsample <- masterframe %>% filter(masterframe$cancer == 0)
     save(negsample, file = paste("Risksample/negsample.Rdata", sep = ""))
-    masterframe <- masterframe %>% filter(masterframe$cancer == 1)
-    save(masterframe,file=paste("Risksample/possample.Rdata"))
+    risksample <- masterframe %>% filter(masterframe$cancer == 1)
+    save(risksample,file=paste("Risksample/possample.Rdata"))
     risksample<-masterframe
     #Clean up redundant inputs
     rm(masterframe, PSA_all_p, risk_mat)
     gc()
 
   } else {
-    risksample <- risksample %>% filter(risksample$life_expectancy >= 50)
+    risksample <- risksample %>% filter(risksample$life_expectancy >= screen_startage)
 
     negsample <- risksample %>% filter(risksample$cancer == 0)
     save(negsample, file = paste("Risksample/negsample.Rdata", sep = ""))
@@ -669,19 +669,15 @@ create_sample_with_misclass <- function(
     colnames(masterframe)[17:49] <- colnames(PSA_all_p)
 
     #Split the dataframe into chunks for easier computation
-    masterframe$split <- (rep(
-      1:chunks,
-      times = round(length(masterframe$VBD) / chunks)
-    ))
-    masterframe <- masterframe %>% filter(masterframe$life_expectancy >= 50)
+    risksample <- masterframe %>% filter(masterframe$life_expectancy >= screen_startage)
 
     negsample <- masterframe %>% filter(masterframe$cancer == 0)
     save(
       negsample,
       file = paste("Risksamplewithmisclass/negsample.Rdata", sep = "")
     )
-    masterframe<- masterframe %>% filter(masterframe$cancer == 1)
-    save(masterframe,file=paste("Risksamplewithmisclass/possample.Rdata"))
+    risksample<- masterframe %>% filter(masterframe$cancer == 1)
+    save(risksample,file=paste("Risksamplewithmisclass/possample.Rdata"))
     risksample<-masterframe
     #Clean up redundant inputs
     rm(masterframe, PSA_all_p, risk_mat)
@@ -690,7 +686,7 @@ create_sample_with_misclass <- function(
 
   } else {
     
-    risksample <- risksample %>% filter(risksample$life_expectancy >= 50)
+    risksample <- risksample %>% filter(risksample$life_expectancy >= screen_startage)
     negsample <- risksample %>% filter(risksample$cancer == 0)
     save(
       negsample,
