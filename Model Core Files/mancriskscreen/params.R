@@ -202,6 +202,9 @@ if ((tam_full_course_eff > 1) | (ana_full_course_eff > 1)) {
 course_length <- c(5., 5.)
 
 #Assign women to risk groups based on 10yr risk if using risk-stratified approach
+# Guard: if screen_strategy not yet defined (e.g. params.R sourced standalone),
+# default to 0 so the else branch runs and matrices are initialised safely.
+if (!exists("screen_strategy")) screen_strategy <- 0L
 if (screen_strategy == 1 | screen_strategy == 9) {
   risk_red <- matrix(
     c(

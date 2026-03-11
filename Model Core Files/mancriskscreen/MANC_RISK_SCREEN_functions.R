@@ -225,7 +225,7 @@ vec_ca_survival_time <- function(stage_cat_vec, Mort_age_vec, age_vec, ca_incide
   return(result_age)
 }
 
-vec_QALY_counter <- function(Mort_age_vec, incidence_age_record_vec, stage_cat_vec) {
+vec_QALY_counter_core <- function(Mort_age_vec, incidence_age_record_vec, stage_cat_vec) {
   n          <- length(Mort_age_vec)
   max_years  <- ceiling(max(Mort_age_vec)) - (screen_startage - 1)
   
@@ -335,4 +335,27 @@ vec_QALY_counter <- function(Mort_age_vec, incidence_age_record_vec, stage_cat_v
   # 3. Return row sums (one total QALY per woman)
   # ===========================================================================
   rowSums(QALY_mat)
+}
+
+vec_QALY_counter <- function(Mort_age_vec, incidence_age_record_vec,
+                             stage_cat_vec, chunk_size = 10000) {
+  n <- length(Mort_age_vec)
+  
+  if (n <= chunk_size) {
+    return(vec_QALY_counter_core(Mort_age_vec, incidence_age_record_vec,
+                                 stage_cat_vec))
+  }
+  
+  # Process in chunks to keep matrix sizes manageable
+  result <- numeric(n)
+  chunks <- split(seq_len(n), ceiling(seq_len(n) / chunk_size))
+  
+  for (idx in chunks) {
+    result[idx] <- vec_QALY_counter_core(
+      Mort_age_vec[idx],
+      incidence_age_record_vec[idx],
+      stage_cat_vec[idx]
+    )
+  }
+  result
 }
