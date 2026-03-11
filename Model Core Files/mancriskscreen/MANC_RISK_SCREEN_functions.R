@@ -1,271 +1,338 @@
 #########################Lookup function for treatment costs############################
 
-fnLookupBase <- function(iStage, iAge, iLE) {
-  as.numeric(tblLookup$CDCost.p.i.d[
-    tblLookup$Stage == iStage & tblLookup$Age == iAge & tblLookup$Yr == iLE
-  ])
+vec_fnLookupBase <- function(iStage_vec, iAge_vec, iLE_vec) {
+  # Build a single composite key for both the lookup table and the query
+  # Faster than three separate match()/& operations
+  lookup_key <- paste(tblLookup$Stage, tblLookup$Age, tblLookup$Yr, sep = "|")
+  query_key  <- paste(iStage_vec,      iAge_vec,      iLE_vec,      sep = "|")
+  
+  as.numeric(tblLookup$CDCost.p.i.d[match(query_key, lookup_key)])
 }
 
 ########################stage calculator#######################################
 
-stage_by_size <- function(Ca_size) {
-  stage_cat <- 0
-
-  #First determine if advanced cancer or not based on metastatic prob by size (categorical)
-  if (Ca_size <= 25) {
-    m_size <- 25
-  } else {
-    m_size <- ceiling((Ca_size - 25) / 10) * 10 + 25
-  }
-  if (m_size > 85) {
-    m_size <- 85
-  }
-  if (
-    dqrunif(1, 0, 1) <
-      metastatic_prob[match(m_size, metastatic_prob[, 1]), 2] &&
-      stage_cat == 0
-  ) {
-    stage_cat <- 4
-  }
-
-  #Sample from stage 1,2 & 3 with probability of each based on the correct row of stagebysize matrix
-  #Ca_size is continuous, need to match to closest larger value in stage_by_size column 1
-  #NB stage 5=DCIS
-  if (stage_cat == 0) {
-    size_cat <- findInterval(Ca_size, ca_size_cut)
-    stage_cat <- sample(
-      x = c(1, 2, 3, 5),
-      size = 1,
-      prob = c(stage_by_size_mat[size_cat, ])
-    ) #1 best 3 worst prognosis
-  }
-  #Return the stage category
-  result <- stage_cat
-
-  return(result)
+vec_stage_by_size <- function(Ca_size_vec) {
+  n <- length(Ca_size_vec)
+  
+  # --- 1. Metastatic probability lookup ---
+  # Bin each tumour size to the nearest metastatic_prob breakpoint
+  m_size <- ifelse(Ca_size_vec <= 25,
+                   25,
+                   pmin(ceiling((Ca_size_vec - 25) / 10) * 10 + 25, 85))
+  
+  met_prob <- metastatic_prob[match(m_size, metastatic_prob[, 1]), 2]
+  
+  # --- 2. Bulk random draws ---
+  draw_met   <- dqrunif(n, 0, 1)   # one draw per woman for metastatic check
+  draw_stage <- dqrunif(n, 0, 1)   # one draw per woman for stage sampling
+  
+  # --- 3. Metastatic assignment ---
+  stage_cat <- integer(n)
+  is_met    <- draw_met < met_prob
+  stage_cat[is_met] <- 4L
+  
+  # --- 4. Stage sampling for non-metastatic women ---
+  # findInterval vectorises natively
+  non_met  <- !is_met
+  size_cat <- findInterval(Ca_size_vec[non_met], ca_size_cut)
+  
+  # Build cumulative probability matrix for non-metastatic women
+  # stage_by_size_mat rows correspond to size_cat; cols are probs for c(1,2,3,5)
+  prob_mat <- stage_by_size_mat[size_cat, , drop = FALSE]
+  cum_mat  <- t(apply(prob_mat, 1, cumsum))
+  
+  # Use the pre-drawn uniform to select stage via row-wise interval lookup
+  u        <- draw_stage[non_met]
+  stage_choices <- c(1L, 2L, 3L, 5L)
+  
+  # For each woman, find which cumulative probability bin her draw falls in
+  stage_idx <- rowSums(cum_mat < u) + 1L   # gives index 1-4 into stage_choices
+  stage_cat[non_met] <- stage_choices[stage_idx]
+  
+  return(stage_cat)
 }
-cmp_stage_by_size <- cmpfun(stage_by_size)
 
 #######################Screening test results simulation##########################
 
-#Inputs are tumour diameter, VDG, MRI_screening(0/1), US_screening(0/1)
-screening_result <- function(Ca_size, VDG, MRI_screening, US_screening) {
-  #Calculate size specific sensitivity
-  Sensitivity <- if (
-    exp((Ca_size - beta2) / beta1) / (1 + exp((Ca_size - beta2) / beta1)) >
-      sensitivity_max
-  ) {
-    sensitivity_max
-  } else {
-    exp((Ca_size - beta2) / beta1) / (1 + exp((Ca_size - beta2) / beta1))
-  } #use to set max sensitivity 0.95
-
-  #Adjust sensitivity for breast density
-  dense_OR <- (Sen_VDG[VDG] / (1 - Sen_VDG[VDG])) /
-    (Sen_VDG_av / (1 - Sen_VDG_av))
-  Sensitivity <- ((Sensitivity / (1 - Sensitivity)) * dense_OR) /
-    (1 + ((Sensitivity / (1 - Sensitivity)) * dense_OR))
-
-  #Draw random number used to compare to Sensitivity with and without supplemental screening
-  rnd_1 <- dqrunif(1, 0, 1)
-
-  #Is cancer detected by mammogram?
-  if (rnd_1 < Sensitivity) {
-    Screen_detected_ca <- 1
-    Mammo_detected_ca <- 1 #Keep track of which stage it is detected
-  } else {
-    Screen_detected_ca <- 0
-    Mammo_detected_ca <- 0
+vec_screening_result <- function(Ca_size_vec, VDG_vec, MRI_vec, US_vec) {
+  n <- length(Ca_size_vec)
+  
+  # --- 1. Base mammographic sensitivity (logistic curve, capped at max) ---
+  logit_val   <- exp((Ca_size_vec - beta2) / beta1)
+  base_sens   <- logit_val / (1 + logit_val)
+  base_sens   <- pmin(base_sens, sensitivity_max)
+  
+  # --- 2. Density adjustment via odds ratio ---
+  dense_OR  <- (Sen_VDG[VDG_vec] / (1 - Sen_VDG[VDG_vec])) /
+    (Sen_VDG_av      / (1 - Sen_VDG_av))
+  sens_odds <- (base_sens / (1 - base_sens)) * dense_OR
+  Sensitivity <- sens_odds / (1 + sens_odds)
+  
+  # --- 3. Single bulk random draw (one per woman) ---
+  rnd_1 <- dqrunif(n, 0, 1)
+  
+  # --- 4. Mammography detection ---
+  Mammo_detected <- rnd_1 < Sensitivity          # logical vector
+  Screen_detected <- Mammo_detected
+  
+  # --- 5. MRI supplemental (only for non-mammo-detected, MRI-eligible women) ---
+  mri_eligible <- !Screen_detected & (MRI_vec == 1L)
+  MRI_detected <- logical(n)
+  
+  if (any(mri_eligible)) {
+    mri_odds <- (Sensitivity[mri_eligible] / (1 - Sensitivity[mri_eligible])) *
+      ((MRI_cdr + Mammo_cdr) / Mammo_cdr)
+    mri_sens <- mri_odds / (1 + mri_odds)
+    MRI_detected[mri_eligible] <- rnd_1[mri_eligible] < mri_sens
+    Screen_detected[mri_eligible] <- Screen_detected[mri_eligible] |
+      MRI_detected[mri_eligible]
   }
-
-  #Is cancer detected by supplemental tests?
-  if (Screen_detected_ca == 0) {
-    if (MRI_screening == 1) {
-      MRI_supp_odds <- (Sensitivity / (1 - Sensitivity)) *
-        ((MRI_cdr + Mammo_cdr) / Mammo_cdr)
-      MRI_supp_sens <- MRI_supp_odds / (MRI_supp_odds + 1)
-      if (rnd_1 < MRI_supp_sens) {
-        Screen_detected_ca <- 1
-        MRI_detected_ca <- 1
-      } else {
-        MRI_detected_ca <- 0
-      }
-    } else {
-      MRI_detected_ca <- 0
-    }
-
-    if (US_screening == 1) {
-      US_supp_odds <- (Sensitivity / (1 - Sensitivity)) *
-        ((US_cdr + Mammo_cdr) / Mammo_cdr)
-      US_supp_sens <- US_supp_odds / (US_supp_odds + 1)
-      if (rnd_1 < US_supp_sens) {
-        Screen_detected_ca <- 1
-        US_detected_ca <- 1
-      } else {
-        US_detected_ca <- 0
-      }
-    } else {
-      US_detected_ca <- 0
-    }
-  } else {
-    US_detected_ca <- 0
-    MRI_detected_ca <- 0
+  
+  # --- 6. US supplemental (only for non-mammo-detected, US-eligible women) ---
+  # NB: mirrors original — US check is independent of MRI result, both
+  # run if mammography missed, Screen_detected updated from either
+  us_eligible <- !Mammo_detected & (US_vec == 1L)
+  US_detected <- logical(n)
+  
+  if (any(us_eligible)) {
+    us_odds <- (Sensitivity[us_eligible] / (1 - Sensitivity[us_eligible])) *
+      ((US_cdr + Mammo_cdr) / Mammo_cdr)
+    us_sens <- us_odds / (1 + us_odds)
+    US_detected[us_eligible] <- rnd_1[us_eligible] < us_sens
+    Screen_detected[us_eligible] <- Screen_detected[us_eligible] |
+      US_detected[us_eligible]
   }
-
-  #Uses estimate based on increased cancer detection rate
-
-  result <- c(
-    Screen_detected_ca,
-    Mammo_detected_ca,
-    MRI_detected_ca,
-    US_detected_ca
+  
+  # --- 7. Return matrix (rows = women, cols mirror original result vector) ---
+  # col 1: Screen_detected, col 2: Mammo_detected,
+  # col 3: MRI_detected,    col 4: US_detected
+  cbind(
+    as.integer(Screen_detected),
+    as.integer(Mammo_detected),
+    as.integer(MRI_detected),
+    as.integer(US_detected)
   )
-  return(result)
 }
-cmp_screening_result <- cmpfun(screening_result)
 
 ############################Simulate survival by stage##########################
 
-Ca_survival_time <- function(stage_cat, Mort_age, age, ca_incidence_age) {
-  #Assign survival for non-metastatic cancer
-  if (stage_cat < 4) {
-    survival_time <- -(log(x = dqrunif(1, 0, 1)) / gamma_stage[stage_cat]) #inverse of cdf when rate is gamma_stage[x]
-
-    #Adjust for additional mortality at ages above 65
-    if (ca_incidence_age > 65) {
-      survival_time <- -(log(x = dqrunif(1, 0, 1)) /
-        ((Incidence_Mortality$X10year.mort.prob[min(
-          (floor(ca_incidence_age) + 1),
-          100
-        )] /
-          Incidence_Mortality$X10year.mort.prob[66]) *
-          gamma_stage[stage_cat]))
+vec_ca_survival_time <- function(stage_cat_vec, Mort_age_vec, age_vec, ca_incidence_age_vec) {
+  n <- length(stage_cat_vec)
+  
+  # Pre-allocate output
+  result_age <- numeric(n)
+  
+  # --- Stage masks ---
+  is_early <- stage_cat_vec < 4L
+  is_met   <- stage_cat_vec == 4L
+  is_dcis  <- stage_cat_vec == 5L
+  
+  # ===========================================================================
+  # BRANCH 1: Non-metastatic (stages 1-3)
+  # ===========================================================================
+  if (any(is_early)) {
+    idx       <- which(is_early)
+    n_early   <- length(idx)
+    stage_i   <- stage_cat_vec[idx]
+    age_i     <- age_vec[idx]
+    inc_age_i <- ca_incidence_age_vec[idx]
+    mort_i    <- Mort_age_vec[idx]
+    
+    # --- 1a. Base exponential survival draw ---
+    rate_base <- gamma_stage[stage_i]    # vectorised index into gamma_stage
+    u1        <- dqrunif(n_early, 0, 1)
+    surv_time <- -log(u1) / rate_base
+    
+    # --- 1b. Age >65 mortality adjustment (overwrite where applicable) ---
+    old_idx <- idx[inc_age_i > 65]
+    if (length(old_idx) > 0) {
+      inc_old   <- ca_incidence_age_vec[old_idx]
+      stage_old <- stage_cat_vec[old_idx]
+      
+      mort_row  <- pmin(floor(inc_old) + 1L, 100L)
+      mort_mult <- Incidence_Mortality$X10year.mort.prob[mort_row] /
+        Incidence_Mortality$X10year.mort.prob[66]
+      rate_old  <- mort_mult * gamma_stage[stage_old]
+      
+      u1_old              <- dqrunif(length(old_idx), 0, 1)
+      surv_time[inc_age_i > 65] <- -log(u1_old) / rate_old
     }
+    
+    # --- 1c. Survival > 10 years: switch to population Weibull mortality ---
+    long_mask <- surv_time > 10
+    if (any(long_mask)) {
+      long_idx  <- idx[long_mask]
+      inc_long  <- ca_incidence_age_vec[long_idx]
+      
+      p_lower <- pweibull(inc_long + 10,
+                          shape = acmmortality_wb_a,
+                          scale = acmmortality_wb_b)
+      u2      <- dqrunif(length(long_idx), min = 0, max = 1)
+      p_draw  <- p_lower + u2 * (1 - p_lower)   # uniform on [p_lower, 1]
+      
+      new_mort <- qweibull(p_draw,
+                           shape = acmmortality_wb_a,
+                           scale = acmmortality_wb_b)
+      new_mort <- pmin(new_mort, time_horizon)
+      
+      # surv_time for these women is implicitly replaced via result_age below
+      result_age[long_idx] <- pmin(new_mort, time_horizon)
+      
+      # Mark as resolved so we don't overwrite in the final step
+      is_early[long_idx] <- FALSE
+    }
+    
+    # Women not resolved by Weibull path
+    still_early <- which(is_early & stage_cat_vec < 4L)
+    result_age[still_early] <- ca_incidence_age_vec[still_early] +
+      surv_time[match(still_early, idx)]
+  }
+  
+  # ===========================================================================
+  # BRANCH 2: Metastatic (stage 4)
+  # ===========================================================================
+  if (any(is_met)) {
+    idx     <- which(is_met)
+    age_i   <- age_vec[idx]
+    
+    age_cat_M        <- integer(length(idx))
+    age_cat_M[age_i < 55]              <- 1L
+    age_cat_M[age_i >= 55 & age_i < 75] <- 2L
+    age_cat_M[age_i >= 75]             <- 3L
+    
+    rate_met       <- metastatic_survival[age_cat_M]
+    u_met          <- dqrunif(length(idx), 0, 1)
+    surv_time_met  <- -log(u_met) / rate_met
+    
+    result_age[idx] <- ca_incidence_age_vec[idx] + surv_time_met
+  }
+  
+  # ===========================================================================
+  # BRANCH 3: DCIS (stage 5) — no cancer mortality effect
+  # ===========================================================================
+  if (any(is_dcis)) {
+    idx             <- which(is_dcis)
+    result_age[idx] <- Mort_age_vec[idx]
+  }
+  
+  # ===========================================================================
+  # Final cap at time horizon and competing-risk floor
+  # ===========================================================================
+  result_age <- pmin(result_age, time_horizon)
+  result_age <- pmin(result_age, 
+                     pmax(result_age, ca_incidence_age_vec))  # never before incidence
+  
+  return(result_age)
+}
 
-    #Data are for 10-year survival, after 10 years assume that pop mortality rates apply
-    if (survival_time > 10) {
-      Mort_age <- qweibull(
-        p = dqrunif(
-          n = 1,
-          min = pweibull(
-            q = ca_incidence_age + 10,
-            shape = acmmortality_wb_a,
-            scale = acmmortality_wb_b
-          ),
-          max = 1
-        ),
-        shape = acmmortality_wb_a,
-        scale = acmmortality_wb_b
-      )
-      if (Mort_age > time_horizon) {
-        Mort_age <- time_horizon
+vec_QALY_counter <- function(Mort_age_vec, incidence_age_record_vec, stage_cat_vec) {
+  n          <- length(Mort_age_vec)
+  max_years  <- ceiling(max(Mort_age_vec)) - (screen_startage - 1)
+  
+  # Row = woman, col = year index y (1-indexed from screen_startage)
+  # Initialised to 0; we mask out years beyond each woman's life later
+  QALY_mat <- matrix(0.0, nrow = n, ncol = max_years)
+  
+  # ===========================================================================
+  # 1. Base discounted utility fill
+  # ===========================================================================
+  # Year indices 1:max_years, same for all women
+  y_idx      <- seq_len(max_years)
+  
+  # Age at each column: (screen_startage - 1) + y, capped at max in utility_ages
+  age_at_y   <- pmin(ceiling((screen_startage - 1) + y_idx),
+                     max(utility_ages[, 1]))
+  util_at_y  <- utility_ages[match(age_at_y, utility_ages[, 1]), 2]
+  disc_at_y  <- 1 / (1 + discount_health)^y_idx
+  
+  # Base QALY weight for each column (same row pattern for all women)
+  base_weight <- util_at_y * disc_at_y   # length max_years
+  
+  # Fill matrix: each row gets base_weight, then we mask/trim per-woman
+  QALY_mat <- matrix(base_weight, nrow = n, ncol = max_years, byrow = TRUE)
+  
+  # --- Per-woman QALY_length and final-year partial adjustment ---
+  QALY_length <- pmax(ceiling(Mort_age_vec) - (screen_startage - 1L), 1L)
+  frac_last   <- 1 - (ceiling(Mort_age_vec) - Mort_age_vec)  # partial final year
+  
+  # Zero out columns beyond each woman's life and apply partial-year fraction
+  # to her final column
+  for (i in seq_len(n)) {
+    ql <- QALY_length[i]
+    if (ql < max_years)
+      QALY_mat[i, (ql + 1):max_years] <- 0.0
+    QALY_mat[i, ql] <- QALY_mat[i, ql] * frac_last[i]
+  }
+  
+  # ===========================================================================
+  # 2. Cancer utility adjustments
+  # ===========================================================================
+  has_cancer <- incidence_age_record_vec > 0
+  
+  if (any(has_cancer)) {
+    ci  <- which(has_cancer)
+    iar <- incidence_age_record_vec[ci]
+    sc  <- stage_cat_vec[ci]
+    ma  <- Mort_age_vec[ci]
+    
+    frac_into_year <- iar - floor(iar)           # fractional part of incidence year
+    col_y1         <- floor(iar) - screen_startage      # year-1 column index
+    col_y2         <- col_y1 + 1L                       # year-2 column index
+    
+    u_y1     <- utility_stage_cat_y1[sc]
+    u_follow <- utility_stage_cat_follow[sc]
+    
+    # --- 2a. Partial year at incidence (year 1 of cancer) ---
+    for (j in seq_along(ci)) {
+      i <- ci[j]
+      c1 <- col_y1[j]
+      if (c1 >= 1L && c1 <= max_years)
+        QALY_mat[i, c1] <- u_y1[j] * QALY_mat[i, c1] * (1 - frac_into_year[j])
+    }
+    
+    # --- 2b. Transition year (straddles y1 and follow-up utility) ---
+    long_enough <- (ma - iar) > 1
+    if (any(long_enough)) {
+      ci2  <- ci[long_enough]
+      c2v  <- col_y2[long_enough]
+      fv   <- frac_into_year[long_enough]
+      u1v  <- u_y1[long_enough]
+      uFv  <- u_follow[long_enough]
+      
+      for (j in seq_along(ci2)) {
+        i  <- ci2[j]
+        c2 <- c2v[j]
+        if (c2 >= 1L && c2 <= max_years)
+          QALY_mat[i, c2] <- (u1v[j]  * QALY_mat[i, c2] * fv[j]) +
+          (uFv[j] * QALY_mat[i, c2] * (1 - fv[j]))
       }
-      survival_time <- Mort_age - age
+    }
+    
+    # --- 2c. Follow-up years (y+2 to min(y+8, Mort_age)) ---
+    mort_cap <- pmin(ma, 100)
+    has_followup <- ceiling(mort_cap) > (iar + 2)
+    
+    if (any(has_followup)) {
+      ci3 <- ci[has_followup]
+      for (j in seq_along(ci3)) {
+        i        <- ci3[j]
+        iar_j    <- iar[has_followup][j]
+        mc_j     <- mort_cap[has_followup][j]
+        uF_j     <- u_follow[has_followup][j]
+        
+        y_start  <- floor(iar_j) + 2L
+        y_end    <- min(floor(iar_j) + 8L, ceiling(mc_j))
+        cols     <- y_start:y_end - screen_startage
+        valid    <- cols >= 1L & cols <= max_years
+        
+        if (any(valid))
+          QALY_mat[i, cols[valid]] <- QALY_mat[i, cols[valid]] * uF_j
+      }
     }
   }
-
-  #Assign survival for metastatic cancer
-  if (stage_cat == 4) {
-    if (age < 55) {
-      age_cat_M <- 1
-    }
-    if (age >= 55 && age < 75) {
-      age_cat_M <- 2
-    }
-    if (age >= 75) {
-      age_cat_M <- 3
-    }
-    survival_time <- -(log(dqrunif(1, 0, 1)) / metastatic_survival[age_cat_M])
-  }
-
-  #Assign survival for DCIS i.e. no effect
-  if (stage_cat == 5) {
-    survival_time <- (Mort_age - ca_incidence_age)
-  }
-
-  if (ca_incidence_age + survival_time > time_horizon) {
-    survival_time <- time_horizon - ca_incidence_age
-  }
-  result <- ca_incidence_age + survival_time
-  #Reduce age of death if cancer causes woman to die earlier
-  if (result < Mort_age) {
-    Mort_age <- result
-  }
-  return(result)
+  
+  # ===========================================================================
+  # 3. Return row sums (one total QALY per woman)
+  # ===========================================================================
+  rowSums(QALY_mat)
 }
-cmp_ca_survival_time <- cmpfun(Ca_survival_time)
-
-###################################QALY Counter##########################
-QALY_counter <- function(Mort_age, incidence_age_record, stage_cat) {
-  #QALY counter
-  #Set up a QALY vector of length equal to life years
-  QALY_length <- ceiling(Mort_age) - (screen_startage - 1)
-
-  #If less than 1 life year lived, set length to 1
-  if (QALY_length < 1) {
-    QALY_length <- 1
-  }
-
-  #Fill QALY vector with 0's
-  QALY_vect <- rep(0, QALY_length)
-
-  #Fill QALY vector with discounted age related utility values
-  for (y in 1:length(QALY_vect)) {
-    QALY_vect[y] <- (utility_ages[
-      match((ceiling((screen_startage - 1) + y)), utility_ages[, 1]),
-      2
-    ]) *
-      (1 / (1 + discount_health)^(y))
-    QALY_vect[QALY_length] <- QALY_vect[QALY_length] *
-      (1 - (ceiling(Mort_age) - Mort_age))
-  }
-
-  #If cancer occurs then fill QALY vector with discounted cancer utilities from incidence age
-  #NB this code accounts for partial years spent in different health states
-  if (incidence_age_record > 0) {
-    QALY_vect[
-      floor(incidence_age_record) - screen_startage
-    ] <- utility_stage_cat_y1[stage_cat] *
-      QALY_vect[floor(incidence_age_record) - screen_startage] *
-      (1 - (incidence_age_record - floor(incidence_age_record)))
-  }
-  if (incidence_age_record > 0 & Mort_age - incidence_age_record > 1) {
-    QALY_vect[
-      (floor(incidence_age_record) - screen_startage) + 1
-    ] <- (utility_stage_cat_y1[
-      stage_cat
-    ] *
-      QALY_vect[(floor(incidence_age_record) - screen_startage) + 1] *
-      (incidence_age_record - floor(incidence_age_record))) +
-      (utility_stage_cat_follow[stage_cat] *
-        QALY_vect[(floor(incidence_age_record) - screen_startage) + 1] *
-        (1 - (incidence_age_record - floor(incidence_age_record))))
-  }
-  if (
-    incidence_age_record > 0 &&
-      ceiling(
-        if (Mort_age < 100) {
-          Mort_age
-        } else {
-          100
-        }
-      ) >
-        incidence_age_record + 2
-  ) {
-    for (y in (incidence_age_record + 2):min(
-      (incidence_age_record + 8),
-      ceiling(
-        if (Mort_age < 100) {
-          Mort_age
-        } else {
-          100
-        }
-      )
-    )) {
-      QALY_vect[y - screen_startage] <- QALY_vect[y - screen_startage] *
-        utility_stage_cat_follow[stage_cat]
-    }
-  }
-  return(QALY_vect)
-}
-cmp_QALY_counter <- cmpfun(QALY_counter)

@@ -387,6 +387,12 @@ tblLookup <- tblPred %>%
   arrange(Stage, Age, Yr) %>%
   ungroup()
 
+tblLookup$stage_flag <- ifelse(tblLookup$Stage == "Early", 0L, 1L)
+tblLookup$age_flag   <- ifelse(tblLookup$Age   == "18.64", 0L, 1L)
+tblLookup$lookup_key <- paste(tblLookup$stage_flag,
+                                  tblLookup$age_flag,
+                                  tblLookup$Yr, sep = "|")
+
 #######################Utility Weights#########################################
 
 #Set age adjusted utility values
