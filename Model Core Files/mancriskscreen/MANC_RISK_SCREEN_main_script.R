@@ -64,6 +64,13 @@ sample_fname <- "possample"
 
 #####Choose screening programme and related parameters##########
 tic()
+
+#Load file containing required functions for the model
+source(file = "MANC_RISK_SCREEN_functions.R")
+source(file = "risksample function.R")
+source(file = "negsample function.R")
+source(file = "des_vectorised_df.R")
+
 #Set the screening strategy: 1=PROCAS, 2=Risk tertiles, 3=3 yearly, 4=2 yearly,
 #5=5 yearly, 6=2 rounds at 50 and 60 (10 yearly), 7=Low risk (5 yearly),
 #8=Low risk (6 yearly),#9=Fully stratified screening programmes
@@ -95,12 +102,6 @@ for (r in 1:length(screen_strategies)) {
   inum <- ceiling((desired_cases / expected_prev)) #Individual women to be sampled to give desired number of positive cancer cases
   mcruns <- controls$mcruns #Monte Carlo runs used if PSA switched on
   seed <- set.seed(controls$seed) #Set seed for random draws
-
-  #Load file containing required functions for the model
-  source(file = "MANC_RISK_SCREEN_functions.R")
-  source(file = "risksample function.R")
-  source(file = "negsample function.R")
-  source(file = "des_vectorised_df.R")
 
   #################################Import baseline parameters####################
 
@@ -137,19 +138,20 @@ for (r in 1:length(screen_strategies)) {
   names(risksample) <- sub(prefix, "", names(risksample))
   
   #Assign cancer size at diagnosis
-  risksample$ca_incidence <- map_dbl(risksample$life_expectancy, function(le) {
-    incidence_age_dist <- Incidence_Mortality %>%
-      mutate(BC_age = ifelse(age < le, BC_age, 0.)) %>%
-      select(BC_age)
-    
-    incidence_age_dist <- incidence_age_dist / sum(incidence_age_dist)
-    
-    sample(
-      x = Incidence_Mortality$age[start_age:101],
-      size = 1,
-      prob = incidence_age_dist$BC_age[start_age:101]
-    )
-  })
+  age_mat <- outer(
+    risksample$life_expectancy,
+    Incidence_Mortality$age,
+    FUN = ">"
+  ) * Incidence_Mortality$BC_age
+  
+  # Normalise rows
+  age_mat <- age_mat / rowSums(age_mat)
+  
+  # Vectorised inverse CDF sampling
+  cum_mat     <- t(apply(age_mat, 1, cumsum))
+  u           <- dqrunif(nrow(risksample), 0, 1)
+  col_indices <- rowSums(cum_mat < u) + 1L
+  risksample$ca_incidence <- Incidence_Mortality$age[col_indices]
   
   #Add error for month of diagnosis
   risksample$ca_incidence<-risksample$ca_incidence+dqrunif(nrow(risksample), 0, 1)
@@ -391,11 +393,10 @@ for (r in 1:length(screen_strategies)) {
  
       #Loop through remaining screens conditional on previous attendance
       for (i in 1:(length(screen_times) - 1)) {
-        idx <- match(paste0("screen_1"), names(risksample))
-        risksample[, idx+i] <- ifelse(
-          rowSums(risksample[idx:(idx+(i-1))]) >= 1,
-          rbinom(length(risksample$risk_group), 1, uptakeotherscreen),
-          rbinom(length(risksample$risk_group), 1, uptakenoscreen)
+        risksample[, paste0("screen_", i+1)] <- ifelse(
+          rowSums(risksample[, paste0("screen_", 1:i), drop = FALSE]) >= 1,
+          rbinom(nrow(risksample), 1, uptakeotherscreen),
+          rbinom(nrow(risksample), 1, uptakenoscreen)
         )
       }
     }else{risksample$screen_1<-999}
