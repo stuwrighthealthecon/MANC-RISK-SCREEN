@@ -53,6 +53,7 @@ MISCLASS          <- controls$MISCLASS
 PREVENTATIVE_DRUG <- controls$PREVENTATIVE_DRUG
 PSA               <- as.integer(controls$PSA)
 intervals         <- as.integer(controls$intervals)
+
 #Place control on number of cores for memory management
 controls$n_cores <- if (controls$desired_cases >= 200000) 3L else
   if (controls$desired_cases >= 100000) 6L else
