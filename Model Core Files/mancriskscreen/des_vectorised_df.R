@@ -235,34 +235,30 @@ vec_fnLookupBase <- function(stage_flag_vec, age_flag_vec, iLE_vec) {
 # =============================================================================
 # 5. vec_QALY_counter
 # =============================================================================
-vec_QALY_counter <- function(Mort_age_vec, incidence_age_record_vec,
-                             stage_cat_vec) {
-  n         <- length(Mort_age_vec)
-  max_years <- ceiling(max(Mort_age_vec)) - (screen_startage - 1)
+vec_QALY_counter <- function(Mort_age_vec, incidence_age_record_vec, stage_cat_vec) {
+  n <- length(Mort_age_vec)
   
-  # --- 1. Base discounted utility fill ---
-  y_idx       <- seq_len(max_years)
-  age_at_y    <- pmin(ceiling((screen_startage - 1) + y_idx),
-                      max(utility_ages[, 1]))
-  util_at_y   <- utility_ages[match(age_at_y, utility_ages[, 1]), 2]
-  disc_at_y   <- 1 / (1 + discount_health)^y_idx
+  # --- 1. Precompute cumulative discounted utility vector (no n×T matrix) ---
+  mort_yr    <- ceiling(Mort_age_vec)
+  frac_last  <- 1 - (mort_yr - Mort_age_vec)
+  years_lived <- pmax(mort_yr - (screen_startage - 1L), 1L)
+  
+  max_years  <- max(years_lived)
+  y_idx      <- seq_len(max_years)
+  age_at_y   <- pmin(ceiling((screen_startage - 1) + y_idx), max(utility_ages[, 1]))
+  util_at_y  <- utility_ages[match(age_at_y, utility_ages[, 1]), 2]
+  disc_at_y  <- 1 / (1 + discount_health)^y_idx
   base_weight <- util_at_y * disc_at_y
+  cum_base    <- cumsum(base_weight)   # length max_years — O(T) not O(n*T)
   
-  QALY_mat <- matrix(base_weight, nrow = n, ncol = max_years, byrow = TRUE)
+  # Each woman's base QALY = sum of base_weight[1..years_lived],
+  # with the final year prorated by frac_last
+  full_yrs   <- years_lived - 1L  # complete years before the partial final year
+  qaly_base  <- ifelse(full_yrs >= 1L, cum_base[full_yrs], 0) +
+    frac_last * base_weight[years_lived]
   
-  # OPT 4: vectorised matrix masking replaces per-woman for-loop
-  QALY_length <- pmax(ceiling(Mort_age_vec) - (screen_startage - 1L), 1L)
-  frac_last   <- 1 - (ceiling(Mort_age_vec) - Mort_age_vec)
-  
-  col_idx  <- matrix(seq_len(max_years), nrow = n, ncol = max_years, byrow = TRUE)
-  life_mat <- col_idx <= QALY_length
-  QALY_mat <- QALY_mat * life_mat
-  
-  # Apply partial final-year fraction via direct matrix row/col indexing
-  QALY_mat[cbind(seq_len(n), QALY_length)] <-
-    QALY_mat[cbind(seq_len(n), QALY_length)] * frac_last
-  
-  # --- 2. Cancer utility adjustments ---
+  # --- 2. Cancer utility adjustments (operates only on cancer subset) ---
+  qaly_total <- qaly_base
   has_cancer <- incidence_age_record_vec > 0
   
   if (any(has_cancer)) {
@@ -272,35 +268,39 @@ vec_QALY_counter <- function(Mort_age_vec, incidence_age_record_vec,
     ma  <- Mort_age_vec[ci]
     
     frac_into_year <- iar - floor(iar)
-    col_y1         <- floor(iar) - screen_startage
+    col_y1         <- floor(iar) - (screen_startage - 1L)   # 1-based year index at incidence
     col_y2         <- col_y1 + 1L
     
     u_y1     <- utility_stage_cat_y1[sc]
     u_follow <- utility_stage_cat_follow[sc]
     
     # 2a. Partial year at incidence
-    for (j in seq_along(ci)) {
-      i  <- ci[j]
-      c1 <- col_y1[j]
-      if (c1 >= 1L && c1 <= max_years)
-        QALY_mat[i, c1] <- u_y1[j] * QALY_mat[i, c1] * (1 - frac_into_year[j])
+    # Woman loses (1 - u_y1) of the base_weight for the fraction of year AFTER incidence.
+    # Weight for col_y1: normal for frac_into_year portion, u_y1-scaled for remainder.
+    valid_y1 <- col_y1 >= 1L & col_y1 <= max_years
+    if (any(valid_y1)) {
+      v   <- which(valid_y1)
+      w   <- base_weight[col_y1[v]]                # base weight for that year
+      # Original full-year contribution already in qaly_base; apply delta
+      delta_y1 <- w * (1 - frac_into_year[v]) * (u_y1[v] - 1)
+      qaly_total[ci[v]] <- qaly_total[ci[v]] + delta_y1
     }
     
-    # 2b. Transition year
+    # 2b. Transition year (col_y2): mix of y1 utility and follow-up utility
     long_enough <- (ma - iar) > 1
     if (any(long_enough)) {
-      ci2 <- ci[long_enough]
-      c2v <- col_y2[long_enough]
-      fv  <- frac_into_year[long_enough]
-      u1v <- u_y1[long_enough]
-      uFv <- u_follow[long_enough]
-      
-      for (j in seq_along(ci2)) {
-        i  <- ci2[j]
-        c2 <- c2v[j]
-        if (c2 >= 1L && c2 <= max_years)
-          QALY_mat[i, c2] <- (u1v[j] * QALY_mat[i, c2] *      fv[j]) +
-          (uFv[j] * QALY_mat[i, c2] * (1 - fv[j]))
+      v   <- which(long_enough)
+      c2v <- col_y2[v]
+      valid_y2 <- c2v >= 1L & c2v <= max_years
+      v2  <- v[valid_y2]
+      if (length(v2) > 0) {
+        c2    <- col_y2[v2]
+        w     <- base_weight[c2]
+        frac  <- frac_into_year[v2]
+        # Transition year: frac portion at u_y1, remainder at u_follow
+        mixed_util  <- frac * u_y1[v2] + (1 - frac) * u_follow[v2]
+        delta_y2    <- w * (mixed_util - 1)
+        qaly_total[ci[v2]] <- qaly_total[ci[v2]] + delta_y2
       }
     }
     
@@ -309,26 +309,28 @@ vec_QALY_counter <- function(Mort_age_vec, incidence_age_record_vec,
     has_followup <- ceiling(mort_cap) > (iar + 2)
     
     if (any(has_followup)) {
-      ci3 <- ci[has_followup]
-      for (j in seq_along(ci3)) {
-        i       <- ci3[j]
-        iar_j   <- iar[has_followup][j]
-        mc_j    <- mort_cap[has_followup][j]
-        uF_j    <- u_follow[has_followup][j]
+      v <- which(has_followup)
+      for (j in seq_along(v)) {
+        jj      <- v[j]
+        iar_j   <- iar[jj]
+        mc_j    <- mort_cap[jj]
+        uF_j    <- u_follow[jj]
         
         y_start <- floor(iar_j) + 2L
         y_end   <- min(floor(iar_j) + 8L, ceiling(mc_j))
-        cols    <- y_start:y_end - screen_startage
+        cols    <- (y_start:y_end) - (screen_startage - 1L)
         valid   <- cols >= 1L & cols <= max_years
         
-        if (any(valid))
-          QALY_mat[i, cols[valid]] <- QALY_mat[i, cols[valid]] * uF_j
+        if (any(valid)) {
+          cv <- cols[valid]
+          delta <- base_weight[cv] * (uF_j - 1)
+          qaly_total[ci[jj]] <- qaly_total[ci[jj]] + sum(delta)
+        }
       }
     }
   }
   
-  # --- 3. Row sums ---
-  rowSums(QALY_mat)
+  qaly_total
 }
 
 

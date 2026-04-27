@@ -65,7 +65,7 @@ metastatic_prob <- data.frame(
     1.73E-01
   )
 )
-write.csv(metastatic_prob, "metaprob.csv")
+
 
 #Create matrix of probability of cancer stage by cancer size
 stage_by_size_mat <- data.frame(

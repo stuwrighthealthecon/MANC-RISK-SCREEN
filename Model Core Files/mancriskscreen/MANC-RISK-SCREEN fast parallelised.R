@@ -36,14 +36,14 @@ library(matrixStats)  # for rowCumsums()
 # 1. Controls
 # -----------------------------------------------------------------------------
 controls <- list(
-  strategies       = c(0,1,2,3,4,9),
+  strategies       = c(3),
   gensample        = TRUE,
   MISCLASS         = TRUE,
   PREVENTATIVE_DRUG = FALSE,
   supplemental_screening = FALSE,
   PSA              = FALSE,
   intervals        = FALSE,
-  desired_cases    = 3000,
+  desired_cases    = 300000,
   mcruns           = 1,
   seed             = 42,
   n_cores          = max(1L, parallel::detectCores() - 1L)
@@ -209,11 +209,12 @@ if (MISCLASS) {
   drop_cols_now  <- c("VBD", "cancer", "feedback", "liferisk")
   drop_cols_late <- c("tenyrrisk")
 }
-if (PSA == 0L) {
-  psa_cols   <- grep("^PSA_", names(splitmaster), value = TRUE)
-  splitmaster <- splitmaster[, !names(splitmaster) %in% psa_cols]
-}
 splitmaster_base <- risksample_master[, !names(risksample_master) %in% drop_cols_now]
+
+if (PSA == 0L) {
+  psa_cols     <- grep("^PSA_", names(splitmaster_base), value = TRUE)
+  splitmaster_base <- splitmaster_base[, !names(splitmaster_base) %in% psa_cols]
+}
 
 # -----------------------------------------------------------------------------
 # 5a. Helper: compute strategy-dependent drug matrices
