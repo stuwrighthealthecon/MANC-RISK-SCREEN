@@ -1,26 +1,5 @@
-# =============================================================================
-# MANC-RISK-SCREEN Main Model Script
-# =============================================================================
-# Optimisations vs original:
-#   1.  source() calls moved outside strategy loop
-#   2.  load() moved outside strategy loop; master copy kept
-#   3.  names() regex fix moved outside strategy loop
-#   4.  dqset.seed() replaces set.seed() for dqrng compatibility
-#   5.  ca_incidence vectorised with outer()/rowSums() replacing map_dbl()
-#   6.  supplemental screening loop replaced with vectorised indexing + bug fix
-#   7.  screen attendance uses direct column names not fragile match()
-#   8.  risk group split() pre-computed once before ii loop
-#   9.  outer() transpose removed in drug block
-#   10. t(apply(..., cumsum)) replaced with matrixStats::rowCumsums()
-#   11. pacman replaced with explicit library() calls
-#   12. Strategy loop parallelised via foreach/doParallel
-#   13. params.R split: fixed params sourced once, strategy-dependent params
-#       computed per strategy inside loop
-# =============================================================================
-
-# -----------------------------------------------------------------------------
-# 0. Packages
-# -----------------------------------------------------------------------------
+#Load require packages
+#-----------------------------------------------------------------------------
 library(doParallel)
 library(MASS)
 library(dqrng)
@@ -28,25 +7,25 @@ library(compiler)
 library(tidyverse)
 library(iterators)
 library(here)
-library(purrr)        # fixed spelling from original 'purr'
+library(purrr)        
 library(tictoc)
-library(matrixStats)  # for rowCumsums()
+library(matrixStats)
 
-# -----------------------------------------------------------------------------
-# 1. Controls
-# -----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+#Set model controls
+#-----------------------------------------------------------------------------
 controls <- list(
-  strategies       = c(3),
-  gensample        = TRUE,
-  MISCLASS         = TRUE,
-  PREVENTATIVE_DRUG = FALSE,
-  supplemental_screening = FALSE,
-  PSA              = FALSE,
-  intervals        = FALSE,
-  desired_cases    = 300000,
-  mcruns           = 1,
-  seed             = 42,
-  n_cores          = max(1L, parallel::detectCores() - 1L)
+  strategies       = c(3), #vector of strategies to simulate
+  gensample        = TRUE, #create new sample to simulate?
+  MISCLASS         = TRUE, #should error in risk prediction be included?
+  PREVENTATIVE_DRUG = FALSE, #should risk reducing medicines be used for high risk?
+  supplemental_screening = FALSE, #should ultrasound and MRI be used as supplemental screening?
+  PSA              = FALSE, #run PSA?
+  intervals        = FALSE, #run PSA with wide distributions for GAM estimation?
+  desired_cases    = 300000, #number of cancer cases required
+  mcruns           = 1, #Number of Monte Carlo runs
+  seed             = 42, #Set seed for random number generation
+  n_cores          = max(1L, parallel::detectCores() - 1L) #Select number of computer cores to use
 )
 
 MISCLASS          <- controls$MISCLASS
@@ -54,13 +33,13 @@ PREVENTATIVE_DRUG <- controls$PREVENTATIVE_DRUG
 PSA               <- as.integer(controls$PSA)
 intervals         <- as.integer(controls$intervals)
 
-#Place control on number of cores for memory management
+#Place control on number of cores for memory management at large sample sizes
 controls$n_cores <- if (controls$desired_cases >= 200000) 3L else
   if (controls$desired_cases >= 100000) 6L else
     max(1L, parallel::detectCores() - 1L)
 
 # -----------------------------------------------------------------------------
-# 2. Output directories
+# Set output directories
 # -----------------------------------------------------------------------------
 det_output_path <- "Deterministic results/"
 psa_output_path <- "PSA results/"
@@ -87,31 +66,29 @@ if (MISCLASS & PREVENTATIVE_DRUG) {
 sample_fname <- "possample"
 
 # -----------------------------------------------------------------------------
-# 3. Fixed parameters and functions — sourced ONCE outside all loops
+# Set parameters and functions
 # -----------------------------------------------------------------------------
 expected_prev <- 0.12
 desired_cases <- controls$desired_cases
 mcruns        <- controls$mcruns
 
+#Set total number of women to simulate to get desired case numbers
 inum <- ceiling(desired_cases / expected_prev)
 
-# OPT 4: dqset.seed controls dqrng draws; base set.seed does not
+#Set seed for dq based random number generators
 dqset.seed(controls$seed)
 
-# Source function files once — they never change between strategies
+# Source function files
 source("MANC_RISK_SCREEN_functions.R")
 source("risksample function.R")
 source("negsample function.R")
 source("des_vectorised_df.R")
 
-# Source fixed params (everything in params.R that does NOT depend on
-# params.R contains a strategy-dependent block that references screen_strategy.
-# params.R now guards against this with exists("screen_strategy"), so it can
-# be sourced safely here before the strategy loop.
+# Source fixed parameters
 source("params.R")
 
 # -----------------------------------------------------------------------------
-# 4. Generate sample (once, before strategy loop)
+# Generate sample
 # -----------------------------------------------------------------------------
 screen_strategies <- unlist(controls$strategies)
 
@@ -128,28 +105,33 @@ if (controls$gensample) {
   }
 }
 
-# OPT 2: load sample ONCE outside the strategy loop
+# Load sample
 if (MISCLASS) {
   load(paste0("Risksamplewithmisclass/", sample_fname, ".Rdata"))
 } else {
   load(paste0("Risksample/", sample_fname, ".Rdata"))
 }
 
-# OPT 3: fix column names ONCE after loading
+#Fix column names for risksample
 prefix <- paste0("^", "X", 1, ".")
 names(risksample) <- sub(prefix, "", names(risksample))
 
-# OPT 5: Vectorised cancer incidence age assignment
-# Replaces map_dbl loop over every woman
-age_cols <- Incidence_Mortality$age  # length 101
+#Vectorised cancer incidence age assignment
+age_cols <- Incidence_Mortality$age
 
-# Matrix: rows = women, cols = ages. Zero out ages >= life_expectancy per woman.
+# Create matrix of likelihood of cancer by age, bound by individual life expectancy
 age_mat  <- outer(rep(1, nrow(risksample)), Incidence_Mortality$BC_age) *
             (outer(risksample$life_expectancy, age_cols, FUN = ">"))
 age_mat  <- age_mat / rowSums(age_mat)
 
-cum_age_mat <- matrixStats::rowCumsums(age_mat)   # OPT 10
+#Create cumulative risk of cancer by age
+cum_age_mat <- matrixStats::rowCumsums(age_mat) 
+
+#Create vector of random draws
+
 u_age       <- dqrunif(nrow(risksample), 0, 1)
+
+#Find column at which random draw exceeds cumulative cancer risk
 col_idx     <- rowSums(cum_age_mat < u_age) + 1L
 col_idx     <- pmin(col_idx, length(age_cols))
 risksample$ca_incidence <- age_cols[col_idx]
