@@ -50,32 +50,38 @@ get_screen_times <- function(screen_strategy, risk_group) {
     return(low_risk_screentimes)
   }
   if (screen_strategy == 0) return(c(0))     # no screening
+  # PROCAS: risk_cutoffs_procas has 5 cutpoints -> groups 1-6
   if (screen_strategy == 1) {
-    # PROCAS: risk_cutoffs_procas has 5 cutpoints -> groups 1-6
     if      (risk_group <= 3)                      return(low_risk_screentimes)
     else if (risk_group == 4)                      return(med_risk_screentimes)
     else                                           return(high_risk_screentimes)
   }
+  # Tertiles: groups 1-3
   if (screen_strategy == 2) {
-    # Tertiles: groups 1-3
     if      (risk_group == 1)                      return(low_risk_screentimes)
     else if (risk_group == 2)                      return(med_risk_screentimes)
     else                                           return(high_risk_screentimes)
   }
+  #3 yearly
   if (screen_strategy == 3)                        return(low_risk_screentimes)
+  #2 yearly
   if (screen_strategy == 4)                        return(med_risk_screentimes)
+  #5 yearly
   if (screen_strategy == 5)                        return(seq(screen_startage, screen_startage + 5*4, 5))
+  #10 yearly
   if (screen_strategy == 6)                        return(seq(screen_startage, screen_startage + 10, 10))
+  #Low risk 5 yearly
   if (screen_strategy == 7) {
     if      (risk_group == 1)                      return(seq(screen_startage, screen_startage + 5*4, 5))
     else                                           return(low_risk_screentimes)
   }
+  #Low risk 6 yearly
   if (screen_strategy == 8) {
     if      (risk_group == 1)                      return(seq(screen_startage, screen_startage + 6*3, 6))
     else                                           return(low_risk_screentimes)
   }
+  # Fully stratified: risk_cutoffs_procas -> groups 1-6
   if (screen_strategy == 9) {
-    # Fully stratified: risk_cutoffs_procas -> groups 1-6
     if      (risk_group == 1)                      return(seq(screen_startage, screen_startage + 5*4, 5))
     else if (risk_group %in% c(2, 3))              return(low_risk_screentimes)
     else if (risk_group == 4)                      return(med_risk_screentimes)
