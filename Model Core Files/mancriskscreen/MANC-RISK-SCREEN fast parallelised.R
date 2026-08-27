@@ -15,7 +15,7 @@ library(matrixStats)
 #Set model controls
 #-----------------------------------------------------------------------------
 controls <- list(
-  strategies       = c(3), #vector of strategies to simulate
+  strategies       = c(0,1,2,3,4,9), #vector of strategies to simulate
   gensample        = TRUE, #create new sample to simulate?
   MISCLASS         = TRUE, #should error in risk prediction be included?
   PREVENTATIVE_DRUG = FALSE, #should risk reducing medicines be used for high risk?
@@ -116,37 +116,6 @@ if (MISCLASS) {
 prefix <- paste0("^", "X", 1, ".")
 names(risksample) <- sub(prefix, "", names(risksample))
 
-#Vectorised cancer incidence age assignment
-age_cols <- Incidence_Mortality$age
-
-# Create matrix of likelihood of cancer by age, bound by individual life expectancy
-age_mat  <- outer(rep(1, nrow(risksample)), Incidence_Mortality$BC_age) *
-            (outer(risksample$life_expectancy, age_cols, FUN = ">"))
-age_mat  <- age_mat / rowSums(age_mat)
-
-#Create cumulative risk of cancer by age
-cum_age_mat <- matrixStats::rowCumsums(age_mat) 
-
-#Create vector of random draws
-
-u_age       <- dqrunif(nrow(risksample), 0, 1)
-
-#Find column at which random draw exceeds cumulative cancer risk
-col_idx     <- rowSums(cum_age_mat < u_age) + 1L
-col_idx     <- pmin(col_idx, length(age_cols))
-risksample$ca_incidence <- age_cols[col_idx]
-
-# Add fractional month jitter
-risksample$ca_incidence <- risksample$ca_incidence + dqrunif(nrow(risksample), 0, 1)
-
-# Tumour size and genesis age
-risksample$clin_detect_size_g <- start_size * 2^risksample$clinical_detect_size
-
-t_gen <- ((log((Vm / Vc)^0.25 - 1) -
-             log((Vm / ((4/3) * pi * (risksample$clin_detect_size_g / 2)^3))^0.25 - 1)) /
-            (0.25 * risksample$growth_rate))
-risksample$genage <- risksample$ca_incidence - t_gen
-
 # Risk group assignment
 if (MISCLASS) {
   risk_col <- "tenyrrisk_est"
@@ -158,14 +127,14 @@ if (MISCLASS) {
 # for strategies that use risk stratification; set to 0 (average) as default
 risksample$risk_group <- 0L
 
-# OPT 6: vectorised supplemental screening assignment (fixes original bug)
+#Assign supplemental screening if used
 if (controls$supplemental_screening) {
   supp_col        <- ifelse(MISCLASS, "tenyrrisk_true", "tenyrrisk_est")
   high_risk_dense <- risksample$VDG >= density_cutoff &
                      risksample[[supp_col]] >= 8
   low_risk_dense  <- risksample$VDG >= density_cutoff &
                      risksample[[supp_col]] < 8
-  risksample$MRI_screen[high_risk_dense] <- 1L   # was bug: used < not <-
+  risksample$MRI_screen[high_risk_dense] <- 1L
   risksample$US_screen[low_risk_dense]   <- 1L
 }
 
@@ -182,8 +151,7 @@ if (PREVENTATIVE_DRUG) {
 # Keep a clean master copy for reuse across strategies
 risksample_master <- risksample
 
-# Keep risk columns in splitmaster_base so assign_risk_groups() can use them
-# inside the strategy loop. Only drop columns that are truly never needed.
+#Drop un-needed columns for memory management, some now some later
 if (MISCLASS) {
   drop_cols_now  <- c("VBD", "cancer", "feedback", "liferisk_est", "liferisk_true")
   drop_cols_late <- c("tenyrrisk_est", "tenyrrisk_true")
@@ -199,122 +167,9 @@ if (PSA == 0L) {
 }
 
 # -----------------------------------------------------------------------------
-# 5a. Helper: compute strategy-dependent drug matrices
-# Replicates the screen_strategy-dependent block from params.R so workers
-# can call this with their own screen_strategy value.
-get_drug_matrices <- function(screen_strategy) {
-  if (screen_strategy %in% c(1, 9)) {
-    risk_red <- matrix(
-      rep(c(ana_eff, tam_eff), 5), nrow = 5, ncol = 2
-    )
-    course_length <- c(5., 5.)
-    uptake <- rbind(c(0.,0.), c(0.,0.), c(0.,0.), c(.71,.71), c(.71,.71))
-    persistence <- matrix(
-      rep(c(ana_dropout_rate, tam_dropout_rate), 5), nrow = 5, ncol = 2
-    )
-  } else if (screen_strategy == 2) {
-    risk_red <- matrix(
-      rep(c(ana_eff, tam_eff), 3), nrow = 3, ncol = 2
-    )
-    uptake <- rbind(c(0.,0.), c(0.,0.), c(.71,.71))
-    persistence <- matrix(
-      rep(c(ana_dropout_rate, tam_dropout_rate), 3), nrow = 3, ncol = 2
-    )
-    course_length <- c(5., 5.)
-  } else if (screen_strategy %in% c(7, 8)) {
-    risk_red    <- matrix(c(ana_eff, tam_eff, ana_eff, tam_eff), nrow = 2, ncol = 2)
-    uptake      <- rbind(c(0.,0.), c(.71,.71))
-    persistence <- matrix(
-      c(ana_dropout_rate, tam_dropout_rate, ana_dropout_rate, tam_dropout_rate),
-      nrow = 2, ncol = 2
-    )
-    course_length <- c(5., 5.)
-  } else {
-    risk_red      <- matrix(c(ana_eff, tam_eff), nrow = 1, ncol = 2)
-    uptake        <- matrix(c(0., 0.),           nrow = 1, ncol = 2)
-    persistence   <- matrix(
-      c(ana_dropout_rate, tam_dropout_rate), nrow = 1, ncol = 2
-    )
-    course_length <- c(5., 5.)
-  }
-  list(risk_red = risk_red, uptake = uptake,
-       persistence = persistence, course_length = course_length)
-}
-
-# 5b. Helper: derive screen_times for a given strategy + risk group
+# Main strategy loop — parallelised via foreach
 # -----------------------------------------------------------------------------
-get_screen_times <- function(screen_strategy, risk_group) {
-  # Guard: NA or missing risk_group falls back to low risk
-  if (is.na(risk_group)) {
-    warning(sprintf("get_screen_times: NA risk_group for strategy %d, using low_risk_screentimes",
-                    screen_strategy))
-    return(low_risk_screentimes)
-  }
-  if (screen_strategy == 0) return(c(0))     # no screening
-  if (screen_strategy == 1) {
-    # PROCAS: risk_cutoffs_procas has 5 cutpoints -> groups 1-6
-    if      (risk_group <= 3)                      return(low_risk_screentimes)
-    else if (risk_group == 4)                      return(med_risk_screentimes)
-    else                                           return(high_risk_screentimes)
-  }
-  if (screen_strategy == 2) {
-    # Tertiles: groups 1-3
-    if      (risk_group == 1)                      return(low_risk_screentimes)
-    else if (risk_group == 2)                      return(med_risk_screentimes)
-    else                                           return(high_risk_screentimes)
-  }
-  if (screen_strategy == 3)                        return(low_risk_screentimes)
-  if (screen_strategy == 4)                        return(med_risk_screentimes)
-  if (screen_strategy == 5)                        return(seq(screen_startage, screen_startage + 5*4, 5))
-  if (screen_strategy == 6)                        return(seq(screen_startage, screen_startage + 10, 10))
-  if (screen_strategy == 7) {
-    if      (risk_group == 1)                      return(seq(screen_startage, screen_startage + 5*4, 5))
-    else                                           return(low_risk_screentimes)
-  }
-  if (screen_strategy == 8) {
-    if      (risk_group == 1)                      return(seq(screen_startage, screen_startage + 6*3, 6))
-    else                                           return(low_risk_screentimes)
-  }
-  if (screen_strategy == 9) {
-    # Fully stratified: risk_cutoffs_procas -> groups 1-6
-    if      (risk_group == 1)                      return(seq(screen_startage, screen_startage + 5*4, 5))
-    else if (risk_group %in% c(2, 3))              return(low_risk_screentimes)
-    else if (risk_group == 4)                      return(med_risk_screentimes)
-    else                                           return(high_risk_screentimes)
-  }
-  return(low_risk_screentimes)  # fallback
-}
-
-# -----------------------------------------------------------------------------
-# 6. Helper: assign risk groups for a given strategy
-# -----------------------------------------------------------------------------
-assign_risk_groups <- function(df, screen_strategy, MISCLASS) {
-  risk_col <- if (MISCLASS) "tenyrrisk_est" else "tenyrrisk"
-
-  if (!risk_col %in% names(df))
-    stop(sprintf("assign_risk_groups: column '%s' not found in df", risk_col))
-
-  rv <- df[[risk_col]]
-  rg <- rep(0L, nrow(df))
-
-  if (screen_strategy %in% c(1, 9)) {
-    rg <- 1L + findInterval(rv, risk_cutoffs_procas)
-  } else if (screen_strategy == 2) {
-    rg <- 1L + findInterval(rv, risk_cutoffs_tert)
-  } else if (screen_strategy %in% c(7, 8)) {
-    rg <- ifelse(rv < low_risk_cut, 1L, 2L)
-  }
-
-  if (any(is.na(rg)))
-    warning(sprintf("assign_risk_groups: %d NA values in risk_group for strategy %d",
-                    sum(is.na(rg)), screen_strategy))
-  rg
-}
-
-# -----------------------------------------------------------------------------
-# 7. Main strategy loop — parallelised via foreach
-# -----------------------------------------------------------------------------
-tic()
+tic() #Start timer
 
 cl <- makeCluster(controls$n_cores)
 registerDoParallel(cl)
@@ -382,7 +237,7 @@ foreach(
   # Drop the risk score columns now that risk groups are assigned
   splitmaster <- splitmaster[, !names(splitmaster) %in% drop_cols_late]
 
-  # OPT 8: pre-split data.frame once before ii loop
+  # Pre-split data.frame before ii loop (for memory management)
   risk_group_list <- split(splitmaster, splitmaster$risk_group)
 
   # ---- ii loop: one iteration per risk group --------------------------------
@@ -390,7 +245,7 @@ foreach(
 
     risksample <- risk_group_list[[as.character(risk_groups[ii])]]
 
-    # Defensive check — catch NA risk_group before it causes cryptic errors
+    # Catch NA risk_group before it causes errors
     if (is.na(risksample$risk_group[1]))
       stop(sprintf("strategy %d ii %d: risk_group[1] is NA",
                    screen_strategy, ii))
@@ -409,6 +264,7 @@ foreach(
       uptake_probs <- uptake[idx]
       risksample$uptake <- dqrunif(nrow(risksample), 0, 1) < uptake_probs
 
+      #Create column of time taking drugs for those who take them
       risksample$time_taking_drug <- risksample$uptake * pmin(
         rexp(nrow(risksample), rate = persistence[idx]),
         course_length
@@ -422,21 +278,17 @@ foreach(
       ages <- Incidence_Mortality$age[start_age:101]
       n    <- nrow(risksample)
 
-      # OPT 9: outer() argument order avoids transpose
       prob_matrix <- outer(
         risksample$weibullrisk, ages,
         FUN = function(scale, age) dweibull(age, shape = inc_shape, scale = scale)
       )
 
-      # Zero out ages >= life_expectancy
       age_mask    <- outer(risksample$life_expectancy, ages, FUN = ">")
       prob_matrix <- prob_matrix * age_mask
 
-      # Normalise rows
       row_sums    <- rowSums(prob_matrix)
       prob_matrix <- prob_matrix / row_sums
 
-      # OPT 10: rowCumsums() replaces t(apply(..., cumsum))
       cum_probs   <- matrixStats::rowCumsums(prob_matrix)
       u           <- dqrunif(n, 0, 1)
       col_indices <- rowSums(cum_probs < u) + 1L
@@ -576,7 +428,9 @@ foreach(
 
   } # end ii loop
 
+  #Run the model for people without cancer
   negsamplefn(screen_strategy, MISCLASS, PSA)
+  
   message(paste("Strategy", r, "complete"))
 
 } # end foreach strategy loop

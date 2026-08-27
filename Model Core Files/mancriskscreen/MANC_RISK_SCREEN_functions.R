@@ -1,3 +1,114 @@
+
+#################Compute strategy-dependent drug matrices###################
+##################Used for prevantative drugs############################
+get_drug_matrices <- function(screen_strategy) {
+  if (screen_strategy %in% c(1, 9)) {
+    risk_red <- matrix(
+      rep(c(ana_eff, tam_eff), 5), nrow = 5, ncol = 2
+    )
+    course_length <- c(5., 5.)
+    uptake <- rbind(c(0.,0.), c(0.,0.), c(0.,0.), c(.71,.71), c(.71,.71))
+    persistence <- matrix(
+      rep(c(ana_dropout_rate, tam_dropout_rate), 5), nrow = 5, ncol = 2
+    )
+  } else if (screen_strategy == 2) {
+    risk_red <- matrix(
+      rep(c(ana_eff, tam_eff), 3), nrow = 3, ncol = 2
+    )
+    uptake <- rbind(c(0.,0.), c(0.,0.), c(.71,.71))
+    persistence <- matrix(
+      rep(c(ana_dropout_rate, tam_dropout_rate), 3), nrow = 3, ncol = 2
+    )
+    course_length <- c(5., 5.)
+  } else if (screen_strategy %in% c(7, 8)) {
+    risk_red    <- matrix(c(ana_eff, tam_eff, ana_eff, tam_eff), nrow = 2, ncol = 2)
+    uptake      <- rbind(c(0.,0.), c(.71,.71))
+    persistence <- matrix(
+      c(ana_dropout_rate, tam_dropout_rate, ana_dropout_rate, tam_dropout_rate),
+      nrow = 2, ncol = 2
+    )
+    course_length <- c(5., 5.)
+  } else {
+    risk_red      <- matrix(c(ana_eff, tam_eff), nrow = 1, ncol = 2)
+    uptake        <- matrix(c(0., 0.),           nrow = 1, ncol = 2)
+    persistence   <- matrix(
+      c(ana_dropout_rate, tam_dropout_rate), nrow = 1, ncol = 2
+    )
+    course_length <- c(5., 5.)
+  }
+  list(risk_red = risk_red, uptake = uptake,
+       persistence = persistence, course_length = course_length)
+}
+
+###############Derive screen_times for a given strategy + risk group#############
+# -----------------------------------------------------------------------------
+get_screen_times <- function(screen_strategy, risk_group) {
+  # Guard: NA or missing risk_group falls back to low risk
+  if (is.na(risk_group)) {
+    warning(sprintf("get_screen_times: NA risk_group for strategy %d, using low_risk_screentimes",
+                    screen_strategy))
+    return(low_risk_screentimes)
+  }
+  if (screen_strategy == 0) return(c(0))     # no screening
+  if (screen_strategy == 1) {
+    # PROCAS: risk_cutoffs_procas has 5 cutpoints -> groups 1-6
+    if      (risk_group <= 3)                      return(low_risk_screentimes)
+    else if (risk_group == 4)                      return(med_risk_screentimes)
+    else                                           return(high_risk_screentimes)
+  }
+  if (screen_strategy == 2) {
+    # Tertiles: groups 1-3
+    if      (risk_group == 1)                      return(low_risk_screentimes)
+    else if (risk_group == 2)                      return(med_risk_screentimes)
+    else                                           return(high_risk_screentimes)
+  }
+  if (screen_strategy == 3)                        return(low_risk_screentimes)
+  if (screen_strategy == 4)                        return(med_risk_screentimes)
+  if (screen_strategy == 5)                        return(seq(screen_startage, screen_startage + 5*4, 5))
+  if (screen_strategy == 6)                        return(seq(screen_startage, screen_startage + 10, 10))
+  if (screen_strategy == 7) {
+    if      (risk_group == 1)                      return(seq(screen_startage, screen_startage + 5*4, 5))
+    else                                           return(low_risk_screentimes)
+  }
+  if (screen_strategy == 8) {
+    if      (risk_group == 1)                      return(seq(screen_startage, screen_startage + 6*3, 6))
+    else                                           return(low_risk_screentimes)
+  }
+  if (screen_strategy == 9) {
+    # Fully stratified: risk_cutoffs_procas -> groups 1-6
+    if      (risk_group == 1)                      return(seq(screen_startage, screen_startage + 5*4, 5))
+    else if (risk_group %in% c(2, 3))              return(low_risk_screentimes)
+    else if (risk_group == 4)                      return(med_risk_screentimes)
+    else                                           return(high_risk_screentimes)
+  }
+  return(low_risk_screentimes)  # fallback
+}
+
+#######################Assign risk groups for a given strategy##################
+assign_risk_groups <- function(df, screen_strategy, MISCLASS) {
+  risk_col <- if (MISCLASS) "tenyrrisk_est" else "tenyrrisk"
+  
+  if (!risk_col %in% names(df))
+    stop(sprintf("assign_risk_groups: column '%s' not found in df", risk_col))
+  
+  rv <- df[[risk_col]]
+  rg <- rep(0L, nrow(df))
+  
+  if (screen_strategy %in% c(1, 9)) {
+    rg <- 1L + findInterval(rv, risk_cutoffs_procas)
+  } else if (screen_strategy == 2) {
+    rg <- 1L + findInterval(rv, risk_cutoffs_tert)
+  } else if (screen_strategy %in% c(7, 8)) {
+    rg <- ifelse(rv < low_risk_cut, 1L, 2L)
+  }
+  
+  if (any(is.na(rg)))
+    warning(sprintf("assign_risk_groups: %d NA values in risk_group for strategy %d",
+                    sum(is.na(rg)), screen_strategy))
+  rg
+}
+
+
 #########################Lookup function for treatment costs############################
 
 vec_fnLookupBase <- function(iStage_vec, iAge_vec, iLE_vec) {

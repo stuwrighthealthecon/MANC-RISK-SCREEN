@@ -104,6 +104,37 @@ create_sample <- function(PSA = 0, intervals = 0, seed = 1, screen_strategy) {
       meanlog = log_norm_mean,
       sdlog = sqrt(log_norm_sd)
     )
+  
+  #Vectorised cancer incidence age assignment
+  age_cols <- Incidence_Mortality$age
+  
+  # Create matrix of likelihood of cancer by age, bound by individual life expectancy
+  age_mat  <- outer(rep(1, nrow(risksample)), Incidence_Mortality$BC_age) *
+    (outer(risksample$life_expectancy, age_cols, FUN = ">"))
+  age_mat  <- age_mat / rowSums(age_mat)
+  
+  #Create cumulative risk of cancer by age
+  cum_age_mat <- matrixStats::rowCumsums(age_mat) 
+  
+  #Create vector of random draws
+  
+  u_age       <- dqrunif(nrow(risksample), 0, 1)
+  
+  #Find column at which random draw exceeds cumulative cancer risk
+  col_idx     <- rowSums(cum_age_mat < u_age) + 1L
+  col_idx     <- pmin(col_idx, length(age_cols))
+  risksample$ca_incidence <- age_cols[col_idx]
+  
+  # Add fractional month jitter
+  risksample$ca_incidence <- risksample$ca_incidence + dqrunif(nrow(risksample), 0, 1)
+  
+  # Tumour size and genesis age
+  risksample$clin_detect_size_g <- start_size * 2^risksample$clinical_detect_size
+  
+  t_gen <- ((log((Vm / Vc)^0.25 - 1) -
+               log((Vm / ((4/3) * pi * (risksample$clin_detect_size_g / 2)^3))^0.25 - 1)) /
+              (0.25 * risksample$growth_rate))
+  risksample$genage <- risksample$ca_incidence - t_gen
 
   if (PSA == 1) {
     if (intervals == 0) {
@@ -455,6 +486,37 @@ create_sample_with_misclass <- function(
       meanlog = log_norm_mean,
       sdlog = sqrt(log_norm_sd)
     )
+  
+  #Vectorised cancer incidence age assignment
+  age_cols <- Incidence_Mortality$age
+  
+  # Create matrix of likelihood of cancer by age, bound by individual life expectancy
+  age_mat  <- outer(rep(1, nrow(risksample)), Incidence_Mortality$BC_age) *
+    (outer(risksample$life_expectancy, age_cols, FUN = ">"))
+  age_mat  <- age_mat / rowSums(age_mat)
+  
+  #Create cumulative risk of cancer by age
+  cum_age_mat <- matrixStats::rowCumsums(age_mat) 
+  
+  #Create vector of random draws
+  
+  u_age       <- dqrunif(nrow(risksample), 0, 1)
+  
+  #Find column at which random draw exceeds cumulative cancer risk
+  col_idx     <- rowSums(cum_age_mat < u_age) + 1L
+  col_idx     <- pmin(col_idx, length(age_cols))
+  risksample$ca_incidence <- age_cols[col_idx]
+  
+  # Add fractional month jitter
+  risksample$ca_incidence <- risksample$ca_incidence + dqrunif(nrow(risksample), 0, 1)
+  
+  # Tumour size and genesis age
+  risksample$clin_detect_size_g <- start_size * 2^risksample$clinical_detect_size
+  
+  t_gen <- ((log((Vm / Vc)^0.25 - 1) -
+               log((Vm / ((4/3) * pi * (risksample$clin_detect_size_g / 2)^3))^0.25 - 1)) /
+              (0.25 * risksample$growth_rate))
+  risksample$genage <- risksample$ca_incidence - t_gen
 
   if (PSA == 1) {
     if (intervals == 0) {
