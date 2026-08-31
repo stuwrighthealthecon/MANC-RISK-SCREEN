@@ -154,7 +154,7 @@ vec_stage_by_size <- function(Ca_size_vec) {
   
   # Build cumulative probability matrix for non-metastatic women
   # stage_by_size_mat rows correspond to size_cat; cols are probs for c(1,2,3,5)
-  prob_mat <- stage_by_size_mat[size_cat, , drop = FALSE]
+  prob_mat <- as.matrix(stage_by_size_mat[size_cat, , drop = FALSE])
   cum_mat <- matrixStats::rowCumsums(prob_mat)
   
   # Use the pre-drawn uniform to select stage via row-wise interval lookup

@@ -155,7 +155,7 @@ negsamplefn <- function(screen_strategy, MISCLASS, PSA) {
 
       #Add blank columns for potential screen times
       for (i in 1:length(screen_times)) {
-        negsample[, 11 + i] <- numeric(length(negsample$negsample.risk_group))
+        negsample[, 11 + i] <- numeric(length(negsample$risk_group))
       }
 
       #Draw attendance at first screen
@@ -215,7 +215,7 @@ negsamplefn <- function(screen_strategy, MISCLASS, PSA) {
       ) *
         ((1 /
           ((1 + discount_cost)^((screen_times[negsample$first_case] -
-            rep(screen_startage, length(nrow(negsample))))))))
+                                   rep(screen_startage, nrow(negsample)))))))
       negsample$screencost <- negsample$screencost + negsample$riskcost
 
       #Create QALY vector
@@ -391,7 +391,7 @@ negsamplefn <- function(screen_strategy, MISCLASS, PSA) {
 
     #Add blank columns for potential screen times
     for (i in 1:length(screen_times)) {
-      negsample[, 11 + i] <- numeric(length(negsample$negsample.risk_group))
+      negsample[, 11 + i] <- numeric(length(negsample$risk_group))
     }
 
     #Draw attendance at first screen
