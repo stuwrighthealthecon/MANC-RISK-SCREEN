@@ -1,1 +1,0 @@
-This is an empty file to ensure this folder is kept when syncing with GitHub

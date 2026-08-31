@@ -104,6 +104,37 @@ create_sample <- function(PSA = 0, intervals = 0, seed = 1, screen_strategy) {
       meanlog = log_norm_mean,
       sdlog = sqrt(log_norm_sd)
     )
+  
+  #Vectorised cancer incidence age assignment
+  age_cols <- Incidence_Mortality$age
+  
+  # Create matrix of likelihood of cancer by age, bound by individual life expectancy
+  age_mat  <- outer(rep(1, nrow(risksample)), Incidence_Mortality$BC_age) *
+    (outer(risksample$life_expectancy, age_cols, FUN = ">"))
+  age_mat  <- age_mat / rowSums(age_mat)
+  
+  #Create cumulative risk of cancer by age
+  cum_age_mat <- matrixStats::rowCumsums(age_mat) 
+  
+  #Create vector of random draws
+  
+  u_age       <- dqrunif(nrow(risksample), 0, 1)
+  
+  #Find column at which random draw exceeds cumulative cancer risk
+  col_idx     <- rowSums(cum_age_mat < u_age) + 1L
+  col_idx     <- pmin(col_idx, length(age_cols))
+  risksample$ca_incidence <- age_cols[col_idx]
+  
+  # Add fractional month jitter
+  risksample$ca_incidence <- risksample$ca_incidence + dqrunif(nrow(risksample), 0, 1)
+  
+  # Tumour size and genesis age
+  risksample$clin_detect_size_g <- start_size * 2^risksample$clinical_detect_size
+  
+  t_gen <- ((log((Vm / Vc)^0.25 - 1) -
+               log((Vm / ((4/3) * pi * (risksample$clin_detect_size_g / 2)^3))^0.25 - 1)) /
+              (0.25 * risksample$growth_rate))
+  risksample$genage <- risksample$ca_incidence - t_gen
 
   if (PSA == 1) {
     if (intervals == 0) {
@@ -308,68 +339,40 @@ create_sample <- function(PSA = 0, intervals = 0, seed = 1, screen_strategy) {
     )
 
     #Bind individual level parameters and monte carlo draws
+    n_risk_cols <- ncol(risksample)
+    n_psa_cols  <- ncol(PSA_all_p)
+    
     masterframe <- data.frame(matrix(
       nrow = inum * mcruns,
-      ncol = length(risksample[1, ]) + length(PSA_all_p[1, ])
+      ncol = n_risk_cols + n_psa_cols
     ))
-    masterframe[, 1:14] <- risksample
-    masterframe[, 15:47] <- PSA_all_p
-    colnames(masterframe)[1:14] <- colnames(risksample)
-    colnames(masterframe)[15:47] <- colnames(PSA_all_p)
+    masterframe[, 1:n_risk_cols] <- risksample
+    masterframe[, (n_risk_cols + 1):(n_risk_cols + n_psa_cols)] <- PSA_all_p
+    colnames(masterframe)[1:n_risk_cols] <- colnames(risksample)
+    colnames(masterframe)[(n_risk_cols + 1):(n_risk_cols + n_psa_cols)] <- colnames(PSA_all_p)
 
     #Split the dataframe into chunks for easier computation
-    masterframe$split <- (rep(
-      1:chunks,
-      times = round(length(masterframe$VBD) / chunks)
-    ))
-    masterframe <- masterframe %>% filter(masterframe$life_expectancy >= 50)
+    risksample <- masterframe %>% filter(masterframe$life_expectancy >= screen_startage)
 
     negsample <- masterframe %>% filter(masterframe$cancer == 0)
     save(negsample, file = paste("Risksample/negsample.Rdata", sep = ""))
-    masterframe <- masterframe %>% filter(masterframe$cancer == 1)
-
-    risksplit <- split(masterframe, masterframe$split)
-
+    risksample <- masterframe %>% filter(masterframe$cancer == 1)
+    save(risksample,file=paste("Risksample/possample.Rdata"))
+    risksample<-masterframe
     #Clean up redundant inputs
-    rm(masterframe, risksample, PSA_all_p, risk_mat)
+    rm(masterframe, PSA_all_p, risk_mat)
     gc()
 
-    #Save risk sample in chunks
-    for (i in 1:chunks) {
-      cancer_col <- paste("X", i, ".cancer", sep = "") %>% as.name()
-      splitsample <- risksplit[i] %>%
-        as.data.frame() %>%
-        filter(!!cancer_col == 1) # We give this the same name as the merged sample to avoid extraneous if statements in the simulation script
-      save(
-        splitsample,
-        file = paste("Risksample/possample_", i, ".Rdata", sep = "")
-      )
-    }
   } else {
-    risksample$split <- (rep(
-      1:chunks,
-      times = round(length(risksample$VBD) / chunks)
-    ))
-    risksample <- risksample %>% filter(risksample$life_expectancy >= 50)
+    risksample <- risksample %>% filter(risksample$life_expectancy >= screen_startage)
 
     negsample <- risksample %>% filter(risksample$cancer == 0)
     save(negsample, file = paste("Risksample/negsample.Rdata", sep = ""))
     risksample <- risksample %>% filter(risksample$cancer == 1)
-    risksplit <- split(risksample, risksample$split)
-  }
-
-  #Save risk sample in chunks
-  for (i in 1:chunks) {
-    cancer_col <- paste("X", i, ".cancer", sep = "") %>% as.name()
-    splitsample <- risksplit[i] %>%
-      as.data.frame() %>%
-      filter(!!cancer_col == 1) # We give this the same name as the merged sample to avoid extraneous if statements in the simulation script
-    save(
-      splitsample,
-      file = paste("Risksample/possample_", i, ".Rdata", sep = "")
-    )
+    save(risksample,file=paste("Risksample/possample.Rdata"))
   }
 }
+
 cmp_create_sample <- cmpfun(create_sample)
 
 # Version of create_sample that stores separate "true" and predicted ten year
@@ -486,6 +489,37 @@ create_sample_with_misclass <- function(
       meanlog = log_norm_mean,
       sdlog = sqrt(log_norm_sd)
     )
+  
+  #Vectorised cancer incidence age assignment
+  age_cols <- Incidence_Mortality$age
+  
+  # Create matrix of likelihood of cancer by age, bound by individual life expectancy
+  age_mat  <- outer(rep(1, nrow(risksample)), Incidence_Mortality$BC_age) *
+    (outer(risksample$life_expectancy, age_cols, FUN = ">"))
+  age_mat  <- age_mat / rowSums(age_mat)
+  
+  #Create cumulative risk of cancer by age
+  cum_age_mat <- matrixStats::rowCumsums(age_mat) 
+  
+  #Create vector of random draws
+  
+  u_age       <- dqrunif(nrow(risksample), 0, 1)
+  
+  #Find column at which random draw exceeds cumulative cancer risk
+  col_idx     <- rowSums(cum_age_mat < u_age) + 1L
+  col_idx     <- pmin(col_idx, length(age_cols))
+  risksample$ca_incidence <- age_cols[col_idx]
+  
+  # Add fractional month jitter
+  risksample$ca_incidence <- risksample$ca_incidence + dqrunif(nrow(risksample), 0, 1)
+  
+  # Tumour size and genesis age
+  risksample$clin_detect_size_g <- start_size * 2^risksample$clinical_detect_size
+  
+  t_gen <- ((log((Vm / Vc)^0.25 - 1) -
+               log((Vm / ((4/3) * pi * (risksample$clin_detect_size_g / 2)^3))^0.25 - 1)) /
+              (0.25 * risksample$growth_rate))
+  risksample$genage <- risksample$ca_incidence - t_gen
 
   if (PSA == 1) {
     if (intervals == 0) {
@@ -690,71 +724,46 @@ create_sample_with_misclass <- function(
     )
 
     #Bind individual level parameters and monte carlo draws
+    n_risk_cols <- ncol(risksample)
+    n_psa_cols  <- ncol(PSA_all_p)
+    
     masterframe <- data.frame(matrix(
       nrow = inum * mcruns,
-      ncol = length(risksample[1, ]) + length(PSA_all_p[1, ])
+      ncol = n_risk_cols + n_psa_cols
     ))
-    masterframe[, 1:16] <- risksample
-    masterframe[, 17:49] <- PSA_all_p
-    colnames(masterframe)[1:16] <- colnames(risksample)
-    colnames(masterframe)[17:49] <- colnames(PSA_all_p)
+    masterframe[, 1:n_risk_cols] <- risksample
+    masterframe[, (n_risk_cols + 1):(n_risk_cols + n_psa_cols)] <- PSA_all_p
+    colnames(masterframe)[1:n_risk_cols] <- colnames(risksample)
+    colnames(masterframe)[(n_risk_cols + 1):(n_risk_cols + n_psa_cols)] <- colnames(PSA_all_p)
 
     #Split the dataframe into chunks for easier computation
-    masterframe$split <- (rep(
-      1:chunks,
-      times = round(length(masterframe$VBD) / chunks)
-    ))
-    masterframe <- masterframe %>% filter(masterframe$life_expectancy >= 50)
+    risksample <- masterframe %>% filter(masterframe$life_expectancy >= screen_startage)
 
     negsample <- masterframe %>% filter(masterframe$cancer == 0)
     save(
       negsample,
       file = paste("Risksamplewithmisclass/negsample.Rdata", sep = "")
     )
-    risksplit <- split(masterframe, masterframe$split)
-
+    risksample<- masterframe %>% filter(masterframe$cancer == 1)
+    save(risksample,file=paste("Risksamplewithmisclass/possample.Rdata"))
+    risksample<-masterframe
     #Clean up redundant inputs
-    rm(masterframe, risksample, PSA_all_p, risk_mat)
+    rm(masterframe, PSA_all_p, risk_mat)
     gc()
 
-    #Save risk sample in chunks
-    for (i in 1:chunks) {
-      cancer_col <- paste("X", i, ".cancer", sep = "") %>% as.name()
-      splitsample <- risksplit[i] %>%
-        as.data.frame() %>%
-        filter(!!cancer_col == 1) # We give this the same name as the merged sample to avoid extraneous if statements in the simulation script
-      save(
-        splitsample,
-        file = paste("Risksamplewithmisclass/possample_", i, ".Rdata", sep = "")
-      )
-    }
-  } else {
-    risksample$split <- (rep(
-      1:chunks,
-      times = round(length(risksample$VBD) / chunks)
-    ))
-    risksample <- risksample %>% filter(risksample$life_expectancy >= 50)
 
+  } else {
+    
+    risksample <- risksample %>% filter(risksample$life_expectancy >= screen_startage)
     negsample <- risksample %>% filter(risksample$cancer == 0)
     save(
       negsample,
       file = paste("Risksamplewithmisclass/negsample.Rdata", sep = "")
     )
-    risksplit <- split(risksample, risksample$split)
-
-    #Save risk sample in chunks
-    for (i in 1:chunks) {
-      cancer_col <- paste("X", i, ".cancer", sep = "") %>% as.name()
-      splitsample <- risksplit[i] %>%
-        as.data.frame() %>%
-        filter(!!cancer_col == 1) # We give this the same name as the merged sample to avoid extraneous if statements in the simulation script
-      save(
-        splitsample,
-        file = paste("Risksamplewithmisclass/possample_", i, ".Rdata", sep = "")
-      )
+    risksample<- risksample %>% filter(risksample$cancer == 1)
+    save(risksample,file=paste("Risksamplewithmisclass/possample.Rdata"))
     }
   }
-}
 
 # Work out new version of IncidenceMortality adjusted for effect of drug on
 # hazard ratios for a single individual.

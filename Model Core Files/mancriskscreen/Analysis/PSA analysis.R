@@ -7,7 +7,7 @@ library("MASS")
 library("patchwork")
 
 #Set number of PSA runs to estimate over
-mcruns <- 1000000
+mcruns <- 100000
 
 #Set alternatives
 alternative <- c(0, 1, 2, 3, 4, 9)

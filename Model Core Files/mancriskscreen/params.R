@@ -65,7 +65,7 @@ metastatic_prob <- data.frame(
     1.73E-01
   )
 )
-write.csv(metastatic_prob, "metaprob.csv")
+
 
 #Create matrix of probability of cancer stage by cancer size
 stage_by_size_mat <- data.frame(
@@ -203,6 +203,9 @@ if ((tam_full_course_eff > 1) | (ana_full_course_eff > 1)) {
 course_length <- c(5., 5.)
 
 #Assign women to risk groups based on 10yr risk if using risk-stratified approach
+# Guard: if screen_strategy not yet defined (e.g. params.R sourced standalone),
+# default to 0 so the else branch runs and matrices are initialised safely.
+if (!exists("screen_strategy")) screen_strategy <- 0L
 if (screen_strategy == 1 | screen_strategy == 9) {
   risk_red <- matrix(
     c(
@@ -303,7 +306,6 @@ cost_MRI_base <- 162.00 #Cost of MRI
 cost_drug_base <- c(100., 100.) # Cost of full course of drug
 
 #If deterministic analysis then set costs as base costs
-if (PSA == 0) {
   cost_DCIS <- cost_DCIS_base
   cost_screen <- cost_screen_base
   cost_follow_up <- cost_follow_up_base
@@ -311,7 +313,7 @@ if (PSA == 0) {
   cost_US <- cost_US_base
   cost_MRI <- cost_MRI_base
   cost_drug <- cost_drug_base
-}
+
 
 #Set up look-up table for treatment costs
 tbl <- tribble(
@@ -387,6 +389,12 @@ tblLookup <- tblPred %>%
   ) %>%
   arrange(Stage, Age, Yr) %>%
   ungroup()
+
+tblLookup$stage_flag <- ifelse(tblLookup$Stage == "Early", 0L, 1L)
+tblLookup$age_flag   <- ifelse(tblLookup$Age   == "18.64", 0L, 1L)
+tblLookup$lookup_key <- paste(tblLookup$stage_flag,
+                                  tblLookup$age_flag,
+                                  tblLookup$Yr, sep = "|")
 
 #######################Utility Weights#########################################
 
