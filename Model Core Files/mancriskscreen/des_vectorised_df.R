@@ -30,11 +30,11 @@ run_des_vectorised <- function(risk_df,
   
   screen_cols <- grep("^screen_", names(df), value = TRUE)
   screen_cols <- screen_cols[order(as.integer(sub("screen_", "", screen_cols)))]
-  attend_mat  <- as.matrix(df[, screen_cols])
-  max_screens <- ncol(attend_mat)
   
-  screen_mat                  <- t(t(attend_mat) * screen_times)
+  screen_mat                  <- t(t(as.matrix(df[, screen_cols])) * screen_times)
+  max_screens <- ncol(screen_mat)
   screen_mat[screen_mat == 0] <- NA_real_
+  df[, screen_cols] <- NULL
   
   # 0b. Initialise state and counter columns
   df$age                  <- start_age
@@ -61,8 +61,6 @@ run_des_vectorised <- function(risk_df,
   df$cd_screen_flag       <- NA_integer_ 
   df$cd_screen_sens       <- NA_real_ #Screen sensitivity (based on size)
   df$cd_screen_spec       <- NA_real_ #Screen specificity
-  df$cd_mort_age_raw      <- df$Mort_age #Base age of death
-  df$cd_CD_age            <- df$CD_age #Cancer diagnosis age
   df$cd_death_age         <- NA_real_ #Cancer death age
   df$cd_screen_number     <- NA_integer_ #Screen at which cancer found
   

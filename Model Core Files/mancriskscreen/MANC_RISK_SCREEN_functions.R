@@ -361,12 +361,11 @@ vec_QALY_counter_core <- function(Mort_age_vec, incidence_age_record_vec, stage_
   
   # Zero out columns beyond each woman's life and apply partial-year fraction
   # to her final column
-  for (i in seq_len(n)) {
-    ql <- QALY_length[i]
-    if (ql < max_years)
-      QALY_mat[i, (ql + 1):max_years] <- 0.0
-    QALY_mat[i, ql] <- QALY_mat[i, ql] * frac_last[i]
-  }
+  col_idx <- matrix(seq_len(max_years), nrow = n, ncol = max_years, byrow = TRUE)
+  QALY_mat[col_idx > QALY_length] <- 0.0
+  
+  last_cell <- cbind(seq_len(n), QALY_length)
+  QALY_mat[last_cell] <- QALY_mat[last_cell] * frac_last
   
   # Cancer utility adjustments
   has_cancer <- incidence_age_record_vec > 0
@@ -385,28 +384,24 @@ vec_QALY_counter_core <- function(Mort_age_vec, incidence_age_record_vec, stage_
     u_follow <- utility_stage_cat_follow[sc]
     
     # Partial year at incidence (year 1 of cancer)
-    for (j in seq_along(ci)) {
-      i <- ci[j]
-      c1 <- col_y1[j]
-      if (c1 >= 1L && c1 <= max_years)
-        QALY_mat[i, c1] <- u_y1[j] * QALY_mat[i, c1] * (1 - frac_into_year[j])
+    valid1 <- col_y1 >= 1L & col_y1 <= max_years
+    if (any(valid1)) {
+      cells1 <- cbind(ci[valid1], col_y1[valid1])
+      QALY_mat[cells1] <- u_y1[valid1] * QALY_mat[cells1] * (1 - frac_into_year[valid1])
     }
     
     # Transition year (straddles y1 and follow-up utility)
     long_enough <- (ma - iar) > 1
     if (any(long_enough)) {
-      ci2  <- ci[long_enough]
-      c2v  <- col_y2[long_enough]
-      fv   <- frac_into_year[long_enough]
-      u1v  <- u_y1[long_enough]
-      uFv  <- u_follow[long_enough]
+      ci2 <- ci[long_enough]; c2v <- col_y2[long_enough]
+      fv  <- frac_into_year[long_enough]
+      u1v <- u_y1[long_enough]; uFv <- u_follow[long_enough]
       
-      for (j in seq_along(ci2)) {
-        i  <- ci2[j]
-        c2 <- c2v[j]
-        if (c2 >= 1L && c2 <= max_years)
-          QALY_mat[i, c2] <- (u1v[j]  * QALY_mat[i, c2] * fv[j]) +
-          (uFv[j] * QALY_mat[i, c2] * (1 - fv[j]))
+      valid2 <- c2v >= 1L & c2v <= max_years
+      if (any(valid2)) {
+        cells2 <- cbind(ci2[valid2], c2v[valid2])
+        QALY_mat[cells2] <- (u1v[valid2] * QALY_mat[cells2] * fv[valid2]) +
+          (uFv[valid2] * QALY_mat[cells2] * (1 - fv[valid2]))
       }
     }
     
@@ -415,24 +410,19 @@ vec_QALY_counter_core <- function(Mort_age_vec, incidence_age_record_vec, stage_
     has_followup <- ceiling(mort_cap) > (iar + 2)
     
     if (any(has_followup)) {
-      ci3 <- ci[has_followup]
-      for (j in seq_along(ci3)) {
-        i        <- ci3[j]
-        iar_j    <- iar[has_followup][j]
-        mc_j     <- mort_cap[has_followup][j]
-        uF_j     <- u_follow[has_followup][j]
-        
-        y_start  <- floor(iar_j) + 2L
-        y_end    <- min(floor(iar_j) + 8L, ceiling(mc_j))
-        cols     <- y_start:y_end - screen_startage
-        valid    <- cols >= 1L & cols <= max_years
-        
-        if (any(valid))
-          QALY_mat[i, cols[valid]] <- QALY_mat[i, cols[valid]] * uF_j
-      }
+      ci3  <- ci[has_followup]
+      iar3 <- iar[has_followup]; mc3 <- mort_cap[has_followup]; uF3 <- u_follow[has_followup]
+      
+      col_start3 <- floor(iar3) + 2L - screen_startage
+      col_end3   <- pmin(floor(iar3) + 8L, ceiling(mc3)) - screen_startage
+      
+      col_idx_sub <- matrix(seq_len(max_years), nrow = length(ci3), ncol = max_years, byrow = TRUE)
+      mask   <- col_idx_sub >= col_start3 & col_idx_sub <= col_end3
+      uF_full <- matrix(uF3, nrow = length(ci3), ncol = max_years)  # recycles uF3 down each column, i.e. per row
+      
+      QALY_mat[ci3, ] <- QALY_mat[ci3, ] * ifelse(mask, uF_full, 1)
     }
   }
-  
   #Return row sums (one total QALY per woman)
   rowSums(QALY_mat)
 }

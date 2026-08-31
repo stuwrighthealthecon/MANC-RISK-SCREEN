@@ -165,6 +165,7 @@ if (PSA == 0L) {
   psa_cols     <- grep("^PSA_", names(splitmaster_base), value = TRUE)
   splitmaster_base <- splitmaster_base[, !names(splitmaster_base) %in% psa_cols]
 }
+rm(risksample_master); gc()
 
 # -----------------------------------------------------------------------------
 # Main strategy loop — parallelised via foreach
@@ -239,6 +240,7 @@ foreach(
 
   # Pre-split data.frame before ii loop (for memory management)
   risk_group_list <- split(splitmaster, splitmaster$risk_group)
+  rm(splitmaster); gc()
 
   # ---- ii loop: one iteration per risk group --------------------------------
   for (ii in seq_along(risk_groups)) {
