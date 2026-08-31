@@ -21,9 +21,9 @@ controls <- list(
   PREVENTATIVE_DRUG = FALSE, #should risk reducing medicines be used for high risk?
   supplemental_screening = FALSE, #should ultrasound and MRI be used as supplemental screening?
   PSA              = TRUE, #run PSA?
-  intervals        = FALSE, #run PSA with wide distributions for GAM estimation?
-  desired_cases    = 100, #number of cancer cases required
-  mcruns           = 100, #Number of Monte Carlo runs
+  intervals        = TRUE, #run PSA with wide distributions for GAM estimation?
+  desired_cases    = 1, #number of cancer cases required
+  mcruns           = 10000, #Number of Monte Carlo runs
   seed             = 42, #Set seed for random number generation
   n_cores          = max(1L, parallel::detectCores() - 1L) #Select number of computer cores to use
 )

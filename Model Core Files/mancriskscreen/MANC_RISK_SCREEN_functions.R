@@ -118,12 +118,10 @@ assign_risk_groups <- function(df, screen_strategy, MISCLASS) {
 #########################Lookup function for treatment costs############################
 
 vec_fnLookupBase <- function(iStage_vec, iAge_vec, iLE_vec) {
-  # Build a single composite key for both the lookup table and the query
-  lookup_key <- paste(tblLookup$Stage, tblLookup$Age, tblLookup$Yr, sep = "|")
   #Create key for specific cancer to look up
-  query_key  <- paste(iStage_vec,      iAge_vec,      iLE_vec,      sep = "|")
+  query_key <- paste(iStage_vec, iAge_vec, iLE_vec, sep = "|")
   #Look up total discounted cost for cancer
-  as.numeric(tblLookup$CDCost.p.i.d[match(query_key, lookup_key)])
+  as.numeric(tblLookup$CDCost.p.i.d[match(query_key, tblLookup$lookup_key)])
 }
 
 ########################Stage calculator#######################################
