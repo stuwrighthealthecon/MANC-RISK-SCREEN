@@ -22,7 +22,7 @@ controls <- list(
   supplemental_screening = FALSE, #should ultrasound and MRI be used as supplemental screening?
   PSA              = TRUE, #run PSA?
   intervals        = FALSE, #run PSA with wide distributions for GAM estimation?
-  desired_cases    = 10, #number of cancer cases required
+  desired_cases    = 100, #number of cancer cases required
   mcruns           = 100, #Number of Monte Carlo runs
   seed             = 42, #Set seed for random number generation
   n_cores          = max(1L, parallel::detectCores() - 1L) #Select number of computer cores to use
@@ -46,19 +46,19 @@ psa_output_path <- "PSA results/"
 
 if (MISCLASS & PREVENTATIVE_DRUG) {
   dir.create("Deterministic results/misclassification_and_preventative_drug",
-             showWarnings = FALSE)
+             showWarnings = FALSE, recursive = TRUE)
   dir.create("PSA results/misclassification_and_preventative_drug",
-             showWarnings = FALSE)
+             showWarnings = FALSE, recursive = TRUE)
   det_output_path <- "Deterministic results/misclassification_and_preventative_drug/"
   psa_output_path <- "PSA results/misclassification_and_preventative_drug/"
 } else if (MISCLASS) {
-  dir.create("Deterministic results/misclassification", showWarnings = FALSE)
-  dir.create("PSA results/misclassification",           showWarnings = FALSE)
+  dir.create("Deterministic results/misclassification", showWarnings = FALSE, recursive = TRUE)
+  dir.create("PSA results/misclassification",           showWarnings = FALSE, recursive = TRUE)
   det_output_path <- "Deterministic results/misclassification/"
   psa_output_path <- "PSA results/misclassification/"
 } else if (PREVENTATIVE_DRUG) {
-  dir.create("Deterministic results/preventative_drug",                    showWarnings = FALSE)
-  dir.create("PSA results/misclassification_and_preventative_drug",        showWarnings = FALSE)
+  dir.create("Deterministic results/preventative_drug",             showWarnings = FALSE, recursive = TRUE)
+  dir.create("PSA results/misclassification_and_preventative_drug", showWarnings = FALSE, recursive = TRUE)
   det_output_path <- "Deterministic results/preventative_drug/"
   psa_output_path <- "PSA results/misclassification_and_preventative_drug/"
 }
@@ -172,7 +172,7 @@ rm(risksample_master); gc()
 # -----------------------------------------------------------------------------
 tic() #Start timer
 
-cl <- makeCluster(controls$n_cores)
+cl <- makeCluster(controls$n_cores, outfile = "")
 registerDoParallel(cl)
 
 # Export globals needed by workers
@@ -244,8 +244,8 @@ foreach(
 
   # ---- ii loop: one iteration per risk group --------------------------------
   for (ii in seq_along(risk_groups)) {
-
-    risksample <- risk_group_list[[as.character(risk_groups[ii])]]
+    tryCatch({
+      risksample <- risk_group_list[[as.character(risk_groups[ii])]]
 
     # Catch NA risk_group before it causes errors
     if (is.na(risksample$risk_group[1]))
@@ -395,11 +395,6 @@ foreach(
       cost_drug     <- cost_drug_base     * (1 + risk_data$PSA_cost_drug)
     }
 
-    if (PSA == 1L) {
-      # ... existing scalar extraction ...
-      psa_cols <- grep("^PSA_", names(risksample), value = TRUE)
-      risksample <- risksample[, !names(risksample) %in% psa_cols]
-    }
     
     # ---- Run DES ------------------------------------------------------------
     run_des_vectorised(
@@ -428,6 +423,15 @@ foreach(
       persistence        = persistence
     )
 
+    }, error = function(e) {
+      message(sprintf(
+        "FAILED: strategy=%s ii=%d risk_group=%s nrow=%d PSA=%d mcruns=%d — %s",
+        screen_strategy, ii, risk_groups[ii],
+        nrow(risk_group_list[[as.character(risk_groups[ii])]]),
+        PSA, mcruns, conditionMessage(e)
+      ))
+      stop(e)
+    })
   } # end ii loop
 
   #Run the model for people without cancer

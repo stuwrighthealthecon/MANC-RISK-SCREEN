@@ -339,14 +339,17 @@ create_sample <- function(PSA = 0, intervals = 0, seed = 1, screen_strategy) {
     )
 
     #Bind individual level parameters and monte carlo draws
+    n_risk_cols <- ncol(risksample)
+    n_psa_cols  <- ncol(PSA_all_p)
+    
     masterframe <- data.frame(matrix(
       nrow = inum * mcruns,
-      ncol = length(risksample[1, ]) + length(PSA_all_p[1, ])
+      ncol = n_risk_cols + n_psa_cols
     ))
-    masterframe[, 1:14] <- risksample
-    masterframe[, 15:47] <- PSA_all_p
-    colnames(masterframe)[1:14] <- colnames(risksample)
-    colnames(masterframe)[15:47] <- colnames(PSA_all_p)
+    masterframe[, 1:n_risk_cols] <- risksample
+    masterframe[, (n_risk_cols + 1):(n_risk_cols + n_psa_cols)] <- PSA_all_p
+    colnames(masterframe)[1:n_risk_cols] <- colnames(risksample)
+    colnames(masterframe)[(n_risk_cols + 1):(n_risk_cols + n_psa_cols)] <- colnames(PSA_all_p)
 
     #Split the dataframe into chunks for easier computation
     risksample <- masterframe %>% filter(masterframe$life_expectancy >= screen_startage)
@@ -721,14 +724,17 @@ create_sample_with_misclass <- function(
     )
 
     #Bind individual level parameters and monte carlo draws
+    n_risk_cols <- ncol(risksample)
+    n_psa_cols  <- ncol(PSA_all_p)
+    
     masterframe <- data.frame(matrix(
       nrow = inum * mcruns,
-      ncol = length(risksample[1, ]) + length(PSA_all_p[1, ])
+      ncol = n_risk_cols + n_psa_cols
     ))
-    masterframe[, 1:16] <- risksample
-    masterframe[, 17:49] <- PSA_all_p
-    colnames(masterframe)[1:16] <- colnames(risksample)
-    colnames(masterframe)[17:49] <- colnames(PSA_all_p)
+    masterframe[, 1:n_risk_cols] <- risksample
+    masterframe[, (n_risk_cols + 1):(n_risk_cols + n_psa_cols)] <- PSA_all_p
+    colnames(masterframe)[1:n_risk_cols] <- colnames(risksample)
+    colnames(masterframe)[(n_risk_cols + 1):(n_risk_cols + n_psa_cols)] <- colnames(PSA_all_p)
 
     #Split the dataframe into chunks for easier computation
     risksample <- masterframe %>% filter(masterframe$life_expectancy >= screen_startage)

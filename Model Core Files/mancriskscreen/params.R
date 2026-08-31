@@ -305,7 +305,6 @@ cost_MRI_base <- 162.00 #Cost of MRI
 cost_drug_base <- c(100., 100.) # Cost of full course of drug
 
 #If deterministic analysis then set costs as base costs
-if (PSA == 0) {
   cost_DCIS <- cost_DCIS_base
   cost_screen <- cost_screen_base
   cost_follow_up <- cost_follow_up_base
@@ -313,7 +312,7 @@ if (PSA == 0) {
   cost_US <- cost_US_base
   cost_MRI <- cost_MRI_base
   cost_drug <- cost_drug_base
-}
+
 
 #Set up look-up table for treatment costs
 tbl <- tribble(
