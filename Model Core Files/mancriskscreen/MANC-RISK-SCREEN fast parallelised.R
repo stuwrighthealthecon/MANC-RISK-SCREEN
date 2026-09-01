@@ -15,7 +15,7 @@ library(matrixStats)
 #Set model controls
 #-----------------------------------------------------------------------------
 controls <- list(
-  strategies       = c(0,1,2,3,4,9), #vector of strategies to simulate
+  strategies       = c(3), #vector of strategies to simulate
   gensample        = TRUE, #create new sample to simulate?
   MISCLASS         = TRUE, #should error in risk prediction be included?
   PREVENTATIVE_DRUG = FALSE, #should risk reducing medicines be used for high risk?
