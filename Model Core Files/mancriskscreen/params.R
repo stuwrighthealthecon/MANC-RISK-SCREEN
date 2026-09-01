@@ -134,8 +134,7 @@ biopsy_rate <- 0.506 #Proportion of referrals without cancer that have biopsy
 #### Drug data ####
 
 # First bring in log hazard ratios from networked analysis
-library(here)
-loghaz_ests <- readRDS(here("Model Core Files/mancriskscreen/Data/posterior_outputs.rds"))
+loghaz_ests <- readRDS("Data/PreventionOutputs.RDS")
 efficacy_ests <- loghaz_ests[1]
 dropout_ests <- loghaz_ests[4]
 

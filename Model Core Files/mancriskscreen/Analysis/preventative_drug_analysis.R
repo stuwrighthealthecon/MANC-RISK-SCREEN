@@ -180,8 +180,7 @@ ca_size_cut <- c(0.025, 5, 10, 15, 20, 30, 128) #Size cut-points for deciding st
 #### Drug data ####
 
 # First bring in log hazard ratios from networked analysis
-library(here)
-loghaz_ests <- readRDS(here("Model Core Files/mancriskscreen/Data/posterior_outputs.rds"))
+loghaz_ests <- readRDS("Data/PreventionOutputs.RDS")
 efficacy_ests <- loghaz_ests[1]
 dropout_ests <- loghaz_ests[4]
 
