@@ -30,7 +30,6 @@ acmmortality_wb_a <- 7.937
 acmmortality_wb_b <- 86.788
   #89.35
 
-
 #Set parameters for all cause mortality following breast cancer
 gamma_survival_1 <- exp(-5.618) #Exponential distribution scale parameter stage 1
 gamma_survival_2 <- exp(-3.808) #Exponential distribution scale parameter stage 2
