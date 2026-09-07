@@ -12,7 +12,7 @@ risk_feedback <- 1 #Uptake for attending risk feedback consultation
 screen_change <- 1 #Uptake for changing screening intervals based on risk
 
 #Age of an individual at start of simulation
-start_age <- 38 #Default is 38 to give time for tumours to develop pre-screening
+start_age <- 18 #Default is 38 to give time for tumours to develop pre-screening
 
 #Set time horizon
 time_horizon <- 100
