@@ -24,10 +24,12 @@ discount_cost <- 0.035
 ##############Set clinical parameters for screening########################
 
 #Set parameters of a Weibull survival curve to represent all cause mortality
-acmmortality_wb_a <- 9.38
-#7.937
-acmmortality_wb_b <- 89.35
-#86.788
+acmmortality_wb_a <- 7.937
+  #9.38
+
+acmmortality_wb_b <- 86.788
+  #89.35
+
 
 #Set parameters for all cause mortality following breast cancer
 gamma_survival_1 <- exp(-5.618) #Exponential distribution scale parameter stage 1
