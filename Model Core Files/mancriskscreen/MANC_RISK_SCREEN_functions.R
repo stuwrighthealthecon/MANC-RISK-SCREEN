@@ -129,39 +129,26 @@ vec_fnLookupBase <- function(iStage_vec, iAge_vec, iLE_vec) {
 vec_stage_by_size <- function(Ca_size_vec) {
   n <- length(Ca_size_vec)
   
-  # Metastatic probability lookup
-  # Bin each tumour size to the nearest metastatic_prob breakpoint
-  m_size <- ifelse(Ca_size_vec <= 25,
-                   25,
-                   pmin(ceiling((Ca_size_vec - 25) / 10) * 10 + 25, 85))
+  draw_met   <- dqrunif(n, 0, 1)
+  draw_stage <- dqrunif(n, 0, 1)
   
+  # STEP 1: assign stage from size FIRST (I, II, III, or DCIS) for everyone
+  size_cat <- findInterval(Ca_size_vec, ca_size_cut)
+  prob_mat <- as.matrix(stage_by_size_mat[size_cat, , drop = FALSE])
+  cum_mat  <- matrixStats::rowCumsums(prob_mat)
+  stage_choices <- c(1L, 2L, 3L, 5L)
+  stage_idx <- rowSums(cum_mat < draw_stage) + 1L
+  stage_cat <- stage_choices[stage_idx]
+  
+  is_dcis <- stage_cat == 5L
+  
+  # STEP 2: metastatic override — DCIS is exempt (non-invasive = zero met risk)
+  m_size <- ifelse(Ca_size_vec <= 25, 25,
+                   pmin(ceiling((Ca_size_vec - 25) / 10) * 10 + 25, 85))
   met_prob <- metastatic_prob[match(m_size, metastatic_prob[, 1]), 2]
   
-  # Bulk random draws
-  draw_met   <- dqrunif(n, 0, 1)   # one draw per woman for metastatic check
-  draw_stage <- dqrunif(n, 0, 1)   # one draw per woman for stage sampling
-  
-  # Metastatic assignment
-  stage_cat <- integer(n)
-  is_met    <- draw_met < met_prob
+  is_met <- !is_dcis & (draw_met < met_prob)
   stage_cat[is_met] <- 4L
-  
-  # Stage sampling for non-metastatic women
-  non_met  <- !is_met
-  size_cat <- findInterval(Ca_size_vec[non_met], ca_size_cut)
-  
-  # Build cumulative probability matrix for non-metastatic women
-  # stage_by_size_mat rows correspond to size_cat; cols are probs for c(1,2,3,5)
-  prob_mat <- as.matrix(stage_by_size_mat[size_cat, , drop = FALSE])
-  cum_mat <- matrixStats::rowCumsums(prob_mat)
-  
-  # Use the pre-drawn uniform to select stage via row-wise interval lookup
-  u        <- draw_stage[non_met]
-  stage_choices <- c(1L, 2L, 3L, 5L)
-  
-  # For each woman, find which cumulative probability bin her draw falls in
-  stage_idx <- rowSums(cum_mat < u) + 1L   # gives index 1-4 into stage_choices
-  stage_cat[non_met] <- stage_choices[stage_idx]
   
   return(stage_cat)
 }
