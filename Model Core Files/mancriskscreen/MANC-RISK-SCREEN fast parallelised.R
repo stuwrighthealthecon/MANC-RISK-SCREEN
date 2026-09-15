@@ -17,7 +17,7 @@ library(matrixStats)
 controls <- list(
   strategies       = c(3), #vector of strategies to simulate
   gensample        = TRUE, #create new sample to simulate?
-  MISCLASS         = FALSE, #should error in risk prediction be included?
+  MISCLASS         = TRUE, #should error in risk prediction be included?
   PREVENTATIVE_DRUG = FALSE, #should risk reducing medicines be used for high risk?
   supplemental_screening = FALSE, #should ultrasound and MRI be used as supplemental screening?
   PSA              = FALSE, #run PSA?

@@ -28,6 +28,10 @@ run_des_vectorised <- function(risk_df,
   df$CD_age   <- df$ca_incidence
   df$CD_size  <- df$clin_detect_size_g
   
+  df$life_expectancy   <- NULL
+  df$ca_incidence       <- NULL
+  df$clin_detect_size_g <- NULL
+  
   screen_cols <- grep("^screen_", names(df), value = TRUE)
   screen_cols <- screen_cols[order(as.integer(sub("screen_", "", screen_cols)))]
   
@@ -116,6 +120,7 @@ run_des_vectorised <- function(risk_df,
     if (any(death_idx)) {
       df$active[death_idx]        <- FALSE
       df$cd_age_record[death_idx] <- df$Mort_age[death_idx]
+      df$cd_death_age[death_idx]  <- df$Mort_age[death_idx]
     }
     
     # 2b. Did anyone have an interval cancer detected before this screen?
@@ -392,6 +397,7 @@ run_des_vectorised <- function(risk_df,
   
   # 3b. Cancer-free deaths
   df$cd_age_record[df$active] <- df$Mort_age[df$active]
+  df$cd_death_age[df$active]  <- df$Mort_age[df$active]
   
   # 4. QALY and life-year calculations
   df$LY_counter <- df$Ca_mort_age - start_age
