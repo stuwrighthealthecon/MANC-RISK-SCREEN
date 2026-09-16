@@ -106,7 +106,10 @@ create_sample <- function(PSA = 0, intervals = 0, seed = 1, screen_strategy) {
     )
   
   # Tumour size and genesis age
-  risksample$clin_detect_size_g <- start_size * 2^risksample$clinical_detect_size
+  risksample$clin_detect_size_g <- pmin(
+    start_size * 2^risksample$clinical_detect_size,
+    max_size * 0.999
+  )
   
   #Sample genesis age
   upper_limit<-pgengamma_custom(risksample$life_expectancy-18,
@@ -119,9 +122,13 @@ create_sample <- function(PSA = 0, intervals = 0, seed = 1, screen_strategy) {
                                         scale = gengammaparams$scale,
                                         k = gengammaparams$k)
   
-  t_gen <- ((log((Vm / Vc)^0.25 - 1) -
-               log((Vm / ((4/3) * pi * (risksample$clin_detect_size_g / 2)^3))^0.25 - 1)) /
-              (0.25 * risksample$growth_rate))
+  t_gen <- rep(NA_real_, nrow(risksample))
+  has_cancer <- risksample$cancer == 1
+  
+  t_gen[has_cancer] <- (
+    log((Vm / Vc)^0.25 - 1) -
+      log((Vm / ((4/3) * pi * (risksample$clin_detect_size_g[has_cancer] / 2)^3))^0.25 - 1)
+  ) / (0.25 * risksample$growth_rate[has_cancer])
   
   risksample$ca_incidence<-risksample$genage+t_gen
 
@@ -507,11 +514,18 @@ create_sample_with_misclass <- function(
                                         k=gengammaparams$k)
   
   # Tumour size and genesis age
-  risksample$clin_detect_size_g <- start_size * 2^risksample$clinical_detect_size
+  risksample$clin_detect_size_g <- pmin(
+    start_size * 2^risksample$clinical_detect_size,
+    max_size * 0.999
+  )
   
-  t_gen <- ((log((Vm / Vc)^0.25 - 1) -
-               log((Vm / ((4/3) * pi * (risksample$clin_detect_size_g / 2)^3))^0.25 - 1)) /
-              (0.25 * risksample$growth_rate))
+  t_gen <- rep(NA_real_, nrow(risksample))
+  has_cancer <- risksample$cancer == 1
+  
+  t_gen[has_cancer] <- (
+    log((Vm / Vc)^0.25 - 1) -
+      log((Vm / ((4/3) * pi * (risksample$clin_detect_size_g[has_cancer] / 2)^3))^0.25 - 1)
+  ) / (0.25 * risksample$growth_rate[has_cancer])
   
   risksample$ca_incidence<-risksample$genage+t_gen
   

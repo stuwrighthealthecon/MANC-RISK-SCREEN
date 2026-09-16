@@ -1,5 +1,5 @@
 #Latent cancer bump up
-lc_bump<-4.23
+lc_bump<-4.23+2.2
 
 # Global option for whether to use corrected age-at-detection distribution
 CORRECT_BC_AGE <- TRUE
