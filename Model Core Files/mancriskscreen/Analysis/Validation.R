@@ -26,9 +26,9 @@ cancer_sizes<-data.frame("Detection"=c("Screen Detected","Clinically Detected"),
                          "Size"=c(mean(screendet$`Cancer Size`),mean(clindet$`Cancer Size`)))
 
 #Plot cancer detection sizes
-plot(density(clindet$`Cancer Size`),col="black",main="Size of Cancers Detected",xlab="Diameter (mm)",ylim=c(0,0.08))
-lines(density(screendet$`Cancer Size`),col="blue")
-legend("right",legend=c("Clinically Detected","Screen Detected"),fill=c("black","blue"))
+#plot(density(clindet$`Cancer Size`),col="black",main="Size of Cancers Detected",xlab="Diameter (mm)",ylim=c(0,0.08))
+#lines(density(screendet$`Cancer Size`),col="blue")
+#legend("right",legend=c("Clinically Detected","Screen Detected"),fill=c("black","blue"))
 
 
 #Calculate calculate age band incidence rates
@@ -88,13 +88,20 @@ incidence_long <- pivot_longer(
   values_to = "Rate"
 )
 
-ggplot(incidence_long, aes(x = `Age Range`, y = Rate, color = Source, group = Source)) +
+incidenceplot<-ggplot(incidence_long, aes(x = `Age Range`, y = Rate, color = Source, group = Source)) +
   geom_line() +
   geom_point() +
   labs(x = "Age Range", y = "Incidence per 100,000 person-years",
        title = "Simulated vs Observed Cancer Incidence by Age Band") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+incidenceplot
+RMSE <- sqrt(mean((incidence$Observed - incidence$Rate_per_100000)^2))
 
+sum(detresults$`screen detected`)/sum(detresults$Screens)
+sum(detresults$`screen detected`)/sum(detresults$Cancer[detresults$`Cancer Diagnosed Age`>0])
 
-print(incidence, row.names = FALSE)
+#print(incidence, row.names = FALSE)
+#plot(density(risksample$liferisk))
+#mean(risksample$liferisk-lc_bump)
 
+mean(detresults$Cancer)

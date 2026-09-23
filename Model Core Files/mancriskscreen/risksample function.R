@@ -131,6 +131,9 @@ create_sample <- function(PSA = 0, intervals = 0, seed = 1, screen_strategy) {
   ) / (0.25 * risksample$growth_rate[has_cancer])
   
   risksample$ca_incidence<-risksample$genage+t_gen
+  
+  # Individual screening-invitation jitter (months -> years), applied to whole schedule
+  risksample$invite_jitter_years <- runif(nrow(risksample), 0, 35.99) / 12
 
   if (PSA == 1) {
     if (intervals == 0) {
@@ -528,6 +531,9 @@ create_sample_with_misclass <- function(
   ) / (0.25 * risksample$growth_rate[has_cancer])
   
   risksample$ca_incidence<-risksample$genage+t_gen
+  
+  # Individual screening-invitation jitter (months -> years), applied to whole schedule
+  risksample$invite_jitter_years <- runif(nrow(risksample), 0, 35.99) / 12
   
   if (PSA == 1) {
     if (intervals == 0) {

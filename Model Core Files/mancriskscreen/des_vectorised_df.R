@@ -35,9 +35,14 @@ run_des_vectorised <- function(risk_df,
   screen_cols <- grep("^screen_", names(df), value = TRUE)
   screen_cols <- screen_cols[order(as.integer(sub("screen_", "", screen_cols)))]
   
-  screen_mat                  <- t(t(as.matrix(df[, screen_cols])) * screen_times)
+  attendance_mat <- as.matrix(df[, screen_cols])
+  
+  # Each woman's own schedule: base screen_times shifted by her personal jitter
+  jittered_times <- outer(df$invite_jitter_years, screen_times, FUN = "+")
+  
+  screen_mat  <- jittered_times * attendance_mat   # 0 where she didn't attend
   max_screens <- ncol(screen_mat)
-  screen_mat[screen_mat == 0] <- NA_real_
+  screen_mat[attendance_mat == 0] <- NA_real_
   df[, screen_cols] <- NULL
   
   # 0b. Initialise state and counter columns

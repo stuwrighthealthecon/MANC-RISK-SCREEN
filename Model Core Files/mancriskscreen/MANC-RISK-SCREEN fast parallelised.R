@@ -22,7 +22,7 @@ controls <- list(
   supplemental_screening = FALSE, #should ultrasound and MRI be used as supplemental screening?
   PSA              = FALSE, #run PSA?
   intervals        = FALSE, #run PSA with wide distributions for GAM estimation?
-  desired_cases    = 300000, #number of cancer cases required
+  desired_cases    = 30000, #number of cancer cases required
   mcruns           = 1, #Number of Monte Carlo runs
   seed             = 42, #Set seed for random number generation
   n_cores          = max(1L, parallel::detectCores() - 1L) #Select number of computer cores to use

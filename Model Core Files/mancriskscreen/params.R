@@ -1,5 +1,5 @@
 #Latent cancer bump up
-lc_bump<-4.23+2.2
+lc_bump<- runif(1,4.05,4.45)
 
 # Global option for whether to use corrected age-at-detection distribution
 CORRECT_BC_AGE <- TRUE
@@ -34,9 +34,11 @@ acmmortality_wb_b <- 86.788
   #89.35
 
 #Cancer genesis age
-gamma_mean<-69.62
-gamma_sd<-23.08
-gamma_p<-8.12
+gamma_mean<-runif(1,65,67.8)
+  
+gamma_sd<-runif(1,22.2,23.7)
+  
+gamma_p<-runif(1,6.2,6.95)
 
 rgengamma_custom <- function(n, p, scale, k) {
   scale * rgamma(n, shape = k, rate = 1)^(1 / p)
