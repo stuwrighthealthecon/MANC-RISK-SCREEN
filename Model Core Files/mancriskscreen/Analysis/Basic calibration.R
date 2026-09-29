@@ -17,7 +17,11 @@ print(paste(c," of ",calibruns," complete"))
 
 calibresults %>% arrange(RMSE)
 
-plotlist[[7]]
+plotlist[[20]]
 
 plot(density(risksample$liferisk),main="Distribution of Lifetime Breast Cancer Risk at Birth")
 count(((risksample$liferisk-2.2-lc_bump)>40))/nrow(risksample)
+
+a
+a<-mean(calibresults$RMSE)
+

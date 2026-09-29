@@ -1,6 +1,7 @@
 #Latent cancer bump up
-lc_bump<- runif(1,4.05,4.45)
-
+lc_bump<-runif(1,7.64,8.15)
+  # WF 4.34
+  
 # Global option for whether to use corrected age-at-detection distribution
 CORRECT_BC_AGE <- TRUE
 
@@ -34,12 +35,16 @@ acmmortality_wb_b <- 86.788
   #89.35
 
 #Cancer genesis age
-gamma_mean<-runif(1,65,67.8)
+gamma_mean<- runif(1,76.6,82.2)
+  #WF 85.04
+ 
   
-gamma_sd<-runif(1,22.2,23.7)
+gamma_sd<-runif(1,20.14,22.7)
+  #WF 23.07
   
-gamma_p<-runif(1,6.2,6.95)
-
+gamma_p<- runif(1,4.7,6.4)
+  #5.45
+ 
 rgengamma_custom <- function(n, p, scale, k) {
   scale * rgamma(n, shape = k, rate = 1)^(1 / p)
 }
@@ -71,7 +76,7 @@ qgengamma_custom <- function(prob, p, scale, k, lower.tail = TRUE, log.p = FALSE
   scale * qgamma(prob, shape = k, rate = 1, lower.tail = lower.tail, log.p = log.p)^(1 / p)
 }
 
-gengammaparams<-get_gengamma_params(gamma_mean,gamma_sd,gamma_p)
+gengammaparams<-get_gengamma_params(gamma_mean-18,gamma_sd,gamma_p)
 
 #Set parameters for all cause mortality following breast cancer
 gamma_survival_1 <- exp(-5.618) #Exponential distribution scale parameter stage 1
@@ -140,8 +145,13 @@ US_cdr <- 3 #CDR for US in Mammogram negative women (incremental)
 density_cutoff <- 3
 
 #Set tumour growth rate parameters
-log_norm_mean <- 1.07
-log_norm_sd <- 1.31
+log_norm_mean <- 0.2
+  #Nanaa 0.2
+  #MacInnes 0.5
+  #WF 1.07
+log_norm_sd <- 0.7
+  #Nanaa 0.7
+  #WF #1.31
 max_size <- 128 #Maximum size of tumours, mm diameter
 start_size <- 0.25 #Starting size of tumours, diameter in mm
 Vc = (4 / 3) * pi * (start_size / 2)^3 #Volume at start

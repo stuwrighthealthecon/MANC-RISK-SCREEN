@@ -7,6 +7,15 @@ negsamplefn <- function(screen_strategy, MISCLASS, PSA) {
   } else {
     load("Risksample/negsample.Rdata")
   }
+
+  # Per-woman screening-invitation jitter (years), created in create_sample().
+  # Kept as a separate vector because later code addresses columns by position.
+  if (!"invite_jitter_years" %in% names(negsample))
+    stop("negsamplefn: 'invite_jitter_years' not found - regenerate the sample")
+  jit_all <- negsample$invite_jitter_years
+
+  # Discount factor matching run_des_vectorised(): whole years since screen_startage
+  disc_at <- function(age) 1 / (1 + discount_cost)^pmax(floor(age - screen_startage), 0)
   if (MISCLASS) {
     #Assign women to risk groups based on 10yr risk if using risk-stratified approach
     if (screen_strategy == 1 | screen_strategy == 9) {
@@ -121,7 +130,9 @@ negsamplefn <- function(screen_strategy, MISCLASS, PSA) {
 
     #Iterate over risk-groups, loading in all individuals from each group
     for (ii in 1:length(subsamples)) {
-      negsample <- filter(mastersample, risk_group == subsamples[ii])
+      grp_idx   <- mastersample$risk_group == subsamples[ii]
+      negsample <- mastersample[grp_idx, ]
+      jit       <- jit_all[grp_idx]
       if (PSA == 1) {
         #Load in PSA values for the group
         subPSA <- filter(savePSA, risk_group == subsamples[ii])
@@ -153,6 +164,9 @@ negsamplefn <- function(screen_strategy, MISCLASS, PSA) {
         screen_times <- seq(screen_startage, screen_startage + (6 * 3), 6)
       }
 
+      # Each woman's own screening ages: schedule shifted by her jitter
+      screen_age <- outer(jit, screen_times, FUN = "+")
+
       #Add blank columns for potential screen times
       for (i in 1:length(screen_times)) {
         negsample[, 11 + i] <- numeric(length(negsample$risk_group))
@@ -176,24 +190,25 @@ negsamplefn <- function(screen_strategy, MISCLASS, PSA) {
 
       #Remove screening attendance after death
       for (i in 1:length(screen_times)) {
-        negsample[, 11 + i][
-          negsample$life_expectancy <
-            rep(screen_times[i], length(negsample$life_expectancy))
-        ] <- 0
+        negsample[, 11 + i][negsample$life_expectancy < screen_age[, i]] <- 0
       }
 
       #Calculate screens attended
       negsample$total_screens <- rowSums(negsample[12:length(negsample[1, ])])
 
-      #Calculate screening cost
+      #Calculate screening cost, with an individual random draw at each
+      #attended screen for a false-positive recall, and for a biopsy if recalled
       for (i in 1:length(screen_times)) {
-        negsample[, 11 + i] <- negsample[, 11 + i] *
-          (negsample$cost_screen +
-            (recall_rate * negsample$cost_follow_up) +
-            (recall_rate * biopsy_rate * negsample$cost_biop) +
-            (negsample$MRI_screen * cost_MRI) +
-            (negsample$US_screen * cost_US) *
-              ((1 / ((1 + discount_cost)^(screen_times[i] - screen_startage)))))
+        attended <- negsample[, 11 + i] == 1
+        recalled <- attended & dqrunif(nrow(negsample), 0, 1) < recall_rate
+        biopsied <- recalled & dqrunif(nrow(negsample), 0, 1) < biopsy_rate
+        negsample[, 11 + i] <-
+          (attended * (negsample$cost_screen +
+                         (negsample$MRI_screen * cost_MRI) +
+                         (negsample$US_screen * cost_US)) +
+             recalled * negsample$cost_follow_up +
+             biopsied * negsample$cost_biop) *
+          disc_at(screen_age[, i])
       }
 
       #Find first screening event to add risk prediciton cost
@@ -213,9 +228,7 @@ negsamplefn <- function(screen_strategy, MISCLASS, PSA) {
         negsample$cost_strat,
         length = nrow(negsample)
       ) *
-        ((1 /
-          ((1 + discount_cost)^((screen_times[negsample$first_case] -
-                                   rep(screen_startage, nrow(negsample)))))))
+        disc_at(screen_age[cbind(seq_len(nrow(negsample)), negsample$first_case)])
       negsample$screencost <- negsample$screencost + negsample$riskcost
 
       #Create QALY vector
@@ -389,6 +402,9 @@ negsamplefn <- function(screen_strategy, MISCLASS, PSA) {
       screen_times <- seq(screen_startage, screen_startage + 10, 10)
     }
 
+    # Each woman's own screening ages: schedule shifted by her jitter
+    screen_age <- outer(jit_all, screen_times, FUN = "+")
+
     #Add blank columns for potential screen times
     for (i in 1:length(screen_times)) {
       negsample[, 11 + i] <- numeric(length(negsample$risk_group))
@@ -412,24 +428,25 @@ negsamplefn <- function(screen_strategy, MISCLASS, PSA) {
 
     #Remove screening attendance after death
     for (i in 1:length(screen_times)) {
-      negsample[, 11 + i][
-        negsample$life_expectancy <
-          rep(screen_times[i], length(negsample$life_expectancy))
-      ] <- 0
+      negsample[, 11 + i][negsample$life_expectancy < screen_age[, i]] <- 0
     }
 
     #Calculate screens attended
     negsample$total_screens <- rowSums(negsample[12:length(negsample[1, ])])
 
-    #Calculate screening cost
+    #Calculate screening cost, with an individual random draw at each
+    #attended screen for a false-positive recall, and for a biopsy if recalled
     for (i in 1:length(screen_times)) {
-      negsample[, 11 + i] <- negsample[, 11 + i] *
-        (negsample$cost_screen +
-          (recall_rate * negsample$cost_follow_up) +
-          (recall_rate * biopsy_rate * negsample$cost_biop) +
-          (negsample$MRI_screen * cost_MRI) +
-          (negsample$US_screen * cost_US) *
-            ((1 / ((1 + discount_cost)^(screen_times[i] - screen_startage)))))
+      attended <- negsample[, 11 + i] == 1
+      recalled <- attended & dqrunif(nrow(negsample), 0, 1) < recall_rate
+      biopsied <- recalled & dqrunif(nrow(negsample), 0, 1) < biopsy_rate
+      negsample[, 11 + i] <-
+        (attended * (negsample$cost_screen +
+                       (negsample$MRI_screen * cost_MRI) +
+                       (negsample$US_screen * cost_US)) +
+           recalled * negsample$cost_follow_up +
+           biopsied * negsample$cost_biop) *
+        disc_at(screen_age[, i])
     }
     negsample$screencost <- rowSums(negsample[12:length(negsample[1, ])])
 

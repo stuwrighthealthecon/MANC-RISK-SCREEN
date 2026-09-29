@@ -82,6 +82,7 @@ inum <- ceiling(desired_cases / expected_prev)
 
 #Set seed for dq based random number generators
 dqset.seed(controls$seed)
+set.seed(NULL)
 
 # Source function files
 source("MANC_RISK_SCREEN_functions.R")

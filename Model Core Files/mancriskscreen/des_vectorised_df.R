@@ -43,6 +43,7 @@ run_des_vectorised <- function(risk_df,
   screen_mat  <- jittered_times * attendance_mat   # 0 where she didn't attend
   max_screens <- ncol(screen_mat)
   screen_mat[attendance_mat == 0] <- NA_real_
+  if (screen_strategy == 0) screen_mat[] <- NA_real_   # no screening: no screen events
   df[, screen_cols] <- NULL
   
   # 0b. Initialise state and counter columns
@@ -54,6 +55,7 @@ run_des_vectorised <- function(risk_df,
   df$US_count             <- 0L #Number of ultrasounds attended
   df$MRI_count            <- 0L #Number of MRIs attended
   df$recall_count         <- 0L #Number of false-positive results
+  df$biopsy_count         <- 0L #Number of biopsies following false-positive results
   df$lastscreen_count     <- 0L #Last screen attended
   df$sdfirst_cancer       <- 0L #Cancer found at first screen
   df$sdlast_cancer        <- 0L #Cancer found at last screen
@@ -328,11 +330,17 @@ run_des_vectorised <- function(risk_df,
     fp_idx     <- act_idx & df$screen_detected_ca == 0L
     fp_draw    <- dqrunif(n, 0, 1)
     recall_idx <- fp_idx & fp_draw < recall_rate
-    
+
+    #Individual random draw for biopsy among women recalled
+    biopsy_draw <- dqrunif(n, 0, 1)
+    biopsy_idx  <- recall_idx & biopsy_draw < biopsy_rate
+
     #Add false-positive costs and add to counters
     if (any(recall_idx)) {
-      fp_cost <- (cost_follow_up + biopsy_rate * cost_biop) * disc_screen[recall_idx]
+      fp_cost <- (cost_follow_up + biopsy_idx[recall_idx] * cost_biop) *
+        disc_screen[recall_idx]
       df$recall_count[recall_idx]    <- df$recall_count[recall_idx]    + 1L
+      df$biopsy_count[biopsy_idx]    <- df$biopsy_count[biopsy_idx]    + 1L
       df$costs[recall_idx]           <- df$costs[recall_idx]           + fp_cost
       df$costs_follow_up[recall_idx] <- df$costs_follow_up[recall_idx] + fp_cost
     }
@@ -403,7 +411,10 @@ run_des_vectorised <- function(risk_df,
   # 3b. Cancer-free deaths
   df$cd_age_record[df$active] <- df$Mort_age[df$active]
   df$cd_death_age[df$active]  <- df$Mort_age[df$active]
-  
+
+  # Other-cause death still applies after a cancer diagnosis
+  df$Ca_mort_age <- pmin(df$Ca_mort_age, df$Mort_age)
+
   # 4. QALY and life-year calculations
   df$LY_counter <- df$Ca_mort_age - start_age
   
