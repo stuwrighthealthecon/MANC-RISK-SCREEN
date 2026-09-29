@@ -38,16 +38,17 @@ create_sample <- function(PSA = 0, intervals = 0, seed = 1, screen_strategy) {
   #If risk-stratified screening used then determine if each woman chooses to have
   #risk predicted, attends risk consultation, and changes interval
 
-  risksample$risk_predicted <- rbinom(length(nrow(risksample)), 1, risk_uptake)
+  # One draw per woman (length(nrow(...)) was 1, so everyone shared one draw)
+  risksample$risk_predicted <- rbinom(nrow(risksample), 1, risk_uptake)
   risksample$feedback <- ifelse(
     risksample$risk_predicted == 1 &
-      rbinom(length(nrow(risksample)), 1, (risk_feedback)) == 1,
+      rbinom(nrow(risksample), 1, (risk_feedback)) == 1,
     1,
     0
   )
   risksample$interval_change <- ifelse(
     risksample$feedback == 1 &
-      rbinom(length(nrow(risksample)), 1, risk_feedback) == 1,
+      rbinom(nrow(risksample), 1, risk_feedback) == 1,
     1,
     0
   )
@@ -62,7 +63,7 @@ create_sample <- function(PSA = 0, intervals = 0, seed = 1, screen_strategy) {
     risksample$life_expectancy <= start_age,
     qweibull(
       p = dqrunif(
-        n = 1,
+        n = nrow(risksample),   # one redraw per woman (was n = 1: same age for all)
         min = pweibull(
           q = start_age,
           shape = acmmortality_wb_a,
@@ -131,6 +132,13 @@ create_sample <- function(PSA = 0, intervals = 0, seed = 1, screen_strategy) {
   ) / (0.25 * risksample$growth_rate[has_cancer])
   
   risksample$ca_incidence<-risksample$genage+t_gen
+
+  # Women without cancer go through the same DES: give them no tumour and no
+  # clinical diagnosis. Inf (not NA) so age comparisons in the DES stay TRUE/FALSE.
+  no_ca <- risksample$cancer == 0
+  risksample$genage[no_ca]       <- Inf
+  risksample$ca_incidence[no_ca] <- Inf
+  risksample$growth_rate[no_ca]  <- 0
   
   # Individual screening-invitation jitter (months -> years), applied to whole schedule
   risksample$invite_jitter_years <- runif(nrow(risksample), 0, 35.99) / 12
@@ -350,25 +358,19 @@ create_sample <- function(PSA = 0, intervals = 0, seed = 1, screen_strategy) {
     colnames(masterframe)[1:n_risk_cols] <- colnames(risksample)
     colnames(masterframe)[(n_risk_cols + 1):(n_risk_cols + n_psa_cols)] <- colnames(PSA_all_p)
 
-    #Split the dataframe into chunks for easier computation
+    #Keep women alive at screening start; everyone (with and without cancer)
+    #is saved in one sample and run through the DES
     risksample <- masterframe %>% filter(masterframe$life_expectancy >= screen_startage)
-
-    negsample <- masterframe %>% filter(masterframe$cancer == 0)
-    save(negsample, file = paste("Risksample/negsample.Rdata", sep = ""))
-    risksample <- masterframe %>% filter(masterframe$cancer == 1)
-    save(risksample,file=paste("Risksample/possample.Rdata"))
-    risksample<-masterframe
+    save(risksample, file = "Risksample/possample.Rdata")
     #Clean up redundant inputs
     rm(masterframe, PSA_all_p, risk_mat)
     gc()
 
   } else {
+    #Keep women alive at screening start; everyone (with and without cancer)
+    #is saved in one sample and run through the DES
     risksample <- risksample %>% filter(risksample$life_expectancy >= screen_startage)
-
-    negsample <- risksample %>% filter(risksample$cancer == 0)
-    save(negsample, file = paste("Risksample/negsample.Rdata", sep = ""))
-    risksample <- risksample %>% filter(risksample$cancer == 1)
-    save(risksample,file=paste("Risksample/possample.Rdata"))
+    save(risksample, file = "Risksample/possample.Rdata")
   }
 }
 
@@ -447,7 +449,7 @@ create_sample_with_misclass <- function(
     risksample$life_expectancy <= start_age,
     qweibull(
       p = dqrunif(
-        n = 1,
+        n = nrow(risksample),   # one redraw per woman (was n = 1: same age for all)
         min = pweibull(
           q = start_age,
           shape = acmmortality_wb_a,
@@ -531,6 +533,13 @@ create_sample_with_misclass <- function(
   ) / (0.25 * risksample$growth_rate[has_cancer])
   
   risksample$ca_incidence<-risksample$genage+t_gen
+
+  # Women without cancer go through the same DES: give them no tumour and no
+  # clinical diagnosis. Inf (not NA) so age comparisons in the DES stay TRUE/FALSE.
+  no_ca <- risksample$cancer == 0
+  risksample$genage[no_ca]       <- Inf
+  risksample$ca_incidence[no_ca] <- Inf
+  risksample$growth_rate[no_ca]  <- 0
   
   # Individual screening-invitation jitter (months -> years), applied to whole schedule
   risksample$invite_jitter_years <- runif(nrow(risksample), 0, 35.99) / 12
@@ -750,17 +759,10 @@ create_sample_with_misclass <- function(
     colnames(masterframe)[1:n_risk_cols] <- colnames(risksample)
     colnames(masterframe)[(n_risk_cols + 1):(n_risk_cols + n_psa_cols)] <- colnames(PSA_all_p)
 
-    #Split the dataframe into chunks for easier computation
+    #Keep women alive at screening start; everyone (with and without cancer)
+    #is saved in one sample and run through the DES
     risksample <- masterframe %>% filter(masterframe$life_expectancy >= screen_startage)
-
-    negsample <- masterframe %>% filter(masterframe$cancer == 0)
-    save(
-      negsample,
-      file = paste("Risksamplewithmisclass/negsample.Rdata", sep = "")
-    )
-    risksample<- masterframe %>% filter(masterframe$cancer == 1)
-    save(risksample,file=paste("Risksamplewithmisclass/possample.Rdata"))
-    risksample<-masterframe
+    save(risksample, file = "Risksamplewithmisclass/possample.Rdata")
     #Clean up redundant inputs
     rm(masterframe, PSA_all_p, risk_mat)
     gc()
@@ -768,14 +770,10 @@ create_sample_with_misclass <- function(
 
   } else {
     
+    #Keep women alive at screening start; everyone (with and without cancer)
+    #is saved in one sample and run through the DES
     risksample <- risksample %>% filter(risksample$life_expectancy >= screen_startage)
-    negsample <- risksample %>% filter(risksample$cancer == 0)
-    save(
-      negsample,
-      file = paste("Risksamplewithmisclass/negsample.Rdata", sep = "")
-    )
-    risksample<- risksample %>% filter(risksample$cancer == 1)
-    save(risksample,file=paste("Risksamplewithmisclass/possample.Rdata"))
+    save(risksample, file = "Risksamplewithmisclass/possample.Rdata")
     }
   }
 

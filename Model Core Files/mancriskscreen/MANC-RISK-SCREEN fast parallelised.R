@@ -15,14 +15,14 @@ library(matrixStats)
 #Set model controls
 #-----------------------------------------------------------------------------
 controls <- list(
-  strategies       = c(3), #vector of strategies to simulate
+  strategies       = c(0,1,2,3,4,9), #vector of strategies to simulate
   gensample        = TRUE, #create new sample to simulate?
   MISCLASS         = FALSE, #should error in risk prediction be included?
   PREVENTATIVE_DRUG = FALSE, #should risk reducing medicines be used for high risk?
   supplemental_screening = FALSE, #should ultrasound and MRI be used as supplemental screening?
   PSA              = FALSE, #run PSA?
   intervals        = FALSE, #run PSA with wide distributions for GAM estimation?
-  desired_cases    = 30000, #number of cancer cases required
+  desired_cases    = 300000, #number of cancer cases required
   mcruns           = 1, #Number of Monte Carlo runs
   seed             = 42, #Set seed for random number generation
   n_cores          = max(1L, parallel::detectCores() - 1L) #Select number of computer cores to use
@@ -196,7 +196,7 @@ worker_globals <- c(
   "density_cutoff", "ca_size_cut",
   "log_norm_mean", "log_norm_sd",
   "Vc", "Vm", "start_size", "max_size",
-  "recall_rate", "biopsy_rate",
+  "fp_rate", "biopsy_rate",
   "risk_cutoffs_procas", "risk_cutoffs_tert", "low_risk_cut",
   "cost_strat", "cost_screen", "cost_follow_up", "cost_biop",
   "cost_DCIS", "cost_US", "cost_MRI", "cost_drug",
@@ -404,7 +404,7 @@ foreach(
       start_age          = start_age,
       screen_startage    = screen_startage,
       discount_cost      = discount_cost,
-      recall_rate        = recall_rate,
+      fp_rate        = fp_rate,
       Vm                 = Vm,
       Vc                 = Vc,
       cost_screen        = cost_screen,

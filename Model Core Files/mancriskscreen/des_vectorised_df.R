@@ -7,7 +7,7 @@ run_des_vectorised <- function(risk_df,
                                start_age,
                                screen_startage,
                                discount_cost,
-                               recall_rate,
+                               fp_rate,
                                Vm, Vc,
                                cost_screen, cost_strat, cost_US,
                                cost_MRI, cost_follow_up, cost_biop,
@@ -54,7 +54,7 @@ run_des_vectorised <- function(risk_df,
   df$screen_count         <- 0L #Number of screens (mammo) attended
   df$US_count             <- 0L #Number of ultrasounds attended
   df$MRI_count            <- 0L #Number of MRIs attended
-  df$recall_count         <- 0L #Number of false-positive results
+  df$fp_count         <- 0L #Number of false-positive results
   df$biopsy_count         <- 0L #Number of biopsies following false-positive results
   df$lastscreen_count     <- 0L #Last screen attended
   df$sdfirst_cancer       <- 0L #Cancer found at first screen
@@ -329,20 +329,20 @@ run_des_vectorised <- function(risk_df,
     #False-positive recalls
     fp_idx     <- act_idx & df$screen_detected_ca == 0L
     fp_draw    <- dqrunif(n, 0, 1)
-    recall_idx <- fp_idx & fp_draw < recall_rate
+    fp_idx <- fp_idx & fp_draw < fp_rate[df$VDG]
 
     #Individual random draw for biopsy among women recalled
     biopsy_draw <- dqrunif(n, 0, 1)
-    biopsy_idx  <- recall_idx & biopsy_draw < biopsy_rate
+    biopsy_idx  <- fp_idx & biopsy_draw < biopsy_rate
 
     #Add false-positive costs and add to counters
-    if (any(recall_idx)) {
-      fp_cost <- (cost_follow_up + biopsy_idx[recall_idx] * cost_biop) *
-        disc_screen[recall_idx]
-      df$recall_count[recall_idx]    <- df$recall_count[recall_idx]    + 1L
+    if (any(fp_idx)) {
+      fp_cost <- (cost_follow_up + biopsy_idx[fp_idx] * cost_biop) *
+        disc_screen[fp_idx]
+      df$fp_count[fp_idx]    <- df$fp_count[fp_idx]    + 1L
       df$biopsy_count[biopsy_idx]    <- df$biopsy_count[biopsy_idx]    + 1L
-      df$costs[recall_idx]           <- df$costs[recall_idx]           + fp_cost
-      df$costs_follow_up[recall_idx] <- df$costs_follow_up[recall_idx] + fp_cost
+      df$costs[fp_idx]           <- df$costs[fp_idx]           + fp_cost
+      df$costs_follow_up[fp_idx] <- df$costs_follow_up[fp_idx] + fp_cost
     }
     
     #Update column of active women in simulation

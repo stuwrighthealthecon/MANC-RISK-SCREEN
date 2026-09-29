@@ -13,6 +13,9 @@ negsamplefn <- function(screen_strategy, MISCLASS, PSA) {
   if (!"invite_jitter_years" %in% names(negsample))
     stop("negsamplefn: 'invite_jitter_years' not found - regenerate the sample")
   jit_all <- negsample$invite_jitter_years
+  
+  #Record breast density for false-positive rates
+  vdg_all <- negsample$VDG
 
   # Discount factor matching run_des_vectorised(): whole years since screen_startage
   disc_at <- function(age) 1 / (1 + discount_cost)^pmax(floor(age - screen_startage), 0)
@@ -133,6 +136,7 @@ negsamplefn <- function(screen_strategy, MISCLASS, PSA) {
       grp_idx   <- mastersample$risk_group == subsamples[ii]
       negsample <- mastersample[grp_idx, ]
       jit       <- jit_all[grp_idx]
+      vdg <- vdg_all[grp_idx]
       if (PSA == 1) {
         #Load in PSA values for the group
         subPSA <- filter(savePSA, risk_group == subsamples[ii])
@@ -200,7 +204,7 @@ negsamplefn <- function(screen_strategy, MISCLASS, PSA) {
       #attended screen for a false-positive recall, and for a biopsy if recalled
       for (i in 1:length(screen_times)) {
         attended <- negsample[, 11 + i] == 1
-        recalled <- attended & dqrunif(nrow(negsample), 0, 1) < recall_rate
+        recalled <- attended & dqrunif(nrow(negsample), 0, 1) < fp_rate[vdg]
         biopsied <- recalled & dqrunif(nrow(negsample), 0, 1) < biopsy_rate
         negsample[, 11 + i] <-
           (attended * (negsample$cost_screen +
@@ -210,7 +214,7 @@ negsamplefn <- function(screen_strategy, MISCLASS, PSA) {
              biopsied * negsample$cost_biop) *
           disc_at(screen_age[, i])
       }
-
+      
       #Find first screening event to add risk prediciton cost
       negsample <- negsample %>%
         mutate(first_case = {
@@ -438,7 +442,7 @@ negsamplefn <- function(screen_strategy, MISCLASS, PSA) {
     #attended screen for a false-positive recall, and for a biopsy if recalled
     for (i in 1:length(screen_times)) {
       attended <- negsample[, 11 + i] == 1
-      recalled <- attended & dqrunif(nrow(negsample), 0, 1) < recall_rate
+      recalled <- attended & dqrunif(nrow(negsample), 0, 1) < fp_rate[vdg_all]
       biopsied <- recalled & dqrunif(nrow(negsample), 0, 1) < biopsy_rate
       negsample[, 11 + i] <-
         (attended * (negsample$cost_screen +
