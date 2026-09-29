@@ -1,10 +1,8 @@
 library(tidyverse)
 
 #Load data
-filenames <- list.files(det_output_path, full.names = TRUE)
-alldata <- lapply(filenames, function(x) {
-  get(load(x, .GlobalEnv))
-})
+filenames <- list.files(det_output_path, pattern = "\\.rds$", full.names = TRUE)
+alldata   <- do.call(rbind, lapply(filenames, readRDS))
 detresults <- as.data.frame(do.call("rbind", alldata))
 
 #Create data.frame of screen and clinically detected cancers

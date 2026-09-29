@@ -34,9 +34,7 @@ PSA               <- as.integer(controls$PSA)
 intervals         <- as.integer(controls$intervals)
 
 #Place control on number of cores for memory management at large sample sizes
-controls$n_cores <- if (controls$desired_cases >= 200000) 3L else
-  if (controls$desired_cases >= 100000) 6L else
-    max(1L, parallel::detectCores() - 1L)
+controls$n_cores <- min(length(controls$strategies), max(1L, parallel::detectCores() - 1L))
 
 # -----------------------------------------------------------------------------
 # Set output directories
@@ -81,7 +79,7 @@ mcruns        <- controls$mcruns
 inum <- ceiling(desired_cases / expected_prev)
 
 #Set seed for dq based random number generators
-dqset.seed(controls$seed)
+dqset.seed(NULL)
 set.seed(NULL)
 
 # Source function files
@@ -167,6 +165,17 @@ if (MISCLASS) {
 }
 splitmaster_base <- risksample_master[, !names(risksample_master) %in% drop_cols_now]
 
+keep <- c("risk_group", "VDG", "MRI_screen", "US_screen", "risk_predicted", "interval_change",
+          "life_expectancy", "ca_incidence", "clin_detect_size_g", "genage", "growth_rate",
+          "invite_jitter_years", "tenyrrisk", "tenyrrisk_est", "tenyrrisk_true",
+          "starting_menses_status", "time_taking_drug", grep("^PSA_|^mcid$", names(splitmaster_base), value = TRUE))
+splitmaster_base <- splitmaster_base[, intersect(keep, names(splitmaster_base))]
+
+for (nm in c("risk_group", "VDG", "MRI_screen", "US_screen", "risk_predicted", "interval_change"))
+  if (nm %in% names(splitmaster_base)) splitmaster_base[[nm]] <- as.integer(splitmaster_base[[nm]])
+
+
+
 if (PSA == 0L) {
   psa_cols     <- grep("^PSA_", names(splitmaster_base), value = TRUE)
   splitmaster_base <- splitmaster_base[, !names(splitmaster_base) %in% psa_cols]
@@ -215,7 +224,7 @@ worker_globals <- c(
   "run_des_vectorised", "vec_stage_by_size", "vec_screening_result",
   "vec_ca_survival_time", "vec_fnLookupBase",
   "vec_QALY_counter", "vec_QALY_counter_core",
-  "get_screen_times", "assign_risk_groups",
+  "get_screen_times", "assign_risk_groups","vec_QALY_counter_fast",
   "negsamplefn", "redraw_drug_pars"
 )
 
@@ -434,9 +443,6 @@ foreach(
       stop(e)
     })
   } # end ii loop
-
-  #Run the model for people without cancer
-  negsamplefn(screen_strategy, MISCLASS, PSA)
   
   message(paste("Strategy", r, "complete"))
 

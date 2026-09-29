@@ -435,3 +435,18 @@ vec_QALY_counter <- function(Mort_age_vec, incidence_age_record_vec,
   }
   result
 }
+
+vec_QALY_counter_fast <- function(Mort_age_vec, incidence_age_record_vec, stage_cat_vec) {
+  max_years <- ceiling(max(Mort_age_vec)) - (screen_startage - 1)
+  y     <- seq_len(max_years)
+  age_y <- pmin(ceiling((screen_startage - 1) + y), max(utility_ages[, 1]))
+  w     <- utility_ages[match(age_y, utility_ages[, 1]), 2] / (1 + discount_health)^y
+  cw    <- c(0, cumsum(w))                                     # QALYs for whole years
+  L     <- pmax(ceiling(Mort_age_vec) - (screen_startage - 1L), 1L)
+  out   <- cw[L] + w[L] * (1 - (ceiling(Mort_age_vec) - Mort_age_vec))  # + part of final year
+  ca    <- incidence_age_record_vec > 0
+  if (any(ca)) out[ca] <- vec_QALY_counter(Mort_age_vec[ca],
+                                           incidence_age_record_vec[ca],
+                                           stage_cat_vec[ca])
+  out
+}
